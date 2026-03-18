@@ -1,0 +1,15 @@
+[
+  {
+    "title": "Getting Started with Docker Containers",
+    "content": "Docker is an open platform for developing, shipping, and running applications. It enables you to separate your applications from your infrastructure so you can deliver software quickly.\n\n### Key Concepts\n- **Images:** Read-only templates used to create containers.\n- **Containers:** Runnable instances of images.\n- **Dockerfile:** A text document containing all commands to assemble an image.\n\n### Basic Commands\n```bash\ndocker run -d -p 80:80 nginx\ndocker ps\ndocker stop <container_id>\n```\n\nDocker is essential for modern DevOps workflows.",
+    "tags": "Docker, Containers, DevOps",
+    "coverImage": "https://images.unsplash.com/photo-1605745341112-85968b19335b?auto=format&fit=crop&q=80&w=1000",
+    "readTime": 5
+  },
+  {
+    "title": "Advanced Docker Compose Techniques",
+    "content": "Docker Compose is a tool for defining and running multi-container Docker applications. With Compose, you use a YAML file to configure your application's services.\n\n### Overriding Defaults\nYou can use multiple compose files to override environments for dev/prod:\n`docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d`\n\n### Healthchecks\nEnsure dependencies are ready before starting a container using the `depends_on` condition `service_healthy`.",
+    "tags": "Docker, Docker Compose, Architecture",
+    "coverImage": "https://images.unsplash.com/photo-1667372393086-9d4001d4d650?auto=format&fit=crop&q=80&w=1000"
+  }
+]

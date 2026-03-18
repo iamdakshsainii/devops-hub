@@ -1,0 +1,169 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String?
+  fullName      String?
+  avatarUrl     String?
+  bio           String?
+  role          String    @default("MEMBER") // "MEMBER" or "ADMIN"
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  notes         Note[]
+  resources     Resource[]
+  bookmarks     Bookmark[]
+  upvotes       Upvote[]
+  events        Event[]
+  notifications Notification[]
+}
+
+model Note {
+  id          String   @id @default(cuid())
+  title       String
+  content     String
+  coverImage  String?
+  tags        String
+  readTime    Int      @default(0)
+  views       Int      @default(0)
+  status      String   @default("PENDING")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  bookmarks   Bookmark[]
+  upvotes     Upvote[]
+}
+
+model Resource {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  type        String
+  url         String
+  tags        String
+  status      String   @default("PENDING")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  bookmarks   Bookmark[]
+  upvotes     Upvote[]
+}
+
+model Event {
+  id           String   @id @default(cuid())
+  title        String
+  description  String
+  type         String
+  startTime    DateTime
+  externalLink String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  status       String   @default("PENDING")
+  
+  authorId     String?
+  author       User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  interestedCount Int   @default(0)
+}
+
+model Announcement {
+  id        String   @id @default(cuid())
+  content   String
+  isPinned  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  link      String?
+  type      String   // e.g "APPROVAL", "NEW_SUBMISSION", "SYSTEM"
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ToolComparison {
+  id          String   @id @default(cuid())
+  title       String
+  toolA       String
+  toolB       String
+  prosA       String
+  consA       String
+  prosB       String
+  consB       String
+  useCaseA    String
+  useCaseB    String
+  verdict     String
+  tags        String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  bookmarks   Bookmark[]
+}
+
+model CertGuide {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  difficulty  Int
+  prepTime    String
+  passScore   String
+  content     String
+  resources   String
+  tags        String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  bookmarks   Bookmark[]
+}
+
+model Bookmark {
+  id        String   @id @default(cuid())
+  userId    String
+  createdAt DateTime @default(now())
+  itemType  String
+
+  noteId    String?
+  resourceId String?
+  toolId    String?
+  certId    String?
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  note      Note?     @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  resource  Resource? @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  tool      ToolComparison? @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  cert      CertGuide? @relation(fields: [certId], references: [id], onDelete: Cascade)
+}
+
+model Upvote {
+  id        String   @id @default(cuid())
+  userId    String
+  createdAt DateTime @default(now())
+  itemType  String
+
+  noteId    String?
+  resourceId String?
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  note      Note?     @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  resource  Resource? @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+}
