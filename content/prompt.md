@@ -27,3 +27,4 @@ Follow these EXACT structural and formatting rules below. Failure to do so will 
 
 ---
 🚀 [Start generating the highly structured, 1000+ words detailed guide below, following exactly that Markdown node layout]:
+you can make at least 8 to 10 topics covering all concpet in detail
