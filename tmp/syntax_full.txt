@@ -1,0 +1,14 @@
+--- STDOUT ---
+
+--- STDERR ---
+c:\my-stuff\devops-hub\tmp\seed_modules.js:654
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+                                    ^
+
+SyntaxError: Unexpected token '.'
+    at wrapSafe (node:internal/modules/cjs/loader:1692:18)
+    at checkSyntax (node:internal/main/check_syntax:76:3)
+
+Node.js v24.13.0
+
+Exit code: 1

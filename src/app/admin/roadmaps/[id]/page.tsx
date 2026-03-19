@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Save, Trash2, Plus, ChevronDown, ChevronRight, Code2, Type,
+  Save, Trash2, Plus, ChevronDown, ChevronRight, Code2, Type, FileText,
   GripVertical, ArrowUp, ArrowDown, Loader2, X
 } from "lucide-react";
 
@@ -64,11 +64,12 @@ export default function RoadmapEditorPage({ params }: { params: Promise<{ id: st
   const router = useRouter();
   const [roadmapId, setRoadmapId] = useState<string>("");
   const [isNew, setIsNew] = useState(true);
-  const [mode, setMode] = useState<"FORM" | "JSON">("FORM");
+  const [mode, setMode] = useState<"FORM" | "JSON" | "MARKDOWN">("FORM");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [jsonInput, setJsonInput] = useState("");
+  const [markdownInput, setMarkdownInput] = useState("");
 
   const [form, setForm] = useState<RoadmapForm>({
     title: "",
@@ -152,6 +153,50 @@ export default function RoadmapEditorPage({ params }: { params: Promise<{ id: st
       setError("");
     } catch {
       setError("Invalid JSON format");
+    }
+  };
+
+  const handleMarkdownParse = () => {
+    try {
+      const lines = markdownInput.split("\n");
+      let currentStep: any = null;
+      let currentTopic: any = null;
+      const steps: any[] = [];
+
+      for (const line of lines) {
+        if (line.trim().startsWith("# ")) {
+          currentStep = {
+            title: line.replace("# ", "").trim(),
+            description: "",
+            icon: "📦",
+            topics: [],
+            resources: [],
+            expanded: false,
+          };
+          steps.push(currentStep);
+          currentTopic = null;
+        } else if (line.trim().startsWith("## ") && currentStep) {
+          currentTopic = {
+            title: line.replace("## ", "").trim(),
+            content: "",
+          };
+          currentStep.topics.push(currentTopic);
+        } else if (currentTopic) {
+          currentTopic.content += line + "\n";
+        } else if (currentStep && !currentTopic) {
+          currentStep.description += line + "\n";
+        }
+      }
+
+      setForm({
+        ...form,
+        steps: [...form.steps, ...steps], // Append to existing steps!
+      });
+      setMode("FORM");
+      setMarkdownInput("");
+      setError("");
+    } catch {
+      setError("Failed to parse Markdown structure layout");
     }
   };
 
@@ -325,6 +370,9 @@ export default function RoadmapEditorPage({ params }: { params: Promise<{ id: st
           <Button variant={mode === "JSON" ? "secondary" : "ghost"} size="sm" onClick={exportJson}>
             <Code2 className="h-4 w-4 mr-2" /> JSON Mode
           </Button>
+          <Button variant={mode === "MARKDOWN" ? "secondary" : "ghost"} size="sm" onClick={() => setMode("MARKDOWN")}>
+            <FileText className="h-4 w-4 mr-2" /> Markdown/AI Paste
+          </Button>
         </div>
       </div>
 
@@ -342,6 +390,24 @@ export default function RoadmapEditorPage({ params }: { params: Promise<{ id: st
               placeholder={'{\n  "title": "DevOps Roadmap",\n  "description": "...",\n  "icon": "🚀",\n  "color": "#3B82F6",\n  "steps": [\n    {\n      "title": "Docker",\n      "description": "Learn containers",\n      "icon": "🐳",\n      "topics": [\n        { "title": "What is Docker?", "content": "<p>Docker is...</p>" }\n      ],\n      "resources": [\n        { "title": "Docker Docs", "url": "https://docs.docker.com", "type": "ARTICLE" }\n      ]\n    }\n  ]\n}'}
             />
             <Button onClick={handleJsonParse}>Apply JSON to Form</Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Markdown / AI Paste Mode */}
+      {mode === "MARKDOWN" && (
+        <Card>
+          <CardContent className="pt-6 space-y-4">
+            <p className="text-xs text-muted-foreground">
+              Paste a giant page from ChatGPT or standard `.md` contents. We will auto-extract **# Headers** into Step title setups and **## Topics** into Topic contents offsets securely!
+            </p>
+            <textarea
+              value={markdownInput}
+              onChange={(e) => setMarkdownInput(e.target.value)}
+              className="w-full h-96 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              placeholder={`# Step 1: Introduction To Docker\n## What is Containerization\nWrite full descriptions inside list offsets safely.\n\n## Containers vs VMs\nWrite full notes sets.`}
+            />
+            <Button onClick={handleMarkdownParse}>Parse & Append Steps</Button>
           </CardContent>
         </Card>
       )}

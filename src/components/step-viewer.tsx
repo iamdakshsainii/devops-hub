@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { marked } from "marked";
 import {
   FileText,
   ExternalLink,
@@ -20,8 +21,9 @@ import {
 interface Topic {
   id: string;
   title: string;
-  content: string;
+  content: string | null;
   order: number;
+  subtopics?: { id: string; title: string; content: string; order: number }[];
 }
 
 interface Resource {
@@ -213,20 +215,22 @@ export function StepViewer({ roadmap, step }: { roadmap: PartialRoadmap; step: S
                      </span>
                      <span className="flex-1 truncate">{topic.title}</span>
                    </button>
-                   
-                   {activeTopicId === topic.id && subtopics.length > 0 && (
-                      <div className="pl-6 flex flex-col space-y-1 mt-1 border-l-2 ml-4 border-muted/50">
-                        {subtopics.map((sub, j) => (
-                          <button
-                            key={j}
-                            onClick={() => scrollToHeading(sub.text)}
-                            className={`text-xs text-left py-1 px-2 rounded-md hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors truncate ${sub.level === 3 ? "pl-4 text-[11px]" : ""}`}
-                          >
-                             {sub.text}
-                          </button>
-                        ))}
-                      </div>
-                   )}
+                   {activeTopicId === topic.id && topic.subtopics && topic.subtopics.length > 0 && (
+                       <div className="pl-6 flex flex-col space-y-1 mt-1 border-l-2 ml-4 border-muted/50">
+                         {topic.subtopics.map((sub) => (
+                           <button
+                             key={sub.id}
+                             onClick={() => {
+                               const el = document.getElementById(`subtopic-${sub.id}`);
+                               if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+                             }}
+                             className="text-xs text-left py-1 px-2 rounded-md hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors truncate"
+                           >
+                             {sub.title}
+                           </button>
+                         ))}
+                       </div>
+                    )}
                 </div>
              ))}
 
@@ -271,18 +275,42 @@ export function StepViewer({ roadmap, step }: { roadmap: PartialRoadmap; step: S
               </div>
 
               {/* Topic Html Content */}
-              {activeTopic.content ? (
+              {activeTopic.content && (
                 <div
-                  className="prose prose-base md:prose-lg dark:prose-invert max-w-none
+                  className="prose prose-base md:prose-lg dark:prose-invert max-w-none mb-8
                     prose-headings:tracking-tight prose-headings:scroll-mt-24
                     prose-a:text-primary prose-a:font-medium prose-a:underline-offset-4
                     prose-code:bg-muted/80 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:before:content-none prose-code:after:content-none prose-code:font-semibold prose-code:text-[0.9em]
                     prose-pre:bg-zinc-950 prose-pre:text-zinc-50 prose-pre:border prose-pre:shadow-xl
                     prose-img:rounded-xl prose-img:border prose-img:shadow-lg prose-img:bg-muted/50
                     prose-blockquote:border-l-primary prose-blockquote:bg-muted/20 prose-blockquote:py-1 prose-blockquote:pr-4 prose-blockquote:rounded-r-lg"
-                  dangerouslySetInnerHTML={{ __html: activeTopic.content }}
+                  dangerouslySetInnerHTML={{ __html: marked.parse(activeTopic.content as string) as string }}
                 />
-              ) : (
+              )}
+
+              {/* Nested Subtopics from Database */}
+              {activeTopic.subtopics && activeTopic.subtopics.length > 0 ? (
+                <div className="space-y-12">
+                   {activeTopic.subtopics.map((sub, sIdx) => (
+                      <div key={sub.id} id={`subtopic-${sub.id}`} className="space-y-4 scroll-mt-24">
+                         <div className="flex items-center gap-2 border-b pb-2">
+                            <span className="text-xs font-mono text-primary font-bold bg-primary/10 px-1.5 py-0.5 rounded">
+                               #{sIdx + 1}
+                            </span>
+                            <h2 className="text-2xl font-bold tracking-tight">{sub.title}</h2>
+                         </div>
+                         <div
+                            className="prose prose-base md:prose-lg dark:prose-invert max-w-none
+                              prose-headings:tracking-tight prose-headings:scroll-mt-24
+                              prose-a:text-primary prose-a:font-medium prose-a:underline-offset-4
+                              prose-code:bg-muted/80 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md
+                              prose-img:rounded-xl prose-img:border prose-img:bg-muted/50"
+                            dangerouslySetInnerHTML={{ __html: marked.parse(sub.content as string) as string }}
+                         />
+                      </div>
+                   ))}
+                </div>
+              ) : !activeTopic.content && (
                 <div className="border border-dashed rounded-2xl p-16 text-center bg-muted/5">
                   <FileText className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
                   <h3 className="text-xl font-bold mb-2">Content Coming Soon</h3>

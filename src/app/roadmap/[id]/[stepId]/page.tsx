@@ -13,7 +13,10 @@ export default async function StepDetailPage({ params }: { params: Promise<{ id:
       steps: {
         where: { id: stepId },
         include: {
-          topics: { orderBy: { order: "asc" } },
+          topics: { 
+            orderBy: { order: "asc" },
+            include: { subtopics: { orderBy: { order: "asc" } } }
+          },
           resources: { orderBy: { order: "asc" } },
           author: { select: { fullName: true, avatarUrl: true } }
         }

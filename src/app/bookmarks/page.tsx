@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Bookmark, FileText, Database } from "lucide-react";
+import { Bookmark, FileText } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -16,17 +16,40 @@ export default async function BookmarksPage({ searchParams }: { searchParams: Pr
   const resolvedSearchParams = await searchParams;
   const activeTab = resolvedSearchParams.tab || "modules";
 
-  const bookmarks = await prisma.bookmark.findMany({
+  // Fetch raw bookmarks first — only the scalar fields that exist in generated client
+  const rawBookmarks = await prisma.bookmark.findMany({
     where: { userId: session.user.id },
-    include: {
-      step: { include: { roadmap: { select: { title: true, color: true } } } },
-      resource: { include: { author: { select: { fullName: true } } } }
-    },
     orderBy: { createdAt: "desc" }
   });
 
-  const moduleBookmarks = bookmarks.filter(b => b.itemType === "MODULE" && b.step);
-  const resourceBookmarks = bookmarks.filter(b => b.itemType === "RESOURCE" && b.resource);
+  // Separate by itemType
+  const moduleBookmarkRows = rawBookmarks.filter(b => b.itemType === "MODULE" && b.stepId);
+  const resourceBookmarkRows = rawBookmarks.filter(b => b.itemType === "RESOURCE" && b.resourceId);
+
+  // Fetch related data separately
+  const stepIds = moduleBookmarkRows.map(b => b.stepId!);
+  const resourceIds = resourceBookmarkRows.map(b => b.resourceId!);
+
+  const [steps, resources] = await Promise.all([
+    stepIds.length > 0
+      ? prisma.roadmapStep.findMany({
+          where: { id: { in: stepIds } },
+          include: { roadmap: { select: { title: true, color: true } } }
+        })
+      : Promise.resolve([]),
+    resourceIds.length > 0
+      ? prisma.resource.findMany({
+          where: { id: { in: resourceIds } },
+          include: { author: { select: { fullName: true } } }
+        })
+      : Promise.resolve([])
+  ]);
+
+  const stepMap = Object.fromEntries(steps.map(s => [s.id, s]));
+  const resourceMap = Object.fromEntries(resources.map(r => [r.id, r]));
+
+  const moduleBookmarks = moduleBookmarkRows.map(b => ({ ...b, step: stepMap[b.stepId!] })).filter(b => b.step);
+  const resourceBookmarks = resourceBookmarkRows.map(b => ({ ...b, resource: resourceMap[b.resourceId!] })).filter(b => b.resource);
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-5xl space-y-8">
@@ -57,7 +80,7 @@ export default async function BookmarksPage({ searchParams }: { searchParams: Pr
                           {step.icon} Module 
                         </span>
                       </div>
-                      <CardTitle className="text-lg leading-tight group-hover:text-primary transition-colors">{step.title}</CardTitle>
+                      <CardTitle className="text-lg leading-tight">{step.title}</CardTitle>
                     </CardHeader>
                     <CardContent className="px-5 pb-5 pt-1 mt-auto space-y-4 flex-grow flex flex-col justify-between">
                         <p className="text-xs text-muted-foreground line-clamp-2 mb-4">{step.description || "Standalone knowledge node."}</p>
