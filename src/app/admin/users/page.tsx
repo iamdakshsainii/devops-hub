@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import UserRow from "@/components/admin/user-row";
 
 export const dynamic = "force-dynamic";
 
@@ -46,41 +47,7 @@ export default async function AdminUsersPage() {
             </thead>
             <tbody className="divide-y">
               {users.map(user => (
-                <tr key={user.id} className="hover:bg-muted/20">
-                  <td className="px-6 py-4">
-                    <div className="font-semibold text-foreground">{user.fullName || "—"}</div>
-                    <div className="text-xs text-muted-foreground mt-0.5">{user.email}</div>
-                  </td>
-                  <td className="px-6 py-4 text-muted-foreground whitespace-nowrap">
-                    {new Date(user.createdAt).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded border ${roleColor(user.role)}`}>
-                      {user.role.replace("_", " ")}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-muted-foreground">
-                    <div className="flex gap-3">
-                      <span>{user._count.notes} Notes</span>
-                      <span>{user._count.resources} Resources</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    {/* SUPER_ADMIN cannot be banned by anyone */}
-                    {user.role === "SUPER_ADMIN" ? (
-                      <span className="text-[10px] text-primary font-medium">Protected</span>
-                    ) : (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-8 shadow-none"
-                        disabled={!isSuperAdmin}
-                      >
-                        Ban User
-                      </Button>
-                    )}
-                  </td>
-                </tr>
+                <UserRow key={user.id} user={user} isSuperAdmin={isSuperAdmin} />
               ))}
             </tbody>
           </table>

@@ -75,3 +75,35 @@ export function AdminRequestAction({ requestId, userId }: { requestId: string, u
     </div>
   );
 }
+
+export function DemoteAdminAction({ userId }: { userId: string }) {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+
+  const handleDemote = async () => {
+    const ok = confirm("Are you sure you want to demote this Admin?");
+    if (!ok) return;
+
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/roles/demote", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId })
+      });
+      if (res.ok) router.refresh();
+    } catch {}
+    setLoading(false);
+  };
+
+  return (
+    <Button 
+      variant="outline" 
+      onClick={handleDemote}
+      className="w-full mt-4 h-7 text-xs border-destructive text-destructive hover:bg-destructive hover:text-white"
+      disabled={loading}
+    >
+       Demote to Member
+    </Button>
+  );
+}

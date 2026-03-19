@@ -5,10 +5,8 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, Lock, Shield } from "lucide-react";
 import Link from "next/link";
-// use standard lucid react
-import { Shield } from "lucide-react";
 
 export default function RequestAdminPage() {
   const { data: session, status } = useSession();
@@ -18,6 +16,17 @@ export default function RequestAdminPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [cooldown, setCooldown] = useState<{ isBlocked: boolean; message: string } | null>(null);
+
+  useState(() => {
+    fetch("/api/admin/requests/check")
+      .then(res => res.json())
+      .then(data => {
+         if (data.isBlocked) {
+            setCooldown(data);
+         }
+      });
+  });
 
   if (status === "loading") return <div className="p-12 text-center text-muted-foreground">Loading...</div>;
   if (!session) { router.push("/login"); return null; }
@@ -67,6 +76,14 @@ export default function RequestAdminPage() {
                </div>
                <p className="text-sm font-bold text-foreground">Submitted Successfully!</p>
                <p className="text-xs text-muted-foreground">Reviewers have been notified. Check back alerts soon.</p>
+            </div>
+          ) : cooldown?.isBlocked ? (
+            <div className="text-center py-6 space-y-3">
+                <div className="h-12 w-12 rounded-full bg-destructive/10 text-destructive flex items-center justify-center mx-auto">
+                     <Lock className="h-5 w-5" />
+                </div>
+                <p className="text-sm font-bold text-foreground">Form Locked</p>
+                <p className="text-xs text-muted-foreground whitespace-pre-wrap leading-relaxed">{cooldown.message}</p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">

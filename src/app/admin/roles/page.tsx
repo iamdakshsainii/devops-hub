@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Shield, ShieldAlert, ShieldCheck } from "lucide-react";
-import { AdminRequestAction } from "./action-form";
+import { AdminRequestAction, DemoteAdminAction } from "./action-form";
 
 export const dynamic = "force-dynamic";
 
@@ -101,6 +101,7 @@ export default async function AdminRolesPage() {
                           <span className="text-[9px] text-muted-foreground italic">None defined</span>
                         )}
                       </div>
+                      <DemoteAdminAction userId={admin.id} />
                     </div>
                   )}
                   {admin.role === "SUPER_ADMIN" && (
