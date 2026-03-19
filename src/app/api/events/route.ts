@@ -11,7 +11,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const { title, description, type, startTime, externalLink } = await req.json();
+    const { title, description, type, startTime, externalLink, imageUrls } = await req.json();
 
     if (!title || !description || !type || !startTime) {
       return NextResponse.json({ message: "Missing required fields" }, { status: 400 });
@@ -26,6 +26,7 @@ export async function POST(req: Request) {
         type, 
         startTime: new Date(startTime),
         externalLink: externalLink || null,
+        imageUrls: imageUrls || null,
         authorId: session.user.id,
         status,
       },

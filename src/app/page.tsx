@@ -7,7 +7,7 @@ export default function Home() {
     <div className="flex flex-col w-full">
       {/* Hero Section */}
       <section className="relative w-full py-24 lg:py-32 xl:py-48 overflow-hidden bg-background">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-neutral-800/20 via-background to-background z-0"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-foreground/5 via-background to-background z-0"></div>
         
         <div className="container relative z-10 px-4 md:px-6 mx-auto">
           <div className="flex flex-col items-center space-y-8 text-center">
@@ -135,12 +135,12 @@ export default function Home() {
       {/* Call to Action */}
       <section className="w-full py-24 bg-foreground text-background">
         <div className="container px-4 md:px-6 mx-auto text-center">
-          <h2 className="text-3xl tracking-tight sm:text-5xl font-bold mb-6">Ready to accelerate your career?</h2>
+          <h2 className="text-3xl tracking-tight sm:text-5xl font-bold mb-6 text-background">Ready to accelerate your career?</h2>
           <p className="mx-auto max-w-[600px] text-background/80 md:text-xl mb-10">
             Create your personalized engineering profile, upload your resume, and start sharing knowledge with thousands of peers.
           </p>
           <Link href="/signup">
-            <Button size="lg" variant="secondary" className="h-14 px-10 text-lg rounded-full shadow-2xl hover:scale-105 transition-transform">
+            <Button size="lg" variant="secondary" className="h-14 px-10 text-lg rounded-full shadow-2xl hover:scale-105 transition-transform bg-background text-foreground hover:bg-background/90">
               Create Your Free Account
             </Button>
           </Link>

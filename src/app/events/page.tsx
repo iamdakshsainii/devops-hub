@@ -60,9 +60,17 @@ export default async function EventsPage() {
 
 function EventCard({ event, isPast = false }: { event: any; isPast?: boolean }) {
   const date = new Date(event.startTime);
+  const images = event.imageUrls ? event.imageUrls.split(",").filter(Boolean) : [];
   
   return (
-    <Card className={`group flex flex-col hover:border-primary/50 transition-colors ${isPast ? 'bg-muted/10' : 'bg-card'}`}>
+    <Card className={`group flex flex-col hover:border-primary/50 transition-colors overflow-hidden ${isPast ? 'bg-muted/10' : 'bg-card'}`}>
+      {images.length > 0 && (
+        <div className={`grid gap-0.5 w-full bg-muted border-b ${images.length === 1 ? 'grid-cols-1 h-48' : images.length === 2 ? 'grid-cols-2 h-40' : 'grid-cols-3 h-32'}`}>
+          {images.slice(0, 3).map((url: string, idx: number) => (
+             <img key={idx} src={url} alt="Event Gallery" className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
+          ))}
+        </div>
+      )}
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start mb-2">
           <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground bg-muted px-2 py-0.5 rounded">

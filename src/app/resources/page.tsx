@@ -55,19 +55,24 @@ export default async function ResourcesPage({
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl space-y-8">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Resource Library</h1>
-          <p className="text-muted-foreground mt-1 text-lg">Curated materials shared by the community.</p>
+          <h1 className="text-3xl font-extrabold tracking-tight">Community Resources</h1>
+          <p className="text-muted-foreground mt-1">Curated links, PDFs, tools, and videos shared by the community.</p>
         </div>
         <Link href="/resources/new">
-          <Button size="lg" className="h-11 px-8">
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Share Resource
-          </Button>
+          <Button className="rounded-full shadow-md px-6">+ Share Resource</Button>
         </Link>
       </div>
 
+      <div className="bg-primary/10 border border-primary/20 rounded-xl p-4 flex items-start sm:items-center gap-3 shadow-sm text-primary">
+         <span className="flex shrink-0 h-6 w-6 items-center justify-center rounded-full bg-background border">🎯</span>
+         <div>
+           <p className="text-sm font-semibold">Earn Community Credits!</p>
+           <p className="text-xs text-foreground/80 mt-0.5">Share high-quality resources. Once approved, you earn +10 Score on your profile and get notified!</p>
+         </div>
+      </div>
+        
       <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-muted/30 p-4 rounded-xl border">
         <form className="relative w-full md:max-w-md">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />

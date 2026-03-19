@@ -44,6 +44,11 @@ export default async function DashboardPage() {
     take: 3,
   });
 
+  const me = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { score: true }
+  });
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl space-y-10">
       {/* Welcome Banner */}
@@ -54,7 +59,11 @@ export default async function DashboardPage() {
             <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight">
               Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-foreground to-foreground/70">{session.user.name || session.user.email?.split("@")[0]}</span>
             </h1>
-            <p className="text-muted-foreground md:text-lg">
+            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary font-bold px-3 py-1.5 rounded-full text-sm">
+               <span className="flex h-2 w-2 rounded-full bg-primary animate-pulse"></span>
+               {me?.score || 0} Community Credits Earned
+            </div>
+            <p className="text-muted-foreground md:text-lg pt-1">
               Here's your highly customized dashboard. Discover new architectures, prepare for certifications, and expand your DevOps skills.
             </p>
             <div className="flex gap-4 pt-2">

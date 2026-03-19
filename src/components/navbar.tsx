@@ -1,16 +1,26 @@
 "use client"
 
 import Link from "next/link"
+import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { useSession, signOut } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Search, Terminal, User as UserIcon, Settings, LogOut, UserCircle } from "lucide-react"
+import { Search, Terminal, User as UserIcon, Settings, LogOut, UserCircle, Shield } from "lucide-react"
 import { ThemeToggle } from "./theme-toggle"
 import { NotificationsDropdown } from "./notifications-dropdown"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 export function Navbar() {
   const { data: session, status } = useSession()
+  const router = useRouter()
+  const [searchQuery, setSearchQuery] = useState("")
+
+  const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && searchQuery.trim()) {
+      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`)
+    }
+  }
 
   return (
     <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
@@ -32,8 +42,11 @@ export function Navbar() {
           <div className="w-full max-w-sm relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input 
-              placeholder="Search..." 
+              placeholder="Search Notes, Resources, Events..." 
               className="pl-9 bg-muted/40 h-9" 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={handleSearch}
             />
           </div>
         </div>
@@ -67,6 +80,17 @@ export function Navbar() {
                    <DropdownMenuItem asChild>
                      <Link href="/dashboard" className="cursor-pointer w-full">Dashboard</Link>
                    </DropdownMenuItem>
+                   {session.user.role === "ADMIN" && (
+                     <DropdownMenuItem className="cursor-pointer" asChild>
+                      <Link href="/admin" className="flex items-center w-full"><Shield className="mr-2 h-4 w-4" /> Moderation Panel</Link>
+                    </DropdownMenuItem>
+                  )}
+                  
+                  {session.user.role === "SUPER_ADMIN" && (
+                    <DropdownMenuItem className="cursor-pointer font-bold text-amber-500 hover:text-amber-600 focus:text-amber-600 focus:bg-amber-500/10" asChild>
+                      <Link href="/admin/roles" className="flex items-center w-full"><Shield className="mr-2 h-4 w-4" /> Role Manager</Link>
+                    </DropdownMenuItem>
+                  )}
                    <DropdownMenuItem asChild>
                      <Link href="/profile" className="cursor-pointer flex items-center w-full">
                        <UserCircle className="mr-2 h-4 w-4" /> Profile Stats

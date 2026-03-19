@@ -11,11 +11,36 @@ export default function NewEventPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [files, setFiles] = useState<FileList | null>(null);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     setError("");
+
+    // Upload files first if any
+    let imageUrlsStr = "";
+    try {
+      if (files && files.length > 0) {
+        const uploadedUrls = [];
+        for (let i = 0; i < files.length; i++) {
+          const uploadData = new FormData();
+          uploadData.append("file", files[i]);
+          const uploadRes = await fetch("/api/upload", {
+            method: "POST",
+            body: uploadData,
+          });
+          if (!uploadRes.ok) throw new Error("Image upload failed");
+          const { url } = await uploadRes.json();
+          uploadedUrls.push(url);
+        }
+        imageUrlsStr = uploadedUrls.join(",");
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to upload images");
+      setLoading(false);
+      return;
+    }
 
     const formData = new FormData(e.currentTarget);
     const data = {
@@ -25,6 +50,7 @@ export default function NewEventPage() {
       startTime: new Date(formData.get("startTime") as string).toISOString(),
       endTime: new Date(formData.get("endTime") as string).toISOString(),
       externalLink: formData.get("externalLink") || undefined,
+      imageUrls: imageUrlsStr || undefined,
     };
 
     try {
@@ -90,6 +116,19 @@ export default function NewEventPage() {
                 <label htmlFor="endTime" className="text-sm font-medium">End Time</label>
                 <Input id="endTime" name="endTime" type="datetime-local" required />
               </div>
+            </div>
+
+            <div className="space-y-2 pt-2">
+              <label htmlFor="images" className="text-sm font-medium">Event Images (Up to 3)</label>
+              <Input 
+                id="images" 
+                type="file" 
+                accept="image/*" 
+                multiple 
+                onChange={(e) => setFiles(e.target.files)} 
+                className="cursor-pointer" 
+              />
+              <p className="text-xs text-muted-foreground">Select multiple images to create a gallery.</p>
             </div>
 
             <Button type="submit" className="w-full mt-4" disabled={loading}>

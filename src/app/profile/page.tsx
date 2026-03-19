@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { ProfileForm } from "@/components/profile-form";
+import { AdminRequestCard } from "@/components/admin-request-card";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,10 @@ export default async function ProfilePage() {
   if (!user) {
     redirect("/login");
   }
+
+  const existingRequest = await prisma.adminRequest.findFirst({
+    where: { userId: session.user.id, status: "PENDING" }
+  });
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-3xl">
@@ -47,6 +52,11 @@ export default async function ProfilePage() {
             />
           </div>
         </div>
+
+        <AdminRequestCard 
+          hasPendingRequest={!!existingRequest} 
+          isAdmin={user.role === "ADMIN" || user.role === "SUPER_ADMIN"} 
+        />
       </div>
     </div>
   );
