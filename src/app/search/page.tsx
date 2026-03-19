@@ -4,6 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/com
 import { FileText, Database, Calendar, SearchX } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { ResourceCard } from "@/components/resource-card";
 
 export const dynamic = "force-dynamic";
 
@@ -24,9 +25,9 @@ export default async function SearchPage({
     where: {
       status: "PUBLISHED",
       OR: [
-        { title: { contains: query } },
-        { content: { contains: query } },
-        { tags: { contains: query } }
+        { title: { contains: query, mode: "insensitive" } },
+        { content: { contains: query, mode: "insensitive" } },
+        { tags: { contains: query, mode: "insensitive" } }
       ]
     },
     include: { author: { select: { fullName: true } } }
@@ -36,9 +37,23 @@ export default async function SearchPage({
     where: {
       status: "PUBLISHED",
       OR: [
-        { title: { contains: query } },
-        { description: { contains: query } },
-        { tags: { contains: query } }
+        { title: { contains: query, mode: "insensitive" } },
+        { description: { contains: query, mode: "insensitive" } },
+        { tags: { contains: query, mode: "insensitive" } }
+      ]
+    },
+    include: {
+      author: { select: { fullName: true } },
+      _count: { select: { upvotes: true } }
+    }
+  });
+
+  const roadmapResourcesPromise = prisma.roadmapResource.findMany({
+    where: {
+      step: { roadmap: { status: "PUBLISHED" } },
+      OR: [
+        { title: { contains: query, mode: "insensitive" } },
+        { description: { contains: query, mode: "insensitive" } }
       ]
     }
   });
@@ -47,15 +62,70 @@ export default async function SearchPage({
     where: {
       status: "PUBLISHED",
       OR: [
-        { title: { contains: query } },
-        { description: { contains: query } }
+        { title: { contains: query, mode: "insensitive" } },
+        { description: { contains: query, mode: "insensitive" } }
       ]
     }
   });
 
-  const [notes, resources, events] = await Promise.all([notesPromise, resourcesPromise, eventsPromise]);
+  const modulesPromise = prisma.roadmapStep.findMany({
+    where: {
+      roadmap: { status: "PUBLISHED" },
+      OR: [
+        { title: { contains: query, mode: "insensitive" } },
+        { description: { contains: query, mode: "insensitive" } },
+        {
+          topics: {
+            some: {
+              OR: [
+                { title: { contains: query, mode: "insensitive" } },
+                { content: { contains: query, mode: "insensitive" } }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    include: { roadmap: true }
+  });
 
-  const hasResults = notes.length > 0 || resources.length > 0 || events.length > 0;
+  const [notes, globalResources, roadmapResources, events, modules] = await Promise.all([
+    notesPromise,
+    resourcesPromise,
+    roadmapResourcesPromise,
+    eventsPromise,
+    modulesPromise
+  ]);
+
+  const mergedResources = [
+    ...globalResources,
+    ...roadmapResources.map((r: any) => ({
+      ...r,
+      tags: r.tags || "",
+      author: { fullName: "Modules Guide" },
+      _count: { upvotes: 0 }
+    }))
+  ];
+
+  const seenUrls = new Set();
+  const resources = [];
+  for (const res of mergedResources) {
+    if (!seenUrls.has(res.url)) {
+      seenUrls.add(res.url);
+      resources.push(res);
+    }
+  }
+
+  const seenModuleTitles = new Set();
+  const finalModules = [];
+  for (const mod of modules) {
+    if (!seenModuleTitles.has(mod.title)) {
+      seenModuleTitles.add(mod.title);
+      finalModules.push(mod);
+    }
+  }
+
+  const hasResults = notes.length > 0 || resources.length > 0 || events.length > 0 || finalModules.length > 0;
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-5xl space-y-12">
@@ -110,32 +180,42 @@ export default async function SearchPage({
             </section>
           )}
 
+          {finalModules && finalModules.length > 0 && (
+            <section className="space-y-6 pt-4">
+              <h2 className="text-2xl font-bold flex items-center border-b pb-4">
+                 <FileText className="mr-2 h-6 w-6 text-primary" /> Modules & Guides <span className="ml-3 text-sm font-normal text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{finalModules.length}</span>
+              </h2>
+              <div className="grid sm:grid-cols-2 gap-4">
+                {finalModules.map((module: any) => (
+                  <Card key={module.id} className="group hover:border-primary/50 transition-colors">
+                    <CardHeader className="p-4 pb-2">
+                       <div className="flex justify-between items-start mb-2">
+                         <span className="text-[10px] uppercase font-bold tracking-wider text-primary bg-primary/10 px-2 py-0.5 rounded">
+                           {module.roadmap ? module.roadmap.title : "Standalone"}
+                         </span>
+                       </div>
+                       <CardTitle className="text-lg leading-tight group-hover:text-primary transition-colors">{module.title}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-4 pt-0">
+                       <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{module.description}</p>
+                       <Link href={module.roadmapId ? `/roadmap/${module.roadmapId}/${module.id}` : `/roadmap/standalone/${module.id}`}>
+                         <Button variant="secondary" className="w-full h-8 cursor-pointer">View Module</Button>
+                       </Link>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </section>
+          )}
+
           {resources.length > 0 && (
             <section className="space-y-6 pt-4">
               <h2 className="text-2xl font-bold flex items-center border-b pb-4">
                  <Database className="mr-2 h-6 w-6 text-primary" /> Resources <span className="ml-3 text-sm font-normal text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{resources.length}</span>
               </h2>
-              <div className="grid gap-4">
+              <div className="grid sm:grid-cols-2 gap-6">
                 {resources.map(resource => (
-                  <Card key={resource.id} className="group hover:border-foreground/30 transition-all flex flex-col sm:flex-row overflow-hidden">
-                    {resource.imageUrl && (
-                      <div className="sm:w-48 h-32 sm:h-auto bg-muted shrink-0 border-b sm:border-b-0 sm:border-r overflow-hidden relative">
-                         <img src={resource.imageUrl} alt={resource.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                      </div>
-                    )}
-                    <div className="flex flex-col flex-1 p-5">
-                      <div className="flex justify-between items-start mb-1">
-                        <span className="text-[10px] font-bold uppercase text-primary tracking-wider bg-primary/10 px-2 py-0.5 rounded">{resource.type}</span>
-                      </div>
-                      <CardTitle className="text-lg mt-1 group-hover:text-primary transition-colors">{resource.title}</CardTitle>
-                      <CardDescription className="line-clamp-2 text-sm mt-2">{resource.description}</CardDescription>
-                      <div className="mt-4 pt-4 border-t flex items-center justify-between">
-                         <Link href={`/resources/${resource.id}`}>
-                           <Button variant="secondary" size="sm" className="h-8 group-hover:bg-primary group-hover:text-primary-foreground">View Resource</Button>
-                         </Link>
-                      </div>
-                    </div>
-                  </Card>
+                  <ResourceCard key={resource.id} resource={resource as any} />
                 ))}
               </div>
             </section>

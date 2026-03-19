@@ -13,7 +13,7 @@ import { Editor } from "@/components/editor";
 
 interface SubtopicForm { title: string; content: string; }
 interface TopicForm { title: string; content: string; subtopics: SubtopicForm[]; expanded: boolean; }
-interface ResourceForm { title: string; url: string; type: string; description: string; }
+interface ResourceForm { title: string; url: string; type: string; description: string; imageUrl?: string; }
 
 interface ModuleForm {
   title: string;
@@ -26,7 +26,7 @@ interface ModuleForm {
 
 const emptySubtopic = (): SubtopicForm => ({ title: "", content: "" });
 const emptyTopic = (): TopicForm => ({ title: "", content: "", subtopics: [], expanded: true });
-const emptyResource = (): ResourceForm => ({ title: "", url: "", type: "ARTICLE", description: "" });
+const emptyResource = (): ResourceForm => ({ title: "", url: "", type: "ARTICLE", description: "", imageUrl: "" });
 
 export default function EditModulePage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
@@ -37,6 +37,8 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
   const [error, setError] = useState("");
   const [jsonInput, setJsonInput] = useState("");
   const [markdownInput, setMarkdownInput] = useState("");
+
+  const [replaceExisting, setReplaceExisting] = useState(true);
 
   const [form, setForm] = useState<ModuleForm>({
     title: "", description: "", icon: "📦", topics: [], resources: []
@@ -63,7 +65,7 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
               expanded: false,
             })),
             resources: (data.resources || []).map((r: any) => ({
-              title: r.title, url: r.url, type: r.type || "ARTICLE", description: r.description || ""
+              title: r.title, url: r.url, type: r.type || "ARTICLE", description: r.description || "", imageUrl: r.imageUrl || ""
             })),
           });
           setLoading(false);
@@ -71,6 +73,26 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
         .catch(() => { setError("Failed to load module"); setLoading(false); });
     });
   }, [params]);
+
+  const handleImageUpload = async (ri: number, file: File | undefined) => {
+    if (!file) return;
+    const formData = new FormData();
+    formData.append("file", file);
+    try {
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.url) {
+        const nr = [...form.resources];
+        nr[ri].imageUrl = data.url;
+        setForm({ ...form, resources: nr });
+      }
+    } catch (err) {
+      setError("Image upload failed");
+    }
+  };
 
   // ── JSON parse ──────────────────────────────────────────────────────────
   const handleJsonParse = () => {
@@ -129,7 +151,7 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
         }
       }
 
-      setForm({ ...form, topics: [...form.topics, ...topics] });
+      setForm({ ...form, topics: replaceExisting ? topics : [...form.topics, ...topics] });
       setMode("FORM");
       setMarkdownInput("");
       setError("");
@@ -267,12 +289,26 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
               className="w-full h-[400px] rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring font-mono"
               placeholder={`## What is Docker?\nDocker is a containerization platform...\n\n### The Shipping Analogy\n![Container](https://images.unsplash.com/photo-xxx)\nBefore containers, shipping software was chaos...\n\n### Containers vs VMs\n| Feature | Containers | VMs |\n| :--- | :--- | :--- |\n| Size | 5-500MB | 3-20GB |\n\n## Core Docker Commands\nAll essential commands you need...\n\n### docker run\nRuns a container from an image...`}
             />
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4 flex-wrap">
+              <label className="flex items-center gap-2 cursor-pointer border px-3 py-1.5 rounded-lg bg-background hover:bg-muted/50 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={replaceExisting}
+                  onChange={(e) => setReplaceExisting(e.target.checked)}
+                  className="rounded border-input text-primary focus:ring-1 focus:ring-ring h-4 w-4"
+                />
+                <span className="text-sm font-medium">Replace existing topics</span>
+              </label>
+              
               <Button onClick={handleMarkdownParse} className="gap-2">
                 <FileText className="h-4 w-4" />
-                Parse & Append to Module
+                {replaceExisting ? "Parse & Replace All" : "Parse & Append"}
               </Button>
-              <p className="text-xs text-muted-foreground">Topics will be appended to existing ones. You can then edit before saving.</p>
+              <p className="text-xs text-muted-foreground">
+                {replaceExisting 
+                  ? "Existing topics will be wiped and replaced with these." 
+                  : "Topics will be added to the bottom."}
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -415,43 +451,76 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
                 <Plus className="h-3 w-3 mr-1" /> Add Resource
               </Button>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-4">
               {form.resources.length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-4">No resources yet.</p>
+                <p className="text-sm text-muted-foreground text-center py-4 bg-muted/20 border border-dashed rounded-lg">No resources items yet.</p>
               )}
-              {form.resources.map((r, ri) => (
-                <div key={ri} className="flex flex-wrap gap-2 items-center border rounded-lg p-3 bg-muted/5">
-                  <Input
-                    value={r.title}
-                    onChange={e => { const nr = [...form.resources]; nr[ri].title = e.target.value; setForm({ ...form, resources: nr }); }}
-                    placeholder="Resource title"
-                    className="flex-1 min-w-[150px] h-9 text-sm"
-                  />
-                  <Input
-                    value={r.url}
-                    onChange={e => { const nr = [...form.resources]; nr[ri].url = e.target.value; setForm({ ...form, resources: nr }); }}
-                    placeholder="https://..."
-                    className="flex-1 min-w-[180px] h-9 text-sm"
-                  />
-                  <select
-                    value={r.type}
-                    onChange={e => { const nr = [...form.resources]; nr[ri].type = e.target.value; setForm({ ...form, resources: nr }); }}
-                    className="h-9 rounded-md border border-input bg-background px-2 text-sm"
-                  >
-                    <option value="ARTICLE">Article</option>
-                    <option value="VIDEO">Video</option>
-                    <option value="DOCS">Docs</option>
-                    <option value="PDF">PDF</option>
-                    <option value="TOOL">Tool</option>
-                  </select>
-                  <button
-                    onClick={() => setForm({ ...form, resources: form.resources.filter((_, j) => j !== ri) })}
-                    className="p-2 hover:bg-destructive/10 rounded"
-                  >
-                    <X className="h-4 w-4 text-destructive" />
-                  </button>
-                </div>
-              ))}
+              <div className="grid gap-4 sm:grid-cols-2">
+                {form.resources.map((r, ri) => (
+                  <Card key={ri} className="overflow-hidden group relative border-muted/60 hover:border-primary/30 transition-all duration-200 shadow-sm">
+                    <CardContent className="p-0">
+                      <div className="aspect-video relative bg-muted flex items-center justify-center overflow-hidden border-b">
+                        {r.imageUrl ? (
+                          <img src={r.imageUrl} alt={r.title} className="object-cover w-full h-full group-hover:scale-105 transition-all duration-300" />
+                        ) : (
+                          <div className="text-muted-foreground/40 flex flex-col items-center gap-1.5">
+                            <ImageIcon className="h-10 w-10 stroke-[1.2]" />
+                            <span className="text-xs">No preview image</span>
+                          </div>
+                        )}
+                        {/* Overlay to upload file */}
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-all duration-200 flex-col px-4 text-center">
+                          <label className="text-xs bg-white text-black font-semibold rounded-md px-2.5 py-1.5 cursor-pointer shadow-sm hover:bg-white/90 transition-colors">
+                            Upload Cover
+                            <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(ri, e.target.files?.[0])} />
+                          </label>
+                        </div>
+                        
+                        <button
+                          onClick={() => setForm({ ...form, resources: form.resources.filter((_, j) => j !== ri) })}
+                          className="absolute top-2 right-2 p-1.5 rounded-full bg-white text-destructive hover:bg-destructive hover:text-white transition-all duration-150 shadow-sm border border-border"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                      
+                      <div className="p-3 space-y-2.5">
+                        <Input
+                          value={r.title}
+                          onChange={e => { const nr = [...form.resources]; nr[ri].title = e.target.value; setForm({ ...form, resources: nr }); }}
+                          placeholder="Resource title"
+                          className="h-8 font-medium text-sm"
+                        />
+                        <Input
+                          value={r.url}
+                          onChange={e => { const nr = [...form.resources]; nr[ri].url = e.target.value; setForm({ ...form, resources: nr }); }}
+                          placeholder="URL (https://...)"
+                          className="h-7 text-xs font-mono"
+                        />
+                        <div className="grid grid-cols-[100px_1fr] gap-2">
+                          <select
+                            value={r.type}
+                            onChange={e => { const nr = [...form.resources]; nr[ri].type = e.target.value; setForm({ ...form, resources: nr }); }}
+                            className="h-7 rounded-md border border-input bg-background px-1 text-xs focus:ring-1 focus:ring-ring"
+                          >
+                            <option value="ARTICLE">Article</option>
+                            <option value="VIDEO">Video</option>
+                            <option value="DOCS">Docs</option>
+                            <option value="PDF">PDF</option>
+                            <option value="TOOL">Tool</option>
+                          </select>
+                          <Input
+                            value={r.description || ""}
+                            onChange={e => { const nr = [...form.resources]; nr[ri].description = e.target.value; setForm({ ...form, resources: nr }); }}
+                            placeholder="Short description"
+                            className="h-7 text-xs"
+                          />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </CardContent>
           </Card>
         </div>

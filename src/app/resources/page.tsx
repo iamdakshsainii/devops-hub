@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Youtube, FileText, Link as LinkIcon, Image as ImageIcon, PlusCircle, Database } from "lucide-react";
+import { ResourceCard } from "@/components/resource-card";
 
 export const dynamic = "force-dynamic";
 
@@ -20,13 +21,19 @@ export default async function ResourcesPage({
   };
 
   if (type && type !== "ALL") {
-    where.type = type;
+    if (type === "YOUTUBE") {
+      where.type = { in: ["YOUTUBE", "VIDEO"] };
+    } else if (type === "LINK") {
+      where.type = { in: ["LINK", "ARTICLE", "TOOL"] };
+    } else {
+      where.type = type;
+    }
   }
   if (q) {
-    where.title = { contains: q };
+    where.title = { contains: q, mode: "insensitive" };
   }
 
-  const resources = await prisma.resource.findMany({
+  const resourcesPromise = prisma.resource.findMany({
     where,
     orderBy: { createdAt: "desc" },
     include: {
@@ -34,6 +41,41 @@ export default async function ResourcesPage({
       _count: { select: { upvotes: true } }
     }
   });
+
+  const roadmapResourcesPromise = prisma.roadmapResource.findMany({
+    where: {
+      step: { roadmap: { status: "PUBLISHED" } },
+      ...(where.type ? { type: where.type } : {}),
+      ...(where.title ? { title: where.title } : {})
+    },
+    orderBy: { createdAt: "desc" }
+  });
+
+  const [globalResources, roadmapResources] = await Promise.all([
+    resourcesPromise,
+    roadmapResourcesPromise
+  ]);
+
+  const mergedResources = [
+    ...globalResources,
+    ...roadmapResources.map((r: any) => ({
+      ...r,
+      tags: r.tags || "",
+      author: { fullName: "Modules Guide" },
+      _count: { upvotes: 0 }
+    }))
+  ];
+
+  const seenUrls = new Set();
+  const resources = [];
+  for (const res of mergedResources) {
+    if (!seenUrls.has(res.url)) {
+      seenUrls.add(res.url);
+      resources.push(res);
+    }
+  }
+
+  resources.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   const getIcon = (type: string) => {
     switch(type) {
@@ -91,39 +133,7 @@ export default async function ResourcesPage({
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {resources.length > 0 ? (
           resources.map(resource => (
-             <Card key={resource.id} className="flex flex-col hover:border-primary/50 transition-colors overflow-hidden group">
-               {resource.imageUrl && (
-                 <div className="w-full h-40 bg-muted overflow-hidden border-b">
-                   <img src={resource.imageUrl} alt={resource.title || "Resource cover"} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
-                 </div>
-               )}
-               <CardHeader className={resource.imageUrl ? "p-4 pb-2" : "p-5 pb-3"}>
-                 <div className="flex items-start justify-between mb-2">
-                   <div className="bg-muted p-2 rounded-lg">
-                     {getIcon(resource.type)}
-                   </div>
-                   <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground bg-muted px-2 py-0.5 rounded">
-                     {resource.tags.split(',')[0]}
-                   </span>
-                 </div>
-                 <CardTitle className="text-lg line-clamp-2 leading-tight group-hover:text-primary transition-colors">{resource.title}</CardTitle>
-                 <CardDescription className="line-clamp-2 h-10 mt-2 text-sm">{resource.description}</CardDescription>
-               </CardHeader>
-               <CardContent className="p-5 pt-2 mt-auto">
-                 <div className="flex items-center justify-between text-xs text-muted-foreground mb-4">
-                   <span>By {resource.author.fullName || "Member"}</span>
-                   <span>{resource._count.upvotes} Upvotes</span>
-                 </div>
-                 <div className="grid grid-cols-2 gap-2">
-                   <a href={resource.url} target="_blank" rel="noopener noreferrer" className="w-full">
-                     <Button variant="secondary" className="w-full h-8 text-xs">{getButtonText(resource.type)}</Button>
-                   </a>
-                   <Link href={`/resources/${resource.id}`} className="w-full">
-                     <Button variant="outline" className="w-full h-8 text-xs">Details</Button>
-                   </Link>
-                 </div>
-               </CardContent>
-             </Card>
+             <ResourceCard key={resource.id} resource={resource} />
           ))
         ) : (
           <div className="col-span-full flex flex-col items-center justify-center p-12 text-center border rounded-xl border-dashed bg-muted/10">

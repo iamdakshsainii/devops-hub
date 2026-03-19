@@ -12,6 +12,7 @@ export default function ModulesPageClient({ data }: { data: any[] }) {
   const [search, setSearch] = useState("");
   const [selectedRoadmap, setSelectedRoadmap] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<"NEWEST" | "OLDEST" | "TOPICS_DESC" | "TOPICS_ASC">("NEWEST");
+  const cyclingColors = ["#3b82f6", "#f97316", "#8b5cf6", "#10b981", "#ec4899", "#14b8a6"];
 
   // Get unique roadmaps for filtering
   const roadmapTitles = Array.from(new Set(data.map(m => m.roadmapTitle)));
@@ -106,11 +107,11 @@ export default function ModulesPageClient({ data }: { data: any[] }) {
          <div className="flex-1">
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredModules.length > 0 ? (
-                 filteredModules.map(mod => (
+                 filteredModules.map((mod, index) => (
                     <Link key={mod.id} href={`/roadmap/${mod.roadmapId}/${mod.id}`} className="group block h-full">
                        <Card className="h-full hover:shadow-xl hover:border-foreground/30 transition-all duration-300 relative overflow-hidden flex flex-col items-start bg-card">
                           {/* Hover Tint */}
-                          <div className="absolute top-0 left-0 w-1.5 h-full opacity-60 group-hover:opacity-100 transition-opacity" style={{ backgroundColor: mod.roadmapColor }} />
+                          <div className="absolute top-0 left-0 w-1.5 h-full opacity-60 group-hover:opacity-100 transition-opacity" style={{ backgroundColor: cyclingColors[index % cyclingColors.length] }} />
                           
                           <CardHeader className="pl-6 w-full pb-3 border-b border-border/10">
                              <div className="flex justify-between items-start mb-3">
@@ -130,11 +131,11 @@ export default function ModulesPageClient({ data }: { data: any[] }) {
                              </p>
                              <div className="flex items-center gap-4 mt-auto text-xs font-semibold text-muted-foreground pt-4 border-t border-border/30">
                                 <span className="flex items-center gap-1.5 bg-muted/50 px-2 py-1 rounded">
-                                   <BookOpen className="h-3.5 w-3.5" style={{ color: mod.roadmapColor }}/>
+                                   <BookOpen className="h-3.5 w-3.5" style={{ color: cyclingColors[index % cyclingColors.length] }}/>
                                    {mod._count.topics} Topics
                                 </span>
                                 <span className="flex items-center gap-1.5 bg-muted/50 px-2 py-1 rounded">
-                                   <Layers className="h-3.5 w-3.5" style={{ color: mod.roadmapColor }}/>
+                                   <Layers className="h-3.5 w-3.5" style={{ color: cyclingColors[index % cyclingColors.length] }}/>
                                    {mod._count.resources} Resources
                                 </span>
                              </div>

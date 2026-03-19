@@ -92,7 +92,12 @@ export default function AdminResourcesList({ resources }: { resources: any[] }) 
       {filteredResources.length > 0 ? (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredResources.map((res) => (
-            <Card key={res.id} className="flex flex-col hover:border-primary/50 transition-colors">
+            <Card key={res.id} className="flex flex-col hover:border-primary/50 transition-colors overflow-hidden">
+               {res.imageUrl && (
+                  <div className="aspect-video relative bg-muted flex items-center justify-center overflow-hidden border-b">
+                     <img src={res.imageUrl} alt={res.title} className="object-cover w-full h-full" />
+                  </div>
+               )}
                <CardHeader className="p-5 pb-3">
                   <div className="flex items-start justify-between">
                      <span className="text-[10px] uppercase font-bold tracking-wider text-primary bg-primary/10 px-2 py-0.5 rounded">

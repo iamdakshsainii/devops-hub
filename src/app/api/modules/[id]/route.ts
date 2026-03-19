@@ -33,84 +33,106 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
     const { id } = await context.params;
     const { title, description, icon, status, topics, resources } = await req.json();
 
-    const result = await prisma.$transaction(async (tx) => {
-      // 1. Delete all existing topics (cascade deletes subtopics) and resources
-      await tx.roadmapTopic.deleteMany({ where: { stepId: id } });
-      await tx.roadmapResource.deleteMany({ where: { stepId: id } });
+    // ── Step 1: Do the global resource mirror check OUTSIDE the transaction.
+    // findFirst calls inside a long transaction burn time — do them upfront.
+    const resourceList = resources || [];
+    const resourceUrls = resourceList.map((r: any) => r.url).filter(Boolean);
 
-      // 2. Re-create topics with subtopics
-      for (let idx = 0; idx < (topics || []).length; idx++) {
-        const t = topics[idx];
-        const topic = await tx.roadmapTopic.create({
-          data: {
-            stepId: id,
-            title: t.title || "Untitled Topic",
-            content: t.content || null,
-            order: idx,
+    const existingGlobalUrls = new Set<string>();
+    if (resourceUrls.length > 0) {
+      const existing = await prisma.resource.findMany({
+        where: { url: { in: resourceUrls } },
+        select: { url: true },
+      });
+      existing.forEach((r) => existingGlobalUrls.add(r.url));
+    }
+
+    // ── Step 2: Run the transaction with a generous timeout (30s).
+    // timeout is in milliseconds.
+    const result = await prisma.$transaction(
+      async (tx) => {
+        // 1. Delete existing topics (cascade deletes subtopics) and resources
+        await tx.roadmapTopic.deleteMany({ where: { stepId: id } });
+        await tx.roadmapResource.deleteMany({ where: { stepId: id } });
+
+        // 2. Re-create topics + subtopics
+        for (let idx = 0; idx < (topics || []).length; idx++) {
+          const t = topics[idx];
+          const topic = await tx.roadmapTopic.create({
+            data: {
+              stepId: id,
+              title: t.title || "Untitled Topic",
+              content: t.content || null,
+              order: idx,
+            },
+          });
+
+          const subs = t.subtopics || [];
+          for (let si = 0; si < subs.length; si++) {
+            const s = subs[si];
+            if (s.title) {
+              await tx.roadmapSubTopic.create({
+                data: {
+                  topicId: topic.id,
+                  title: s.title,
+                  content: s.content || "",
+                  order: si,
+                },
+              });
+            }
           }
-        });
+        }
 
-        // Create subtopics if any
-        const subs = t.subtopics || [];
-        for (let si = 0; si < subs.length; si++) {
-          const s = subs[si];
-          if (s.title) {
-            await tx.roadmapSubTopic.create({
+        // 3. Re-create resources
+        for (let idx = 0; idx < resourceList.length; idx++) {
+          const r = resourceList[idx];
+          await tx.roadmapResource.create({
+            data: {
+              stepId: id,
+              title: r.title || "",
+              url: r.url || "",
+              type: r.type || "ARTICLE",
+              description: r.description || "",
+              imageUrl: r.imageUrl || null,
+              order: idx,
+            },
+          });
+
+          // Smart mirror — only insert if not already in global resources
+          // (checked outside the transaction so no extra queries here)
+          if (r.url && !existingGlobalUrls.has(r.url)) {
+            await tx.resource.create({
               data: {
-                topicId: topic.id,
-                title: s.title,
-                content: s.content || "",
-                order: si,
-              }
+                title: r.title || "Module Resource",
+                url: r.url || "",
+                type: r.type || "ARTICLE",
+                description: r.description || `Resource from module: ${title || "Standalone"}`,
+                tags: "Module",
+                status: "PUBLISHED",
+                authorId: session.user.id,
+              },
             });
           }
         }
+
+        // 4. Update the step itself
+        return tx.roadmapStep.update({
+          where: { id },
+          data: {
+            title: title || "Untitled",
+            description: description || "",
+            icon: icon || "📦",
+            status: status || "PENDING",
+          },
+        });
+      },
+      {
+        // Increase timeout to 30 seconds — default is 5s which is too short
+        // for large modules with many topics + subtopics
+        timeout: 30000,
+        maxWait: 5000,
       }
-
-      // 3. Re-create resources
-        // 3. Re-create resources and Mirror to Global Resources implicitly
-        if (resources?.length) {
-           for (let idx = 0; idx < resources.length; idx++) {
-              const r = resources[idx];
-              await tx.roadmapResource.create({
-                 data: {
-                    stepId: id,
-                    title: r.title || "",
-                    url: r.url || "",
-                    type: r.type || "ARTICLE",
-                    description: r.description || "",
-                    order: idx,
-                 }
-              });
-
-              // Smart Mirroring Node 
-              const existingGlobal = await tx.resource.findFirst({ where: { url: r.url } });
-              if (!existingGlobal) {
-                 await tx.resource.create({
-                    data: {
-                       title: r.title || "Module Resource",
-                       url: r.url || "",
-                       type: r.type || "ARTICLE",
-                       description: r.description || `Resource from module: ${title || "Standalone"}`,
-                       tags: "Module",
-                       status: "PUBLISHED",
-                       authorId: session.user.id
-                    }
-                 });
-              }
-           }
-        }
-
-      return tx.roadmapStep.update({
-        where: { id },
-        data: {
-          title: title || "Untitled",
-          description: description || "",
-          icon: icon || "📦",
-          status: status || "PENDING",
-        }
-      });
-    });
+    );
 
     return NextResponse.json({ message: "Updated", step: result });
   } catch (err) {

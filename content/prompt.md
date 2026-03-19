@@ -19,12 +19,28 @@ Follow these EXACT structural and formatting rules below. Failure to do so will 
 - ALL commands, file configurations, and code MUST be wrapped inside fenced code blocks WITH the language specified (e.g., ```bash, ```yaml, ```dockerfile, ```go).
 - Include comments inside the code block to explain exactly what each continuous snippet/parameter does.
 - For executable commands, use `$` or `#` to denote prompts clearly.
+- NEVER use ASCII art, box-drawing characters (+---, |---|, arrows made of dashes) inside code blocks or anywhere in the document. Use real images instead (see rule 4).
 
-### 🖼️ 4. VISUALS / DIAGRAM PLACEHOLDERS
-- We automatically render banner images natively. Include high-quality diagrams/placeholders to anchor layout spacing.
-- Syntax to use: `![Placeholder Description](https://images.unsplash.com/photo-...?auto=format&fit=crop&w=1200&q=80)`
-- Provide at least 3-4 distinct layout images placed intelligently across different major sections.
+### 🖼️ 4. VISUALS & DIAGRAMS — CRITICAL RULE
+- NEVER draw diagrams using ASCII/text characters. No +---, no |---|, no text-based boxes or arrows.
+- For every concept that needs a diagram (architecture, lifecycle, flow, pipeline, comparison), use a REAL image URL with this syntax:
+  `![Clear description of what this shows](DIRECT_IMAGE_URL)`
+- ONLY use direct image URLs that end in .png, .jpg, .svg, or .webp — no redirects, no HTML pages.
+- Preferred reliable image sources (use these, they never expire):
+  - Wikimedia Commons direct URLs: `https://upload.wikimedia.org/wikipedia/commons/...`
+  - Official project documentation CDN images
+  - GitHub raw content: `https://raw.githubusercontent.com/[org]/[repo]/main/docs/images/...`
+  - Draw.io exported PNGs hosted on GitHub
+- Also include 3-4 Unsplash banner/section images for visual spacing between major sections:
+  `![Section banner](https://images.unsplash.com/photo-XXXXXXXXXX?auto=format&fit=crop&w=1200&q=80)`
+- Place images immediately after introducing a concept — not at the end of a section.
+- Every major `##` section must contain at least one image.
+
+### ✅ 5. QUALITY RULES
+- Minimum 1000 words. Aim for 8 to 10 topics covering all concepts in depth.
+- Every section must feel complete — no stubs, no "coming soon" placeholders.
+- Write for senior engineers — precise, production-focused, no hand-holding.
+- All tables must have a header row and at least 3 data rows.
 
 ---
-🚀 [Start generating the highly structured, 1000+ words detailed guide below, following exactly that Markdown node layout]:
-you can make at least 8 to 10 topics covering all concpet in detail
+🚀 [Start generating the highly structured, detailed guide below following exactly the layout above]:

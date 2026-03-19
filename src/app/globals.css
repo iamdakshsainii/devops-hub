@@ -7,28 +7,20 @@
   --color-ring: hsl(var(--ring));
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
-
   --color-primary: hsl(var(--primary));
   --color-primary-foreground: hsl(var(--primary-foreground));
-
   --color-secondary: hsl(var(--secondary));
   --color-secondary-foreground: hsl(var(--secondary-foreground));
-
   --color-muted: hsl(var(--muted));
   --color-muted-foreground: hsl(var(--muted-foreground));
-
   --color-accent: hsl(var(--accent));
   --color-accent-foreground: hsl(var(--accent-foreground));
-
   --color-card: hsl(var(--card));
   --color-card-foreground: hsl(var(--card-foreground));
-
   --color-popover: hsl(var(--popover));
   --color-popover-foreground: hsl(var(--popover-foreground));
-
   --color-destructive: hsl(var(--destructive));
   --color-destructive-foreground: hsl(var(--destructive-foreground));
-
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -43,7 +35,7 @@
     --card-foreground: 0 0% 9%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 9%;
-    --primary: 0 0% 9%; /* Black accent */
+    --primary: 0 0% 9%;
     --primary-foreground: 0 0% 98%;
     --secondary: 0 0% 96.1%;
     --secondary-foreground: 0 0% 9%;
@@ -60,13 +52,13 @@
   }
 
   .dark {
-    --background: 0 0% 0%; /* Pure Black */
+    --background: 0 0% 0%;
     --foreground: 0 0% 98%;
-    --card: 0 0% 3%; /* Very dark gray for cards */
+    --card: 0 0% 3%;
     --card-foreground: 0 0% 98%;
     --popover: 0 0% 3%;
     --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%; /* White accent */
+    --primary: 0 0% 98%;
     --primary-foreground: 0 0% 9%;
     --secondary: 0 0% 10%;
     --secondary-foreground: 0 0% 98%;
@@ -91,26 +83,550 @@
   }
 }
 
-/* 🌙 Direct absolute overrides to fix dim blue dark layout colors */
-.dark .prose {
-  --tw-prose-body: #d4d4d8 !important; /* zinc-300 */
-  --tw-prose-headings: #fafafa !important; /* zinc-50 */
-  --tw-prose-bold: #ffffff !important;
-  --tw-prose-links: #38bdf8 !important; /* sky-400 */
-  --tw-prose-quotes: #e4e4e7 !important;
+/* ════════════════════════════════════════════════════════════════════
+   TAILWIND PROSE CSS VARIABLES — override at root so prose reads them
+════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --tw-prose-body: #111827;
+  --tw-prose-headings: #030712;
+  --tw-prose-lead: #374151;
+  --tw-prose-links: #1d4ed8;
+  --tw-prose-bold: #030712;
+  --tw-prose-counters: #374151;
+  --tw-prose-bullets: #374151;
+  --tw-prose-hr: #d1d5db;
+  --tw-prose-quotes: #111827;
+  --tw-prose-quote-borders: #d1d5db;
+  --tw-prose-captions: #374151;
+  --tw-prose-code: #111827;
+  --tw-prose-pre-code: #24292e;
+  --tw-prose-pre-bg: #f6f8fa;
+  --tw-prose-th-borders: #d1d5db;
+  --tw-prose-td-borders: #e5e7eb;
 }
 
-.dark .prose p, 
-.dark .prose li, 
-.dark .prose span,
-.dark .prose ul,
-.dark .prose ol {
-  color: #e4e4e7 !important; /* Make Paragraphs Bright zinc-200 */
+.dark {
+  --tw-prose-body: #e4e4e7;
+  --tw-prose-headings: #fafafa;
+  --tw-prose-lead: #d4d4d8;
+  --tw-prose-links: #38bdf8;
+  --tw-prose-bold: #ffffff;
+  --tw-prose-counters: #a1a1aa;
+  --tw-prose-bullets: #a1a1aa;
+  --tw-prose-hr: #3f3f46;
+  --tw-prose-quotes: #e4e4e7;
+  --tw-prose-quote-borders: #52525b;
+  --tw-prose-code: #e4e4e7;
+  --tw-prose-pre-code: #e6edf3;
+  --tw-prose-pre-bg: #0d1117;
+  --tw-prose-th-borders: #3f3f46;
+  --tw-prose-td-borders: #27272a;
 }
 
-.dark .prose h1, 
-.dark .prose h2, 
-.dark .prose h3, 
-.dark .prose h4 {
-  color: #fafafa !important; /* Headers white */
+/* ════════════════════════════════════════════════════════════════════
+   PROSE TEXT — hard overrides for full contrast both modes
+════════════════════════════════════════════════════════════════════ */
+
+.devhub-prose {
+  color: #111827 !important;
+}
+
+.devhub-prose p,
+.devhub-prose li,
+.devhub-prose ul,
+.devhub-prose ol {
+  color: #111827 !important;
+}
+
+.devhub-prose h1,
+.devhub-prose h2,
+.devhub-prose h3,
+.devhub-prose h4 {
+  color: #030712 !important;
+}
+
+.devhub-prose strong,
+.devhub-prose b {
+  color: #030712 !important;
+  font-weight: 700;
+}
+
+.devhub-prose a {
+  color: #1d4ed8 !important;
+}
+
+.devhub-prose blockquote,
+.devhub-prose blockquote p {
+  color: #374151 !important;
+}
+
+.dark .devhub-prose,
+.dark .devhub-prose p,
+.dark .devhub-prose li,
+.dark .devhub-prose ul,
+.dark .devhub-prose ol {
+  color: #e4e4e7 !important;
+}
+
+.dark .devhub-prose h1,
+.dark .devhub-prose h2,
+.dark .devhub-prose h3,
+.dark .devhub-prose h4 {
+  color: #fafafa !important;
+}
+
+.dark .devhub-prose strong,
+.dark .devhub-prose b {
+  color: #ffffff !important;
+}
+
+.dark .devhub-prose a {
+  color: #38bdf8 !important;
+}
+
+.dark .devhub-prose blockquote,
+.dark .devhub-prose blockquote p {
+  color: #e4e4e7 !important;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   TABLE
+════════════════════════════════════════════════════════════════════ */
+
+.devhub-prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9em;
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.6rem;
+  overflow: hidden;
+  margin: 1.5rem 0;
+}
+
+.devhub-prose thead {
+  background: hsl(var(--muted));
+}
+
+.devhub-prose th {
+  padding: 0.65rem 1rem;
+  font-weight: 700;
+  text-align: left;
+  border-bottom: 1px solid hsl(var(--border));
+  font-size: 0.85em;
+  color: #111827 !important;
+}
+
+.devhub-prose td {
+  padding: 0.6rem 1rem;
+  border-bottom: 1px solid hsl(var(--border));
+  vertical-align: top;
+  color: #111827 !important;
+}
+
+.dark .devhub-prose th {
+  color: #f4f4f5 !important;
+}
+
+.dark .devhub-prose td {
+  color: #e4e4e7 !important;
+}
+
+.devhub-prose tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.devhub-prose tbody tr:hover {
+  background: hsl(var(--muted) / 0.5);
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   INLINE CODE
+════════════════════════════════════════════════════════════════════ */
+
+.devhub-prose :not(pre)>code {
+  background: #f3f4f6 !important;
+  color: #111827 !important;
+  border: 1px solid #e5e7eb !important;
+  padding: 0.15em 0.45em !important;
+  border-radius: 0.3rem !important;
+  font-size: 0.85em !important;
+  font-weight: 600 !important;
+  font-family: ui-monospace, monospace !important;
+}
+
+.dark .devhub-prose :not(pre)>code {
+  background: #1f2937 !important;
+  color: #f9fafb !important;
+  border: 1px solid #374151 !important;
+}
+
+.devhub-prose code::before,
+.devhub-prose code::after {
+  content: none !important;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   HR
+════════════════════════════════════════════════════════════════════ */
+
+.devhub-prose hr {
+  border: none;
+  border-top: 1px solid hsl(var(--border));
+  margin: 2.5rem 0;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   NEUTRALISE TAILWIND PROSE PRE — devhub-code-block takes over
+════════════════════════════════════════════════════════════════════ */
+
+.devhub-prose pre {
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  color: inherit !important;
+}
+
+.devhub-prose pre code {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  font-size: inherit !important;
+  color: inherit !important;
+  border-radius: 0 !important;
+  font-weight: normal !important;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   CODE BLOCK WRAPPER
+════════════════════════════════════════════════════════════════════ */
+
+.devhub-code-block {
+  position: relative;
+  margin: 1.75rem 0;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  border: 1px solid #d0d7de;
+  font-family: ui-monospace, "Cascadia Code", "Fira Code", "Consolas", monospace;
+}
+
+.dark .devhub-code-block {
+  border-color: #30363d;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   CODE BLOCK HEADER BAR
+════════════════════════════════════════════════════════════════════ */
+
+.devhub-code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.45rem 1rem;
+  background: #eaeef2;
+  border-bottom: 1px solid #d0d7de;
+}
+
+.dark .devhub-code-header {
+  background: #161b22;
+  border-color: #30363d;
+}
+
+.devhub-lang-label {
+  font-size: 0.65rem;
+  font-family: ui-monospace, monospace;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #57606a;
+}
+
+.dark .devhub-lang-label {
+  color: #8b949e;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   COPY BUTTON
+════════════════════════════════════════════════════════════════════ */
+
+.devhub-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  color: #57606a;
+  background: transparent;
+  border: 1px solid #d0d7de;
+  border-radius: 0.4rem;
+  padding: 0.2rem 0.55rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 1.6;
+}
+
+.devhub-copy-btn:hover {
+  color: #24292f;
+  background: #f6f8fa;
+  border-color: #57606a;
+}
+
+.devhub-copy-btn.copied {
+  color: #16a34a;
+  border-color: #16a34a;
+  background: rgba(22, 163, 74, 0.08);
+}
+
+.dark .devhub-copy-btn {
+  color: #8b949e;
+  border-color: #30363d;
+}
+
+.dark .devhub-copy-btn:hover {
+  background: #21262d;
+  color: #e6edf3;
+  border-color: #484f58;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   PRE + CODE BLOCKS
+════════════════════════════════════════════════════════════════════ */
+
+.devhub-pre {
+  margin: 0 !important;
+  padding: 1.5rem 1.75rem !important;
+  overflow-x: auto !important;
+  border-radius: 0 !important;
+  text-align: left !important;
+  line-height: 1.8 !important;
+  background: #f6f8fa !important;
+  scrollbar-width: thin;
+  scrollbar-color: #d0d7de transparent;
+}
+
+.dark .devhub-pre {
+  background: #0d1117 !important;
+  scrollbar-color: #30363d transparent;
+}
+
+.devhub-pre::-webkit-scrollbar {
+  height: 6px;
+}
+
+.devhub-pre::-webkit-scrollbar-thumb {
+  background: #d0d7de;
+  border-radius: 3px;
+}
+
+.dark .devhub-pre::-webkit-scrollbar-thumb {
+  background: #30363d;
+}
+
+.devhub-pre code {
+  font-family: ui-monospace, "Cascadia Code", "Fira Code", "Consolas", monospace !important;
+  font-size: 0.875rem !important;
+  line-height: 1.9 !important;
+  text-align: left !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  white-space: pre !important;
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+  display: block;
+  /* Add spacing between logical groups separated by blank lines */
+  letter-spacing: 0.01em;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   HLJS LIGHT MODE — GitHub Light token colors
+   (No @import needed — defined manually here)
+════════════════════════════════════════════════════════════════════ */
+
+.hljs {
+  color: #24292e;
+  background: #f6f8fa;
+}
+
+.hljs-doctag,
+.hljs-keyword,
+.hljs-meta .hljs-keyword,
+.hljs-template-tag,
+.hljs-template-variable,
+.hljs-type,
+.hljs-variable.language_ {
+  color: #d73a49;
+}
+
+.hljs-title,
+.hljs-title.class_,
+.hljs-title.class_.inherited__,
+.hljs-title.function_ {
+  color: #6f42c1;
+}
+
+.hljs-attr,
+.hljs-attribute,
+.hljs-literal,
+.hljs-meta,
+.hljs-number,
+.hljs-operator,
+.hljs-selector-attr,
+.hljs-selector-class,
+.hljs-selector-id,
+.hljs-variable {
+  color: #005cc5;
+}
+
+.hljs-string,
+.hljs-regexp {
+  color: #032f62;
+}
+
+.hljs-built_in,
+.hljs-symbol {
+  color: #e36209;
+}
+
+.hljs-comment,
+.hljs-code,
+.hljs-formula {
+  color: #6a737d;
+  font-style: italic;
+}
+
+.hljs-name,
+.hljs-bullet,
+.hljs-deletion {
+  color: #b31d28;
+}
+
+.hljs-addition {
+  color: #22863a;
+}
+
+.hljs-emphasis {
+  font-style: italic;
+}
+
+.hljs-strong {
+  font-weight: bold;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   HLJS DARK MODE — GitHub Dark token colors
+════════════════════════════════════════════════════════════════════ */
+
+.dark .hljs {
+  color: #e6edf3;
+  background: #0d1117;
+}
+
+.dark .hljs-doctag,
+.dark .hljs-keyword,
+.dark .hljs-meta .hljs-keyword,
+.dark .hljs-template-tag,
+.dark .hljs-template-variable,
+.dark .hljs-type,
+.dark .hljs-variable.language_ {
+  color: #ff7b72;
+}
+
+.dark .hljs-title,
+.dark .hljs-title.class_,
+.dark .hljs-title.class_.inherited__,
+.dark .hljs-title.function_ {
+  color: #d2a8ff;
+}
+
+.dark .hljs-attr,
+.dark .hljs-attribute,
+.dark .hljs-literal,
+.dark .hljs-meta,
+.dark .hljs-number,
+.dark .hljs-operator,
+.dark .hljs-selector-attr,
+.dark .hljs-selector-class,
+.dark .hljs-selector-id,
+.dark .hljs-variable {
+  color: #79c0ff;
+}
+
+.dark .hljs-string,
+.dark .hljs-regexp {
+  color: #a5d6ff;
+}
+
+.dark .hljs-built_in,
+.dark .hljs-symbol {
+  color: #ffa657;
+}
+
+.dark .hljs-comment,
+.dark .hljs-code,
+.dark .hljs-formula {
+  color: #8b949e;
+  font-style: italic;
+}
+
+.dark .hljs-name,
+.dark .hljs-bullet,
+.dark .hljs-deletion {
+  color: #ffa198;
+}
+
+.dark .hljs-addition {
+  color: #56d364;
+}
+
+.dark .hljs-emphasis {
+  font-style: italic;
+}
+
+.dark .hljs-strong {
+  font-weight: bold;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   BLANK LINE SPACING inside code blocks
+   Blank lines in <pre> collapse — this gives them visible height
+════════════════════════════════════════════════════════════════════ */
+
+.devhub-pre code .hljs-ln-line:empty::after,
+.devhub-pre .hljs-ln-line:empty::after {
+  content: " ";
+  display: block;
+  height: 0.9rem;
+}
+
+/* Fallback: target the raw text nodes via line wrapping */
+.devhub-pre code br {
+  display: block;
+  margin-top: 0.5rem;
+  content: " ";
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   ASCII / PLAINTEXT blocks — fenced code with no language tag
+   Give them a muted distinct look so they don't look broken
+════════════════════════════════════════════════════════════════════ */
+
+.devhub-code-block:has(.language-plaintext) {
+  border-style: dashed;
+  opacity: 0.85;
+}
+
+.devhub-pre .language-plaintext {
+  color: #57606a !important;
+  font-size: 0.8rem !important;
+  line-height: 1.55 !important;
+}
+
+.dark .devhub-pre .language-plaintext {
+  color: #8b949e !important;
 }

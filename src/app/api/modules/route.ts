@@ -81,6 +81,7 @@ export async function POST(req: Request) {
                    url: r.url || "",
                    type: r.type || "ARTICLE",
                    description: r.description || "",
+                   imageUrl: r.imageUrl || null,
                    order: idx,
                 }
              });

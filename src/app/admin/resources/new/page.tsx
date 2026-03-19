@@ -5,13 +5,24 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Save, Loader2 } from "lucide-react";
+import { Save, Loader2, Image as ImageIcon, X } from "lucide-react";
 
 export default function NewResourceAdminPage() {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [form, setForm] = useState({ title: "", description: "", type: "ARTICLE", url: "", tags: "", imageUrl: "" });
+
+  const handleImageUpload = async (file: File | undefined) => {
+    if (!file) return;
+    const formData = new FormData();
+    formData.append("file", file);
+    try {
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      const data = await res.json();
+      if (data.url) setForm({ ...form, imageUrl: data.url });
+    } catch { setError("Image upload failed"); }
+  };
 
   const handleSave = async () => {
     setSaving(true); setError("");
@@ -54,6 +65,24 @@ export default function NewResourceAdminPage() {
             <div className="space-y-1.5">
                <label className="text-sm font-medium">URL</label>
                <Input value={form.url} onChange={e => setForm({...form, url: e.target.value})} placeholder="https://..." />
+            </div>
+
+            <div className="space-y-1.5">
+               <label className="text-sm font-medium">Cover Image</label>
+               <div className="flex gap-3 items-center">
+                  <Input value={form.imageUrl} onChange={e => setForm({...form, imageUrl: e.target.value})} placeholder="https://image-url..." className="flex-1" />
+                  <label className="h-10 px-3 flex items-center justify-center border rounded-md cursor-pointer hover:bg-muted font-medium text-xs bg-background shrink-0 gap-1 opacity-80 hover:opacity-100">
+                       <ImageIcon className="h-4 w-4 text-muted-foreground" /> Upload Cover
+                       <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e.target.files?.[0])} />
+                  </label>
+               </div>
+               {form.imageUrl && (
+                   <div className="mt-2 text-xs text-muted-foreground flex items-center gap-2 border rounded-lg p-2 bg-muted/20">
+                       <img src={form.imageUrl} className="h-10 w-16 object-cover rounded-md" alt="Preview" />
+                       <span className="truncate flex-1">{form.imageUrl}</span>
+                       <Button variant="ghost" size="sm" className="h-7 w-7 p-0 ml-auto" onClick={() => setForm({...form, imageUrl: ""})}><X className="h-3.5 w-3.5" /></Button>
+                   </div>
+               )}
             </div>
 
             <div className="space-y-1.5">
