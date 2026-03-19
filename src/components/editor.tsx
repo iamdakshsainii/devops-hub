@@ -1,7 +1,9 @@
 "use client";
 
+import * as React from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import Image from "@tiptap/extension-image";
 import { Button } from "@/components/ui/button";
 import {
   Bold,
@@ -16,6 +18,7 @@ import {
   Quote,
   Undo,
   Redo,
+  ImageIcon,
 } from "lucide-react";
 
 interface EditorProps {
@@ -24,8 +27,16 @@ interface EditorProps {
 }
 
 export function Editor({ content, onChange }: EditorProps) {
+  const [uploading, setUploading] = React.useState(false);
+
   const editor = useEditor({
-    extensions: [StarterKit],
+    extensions: [
+      StarterKit,
+      Image.configure({
+        inline: true,
+        allowBase64: true,
+      }),
+    ],
     content: content,
     immediatelyRender: false,
     editorProps: {
@@ -37,6 +48,37 @@ export function Editor({ content, onChange }: EditorProps) {
       onChange(editor.getHTML());
     },
   });
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !editor) return;
+
+    try {
+      setUploading(true);
+      const formData = new FormData();
+      formData.append("file", file);
+      
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+      
+      if (!res.ok) throw new Error("Upload failed");
+      const data = await res.json();
+      
+      editor.chain().focus().setImage({ src: data.url }).run();
+    } catch (err) {
+      console.error("Error uploading image:", err);
+      // Fallback: prompt for URL
+      const url = window.prompt("Upload failed. Enter image URL instead:");
+      if (url) {
+        editor.chain().focus().setImage({ src: url }).run();
+      }
+    } finally {
+      setUploading(false);
+      if (e.target) e.target.value = '';
+    }
+  };
 
   if (!editor) {
     return null;
@@ -143,6 +185,28 @@ export function Editor({ content, onChange }: EditorProps) {
           <Quote className="h-4 w-4" />
         </Button>
         
+        <div className="w-px h-6 bg-border mx-1" />
+
+        <div className="relative inline-flex">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className={`h-8 w-8 p-0 ${uploading ? 'opacity-50' : ''}`}
+          >
+            <label className="cursor-pointer w-full h-full flex items-center justify-center">
+              <input 
+                type="file" 
+                className="hidden" 
+                accept="image/*"
+                onChange={handleImageUpload}
+                disabled={uploading}
+              />
+              <ImageIcon className="h-4 w-4" />
+            </label>
+          </Button>
+        </div>
+
         <div className="w-px h-6 bg-border mx-1 ml-auto" />
         
         <Button

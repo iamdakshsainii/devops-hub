@@ -424,10 +424,10 @@ export default function RoadmapEditorPage({ params }: { params: Promise<{ id: st
             {form.steps.map((step, si) => (
               <Card key={si} className="overflow-hidden">
                 <div className="h-1" style={{ backgroundColor: form.color }} />
-                {/* Step header — click to expand/collapse */}
-                <button
+                {/* Step header — click to expand/collapse (changed to div to avoid nested buttons) */}
+                <div
                   onClick={() => updateStep(si, { expanded: !step.expanded })}
-                  className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-muted/50 transition-colors"
+                  className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-muted/50 transition-colors cursor-pointer"
                 >
                   <span
                     className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold shrink-0"
@@ -442,18 +442,18 @@ export default function RoadmapEditorPage({ params }: { params: Promise<{ id: st
                     {step.topics.length} topics · {step.resources.length} resources
                   </span>
                   <div className="flex gap-1 items-center" onClick={(e) => e.stopPropagation()}>
-                    <button className="p-1 hover:bg-muted rounded" onClick={() => moveStep(si, -1)} disabled={si === 0}>
+                    <button type="button" className="p-1 hover:bg-muted rounded" onClick={() => moveStep(si, -1)} disabled={si === 0}>
                       <ArrowUp className="h-3.5 w-3.5 text-muted-foreground" />
                     </button>
-                    <button className="p-1 hover:bg-muted rounded" onClick={() => moveStep(si, 1)} disabled={si === form.steps.length - 1}>
+                    <button type="button" className="p-1 hover:bg-muted rounded" onClick={() => moveStep(si, 1)} disabled={si === form.steps.length - 1}>
                       <ArrowDown className="h-3.5 w-3.5 text-muted-foreground" />
                     </button>
-                    <button className="p-1 hover:bg-destructive/10 rounded" onClick={() => removeStep(si)}>
+                    <button type="button" className="p-1 hover:bg-destructive/10 rounded" onClick={() => removeStep(si)}>
                       <Trash2 className="h-3.5 w-3.5 text-destructive" />
                     </button>
                   </div>
                   {step.expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                </button>
+                </div>
 
                 {/* Expanded content */}
                 {step.expanded && (

@@ -192,20 +192,20 @@ export default function NewRoadmapPage() {
             {form.steps.map((step,si) => (
               <Card key={si} className="overflow-hidden">
                 <div className="h-1" style={{backgroundColor:form.color}}/>
-                <button onClick={()=>updateStep(si,{expanded:!step.expanded})}
-                  className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-muted/50 transition-colors">
+                <div onClick={()=>updateStep(si,{expanded:!step.expanded})}
+                  className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-muted/50 transition-colors cursor-pointer">
                   <span className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold shrink-0" style={{backgroundColor:form.color}}>
                     {si+1}
                   </span>
                   <span className="text-sm font-semibold flex-1 truncate">{step.icon} {step.title || `Step ${si+1} (untitled)`}</span>
                   <span className="text-xs text-muted-foreground hidden sm:inline">{step.topics.length} topics · {step.resources.length} resources</span>
                   <div className="flex gap-1 items-center" onClick={e=>e.stopPropagation()}>
-                    <button className="p-1 hover:bg-muted rounded" onClick={()=>moveStep(si,-1)} disabled={si===0}><ArrowUp className="h-3.5 w-3.5 text-muted-foreground"/></button>
-                    <button className="p-1 hover:bg-muted rounded" onClick={()=>moveStep(si,1)} disabled={si===form.steps.length-1}><ArrowDown className="h-3.5 w-3.5 text-muted-foreground"/></button>
-                    <button className="p-1 hover:bg-destructive/10 rounded" onClick={()=>removeStep(si)}><X className="h-3.5 w-3.5 text-destructive"/></button>
+                    <button type="button" className="p-1 hover:bg-muted rounded" onClick={()=>moveStep(si,-1)} disabled={si===0}><ArrowUp className="h-3.5 w-3.5 text-muted-foreground"/></button>
+                    <button type="button" className="p-1 hover:bg-muted rounded" onClick={()=>moveStep(si,1)} disabled={si===form.steps.length-1}><ArrowDown className="h-3.5 w-3.5 text-muted-foreground"/></button>
+                    <button type="button" className="p-1 hover:bg-destructive/10 rounded" onClick={()=>removeStep(si)}><X className="h-3.5 w-3.5 text-destructive"/></button>
                   </div>
                   {step.expanded ? <ChevronDown className="h-4 w-4"/> : <ChevronRight className="h-4 w-4"/>}
-                </button>
+                </div>
 
                 {step.expanded && (
                   <CardContent className="border-t pt-5 space-y-6">

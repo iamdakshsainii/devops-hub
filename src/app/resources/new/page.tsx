@@ -7,13 +7,15 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Save, PlusCircle } from "lucide-react";
 
+import { TagInput } from "@/components/ui/tag-input";
+
 export default function NewResourcePage() {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [type, setType] = useState("LINK");
   const [url, setUrl] = useState("");
-  const [tags, setTags] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
   const [file, setFile] = useState<File | null>(null);
   
   const [loading, setLoading] = useState(false);
@@ -21,6 +23,10 @@ export default function NewResourcePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (tags.length === 0) {
+      setError("Please add at least one tag.");
+      return;
+    }
     setLoading(true);
     setError("");
 
@@ -42,7 +48,8 @@ export default function NewResourcePage() {
       const res = await fetch("/api/resources", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, description, type, url, tags, imageUrl }),
+        // Join tags back into comma separated string for backward compatibility with schema
+        body: JSON.stringify({ title, description, type, url, tags: tags.join(", "), imageUrl }),
       });
 
       const data = await res.json();
@@ -108,13 +115,13 @@ export default function NewResourcePage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium leading-none">Tags (comma separated)</label>
-              <Input 
-                value={tags} 
-                onChange={e => setTags(e.target.value)} 
-                placeholder="docker, networking, guide" 
-                required 
+              <label className="text-sm font-medium leading-none">Tags</label>
+              <TagInput 
+                tags={tags} 
+                setTags={setTags} 
+                placeholder="Type tag and press Enter..." 
               />
+              <p className="text-[10px] text-muted-foreground mt-1">Press enter or comma to add a tag.</p>
             </div>
 
             <div className="space-y-2">

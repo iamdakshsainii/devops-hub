@@ -34,10 +34,10 @@ export function Navbar() {
         
         <div className="flex-1 hidden md:flex items-center justify-between mr-4 space-x-6">
           <nav className="flex items-center space-x-6 text-sm font-medium">
-            <Link href="/notes" className="transition-colors hover:text-foreground/80 text-foreground/60">Notes</Link>
+            <Link href="/modules" className="transition-colors hover:text-foreground/80 text-foreground/60">Modules</Link>
+            <Link href="/roadmap" className="transition-colors hover:text-foreground/80 text-foreground/60">Roadmap</Link>
             <Link href="/resources" className="transition-colors hover:text-foreground/80 text-foreground/60">Resources</Link>
             <Link href="/events" className="transition-colors hover:text-foreground/80 text-foreground/60">Events</Link>
-            <Link href="/roadmap" className="transition-colors hover:text-foreground/80 text-foreground/60">Roadmap</Link>
           </nav>
           <div className="w-full max-w-sm relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />

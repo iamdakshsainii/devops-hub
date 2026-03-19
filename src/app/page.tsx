@@ -25,7 +25,7 @@ export default function Home() {
                 </span>
               </h1>
               <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl leading-relaxed">
-                A community-driven hub for sharing architecture notes, premium resources, and exclusive events. Build your profile and accelerate your engineering journey.
+                A community-driven hub for detailed learning modules, premium resources, and exclusive events. Build your profile and accelerate your engineering journey.
               </p>
             </div>
 
@@ -62,12 +62,12 @@ export default function Home() {
               <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mb-6">
                 <BookOpen className="h-6 w-6 text-foreground" />
               </div>
-              <h3 className="text-xl font-bold mb-3">Architecture Notes</h3>
+              <h3 className="text-xl font-bold mb-3">Learning Modules</h3>
               <p className="text-muted-foreground mb-6 leading-relaxed">
-                Dive deep into crowd-sourced system design documentation and infrastructure as code snippets.
+                Dive deep into curated system design documentation and infrastructure courses designed for accelerated learning.
               </p>
-              <Link href="/notes" className="text-sm font-medium flex items-center group-hover:text-foreground/80 transition-colors">
-                Browse Notes <ArrowRight className="ml-1 h-3 w-3" />
+              <Link href="/modules" className="text-sm font-medium flex items-center group-hover:text-foreground/80 transition-colors">
+                Browse Modules <ArrowRight className="ml-1 h-3 w-3" />
               </Link>
             </div>
 
@@ -115,8 +115,8 @@ export default function Home() {
                </div>
                <div className="flex flex-col items-center justify-center space-y-2">
                  <ShieldCheck className="h-5 w-5 text-muted-foreground mb-2" />
-                 <h4 className="text-3xl font-bold">2.4k</h4>
-                 <p className="text-sm text-muted-foreground font-medium">Curated Notes</p>
+                 <h4 className="text-3xl font-bold">100+</h4>
+                 <p className="text-sm text-muted-foreground font-medium">Learning Modules</p>
                </div>
                <div className="flex flex-col items-center justify-center space-y-2">
                  <Zap className="h-5 w-5 text-muted-foreground mb-2" />

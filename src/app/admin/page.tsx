@@ -37,12 +37,27 @@ export default async function AdminOverviewPage() {
     prisma.roadmap.count(),
     prisma.adminRequest.count({ where: { status: "PENDING" } }),
     prisma.user.findMany({ take: 5, orderBy: { createdAt: "desc" }, select: { fullName: true, email: true, createdAt: true, role: true } }),
-    prisma.note.findMany({ take: 5, orderBy: { createdAt: "desc" }, select: { title: true, status: true, createdAt: true, user: { select: { fullName: true } } } }),
-    prisma.resource.findMany({ take: 5, orderBy: { createdAt: "desc" }, select: { title: true, status: true, createdAt: true, user: { select: { fullName: true } } } }),
+    prisma.note.findMany({ take: 5, orderBy: { createdAt: "desc" }, select: { title: true, status: true, createdAt: true, author: { select: { fullName: true } } } }),
+    prisma.resource.findMany({ take: 5, orderBy: { createdAt: "desc" }, select: { title: true, status: true, createdAt: true, author: { select: { fullName: true } } } }),
   ]);
 
   const publishedNotes = totalNotes - pendingNotes;
   const publishedResources = totalResources - pendingResources;
+
+  let dbSizeMB = 0;
+  let dbSizePercent = 0;
+  if (isSuperAdmin) {
+    try {
+      // Neon free tier logic: ~500MB max per project usually
+      const result = await prisma.$queryRaw`SELECT pg_database_size(current_database()) as size;` as any[];
+      if (Array.isArray(result) && result[0]?.size) {
+        dbSizeMB = Number(result[0].size) / (1024 * 1024);
+        dbSizePercent = Math.min((dbSizeMB / 500) * 100, 100);
+      }
+    } catch (e) {
+      console.error("Failed to fetch DB size:", e);
+    }
+  }
 
   // Data for the bar chart (CSS-based, no library)
   const chartData = [
@@ -182,6 +197,26 @@ export default async function AdminOverviewPage() {
             </CardContent>
           </Card>
         </Link>
+        
+        {isSuperAdmin && (
+          <a href="https://console.neon.tech/" target="_blank" rel="noopener noreferrer" className="group">
+            <Card className="h-full hover:border-emerald-500/40 hover:shadow-md transition-all cursor-pointer flex flex-col justify-between overflow-hidden relative">
+              <div className="absolute inset-x-0 bottom-0 h-1" style={{ backgroundColor: "#10B981", width: `${dbSizePercent}%` }} />
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 bg-gradient-to-br from-emerald-500/10 to-transparent">
+                <CardTitle className="text-sm font-medium flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> Neon DB</CardTitle>
+                <Database className="h-4 w-4 text-emerald-500" />
+              </CardHeader>
+              <CardContent className="pt-2">
+                <div className="text-3xl font-bold flex items-end gap-1">
+                   {dbSizeMB.toFixed(1)} <span className="text-lg font-medium text-muted-foreground mb-1">MB</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1 group-hover:text-emerald-500 transition-colors">
+                  {dbSizePercent.toFixed(1)}% of 500MB Free Tier
+                </p>
+              </CardContent>
+            </Card>
+          </a>
+        )}
       </div>
 
       {/* Chart + Recent Activity */}
@@ -248,7 +283,7 @@ export default async function AdminOverviewPage() {
                   <div className="flex-1 min-w-0">
                     <p className="font-medium truncate">{note.title}</p>
                     <p className="text-xs text-muted-foreground">
-                      by {note.user.fullName} ·{" "}
+                      by {note.author?.fullName || "Unknown"} ·{" "}
                       <span className={note.status === "PENDING" ? "text-amber-500 font-medium" : "text-emerald-500"}>
                         {note.status}
                       </span>
@@ -267,7 +302,7 @@ export default async function AdminOverviewPage() {
                   <div className="flex-1 min-w-0">
                     <p className="font-medium truncate">{res.title}</p>
                     <p className="text-xs text-muted-foreground">
-                      by {res.user.fullName} ·{" "}
+                      by {res.author?.fullName || "Unknown"} ·{" "}
                       <span className={res.status === "PENDING" ? "text-amber-500 font-medium" : "text-emerald-500"}>
                         {res.status}
                       </span>

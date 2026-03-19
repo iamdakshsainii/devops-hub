@@ -20,7 +20,7 @@ export function Footer() {
           <div>
             <h3 className="font-semibold mb-4 text-foreground">Platform</h3>
             <ul className="space-y-3 text-sm text-muted-foreground">
-              <li><Link href="/notes" className="hover:text-foreground transition-colors">Architecture Notes</Link></li>
+              <li><Link href="/modules" className="hover:text-foreground transition-colors">Learning Modules</Link></li>
               <li><Link href="/resources" className="hover:text-foreground transition-colors">Resource Library</Link></li>
               <li><Link href="/events" className="hover:text-foreground transition-colors">Community Events</Link></li>
               <li><Link href="/roadmap" className="hover:text-foreground transition-colors">DevOps Roadmap</Link></li>
@@ -29,9 +29,9 @@ export function Footer() {
           <div>
             <h3 className="font-semibold mb-4 text-foreground">Legal</h3>
             <ul className="space-y-3 text-sm text-muted-foreground">
-              <li><Link href="#" className="hover:text-foreground transition-colors">Privacy Policy</Link></li>
-              <li><Link href="#" className="hover:text-foreground transition-colors">Terms of Service</Link></li>
-              <li><Link href="#" className="hover:text-foreground transition-colors">Cookie Policy</Link></li>
+              <li><Link href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link></li>
+              <li><Link href="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link></li>
+              <li><Link href="/privacy" className="hover:text-foreground transition-colors">Cookie Policy</Link></li>
             </ul>
           </div>
           <div>

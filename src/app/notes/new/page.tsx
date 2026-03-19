@@ -8,12 +8,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Editor } from "@/components/editor";
 import { Save, Code2, Type } from "lucide-react";
 
+import { TagInput } from "@/components/ui/tag-input";
+
 export default function NewNotePage() {
   const router = useRouter();
   const [mode, setMode] = useState<"VISUAL" | "JSON">("VISUAL");
   const [title, setTitle] = useState("");
   const [coverImage, setCoverImage] = useState("");
-  const [tags, setTags] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
   const [content, setContent] = useState("<p>Write your amazing DevOps note here...</p>");
   const [jsonInput, setJsonInput] = useState("");
   
@@ -27,7 +29,9 @@ export default function NewNotePage() {
       const parsed = JSON.parse(val);
       if (parsed.title) setTitle(parsed.title);
       if (parsed.coverImage) setCoverImage(parsed.coverImage);
-      if (parsed.tags) setTags(parsed.tags);
+      if (parsed.tags) {
+        setTags(Array.isArray(parsed.tags) ? parsed.tags : parsed.tags.split(",").map((t:string) => t.trim()));
+      }
       if (parsed.content) setContent(parsed.content);
       setError("");
     } catch (e) {
@@ -37,6 +41,10 @@ export default function NewNotePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (tags.length === 0) {
+      setError("Please add at least one tag.");
+      return;
+    }
     setLoading(true);
     setError("");
 
@@ -44,7 +52,7 @@ export default function NewNotePage() {
       const res = await fetch("/api/notes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, coverImage, tags, content }),
+        body: JSON.stringify({ title, coverImage, tags: tags.join(", "), content }),
       });
 
       const data = await res.json();
@@ -96,7 +104,7 @@ export default function NewNotePage() {
                   value={jsonInput}
                   onChange={handleJsonPaste}
                   className="w-full h-48 rounded-md border border-input bg-background px-3 py-2 text-sm font-mono ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  placeholder={'{\n  "title": "My Note",\n  "content": "<p>Hello</p>",\n  "tags": "docker, aws"\n}'}
+                  placeholder={'{\n  "title": "My Note",\n  "content": "<p>Hello</p>",\n  "tags": ["docker", "aws"]\n}'}
                 />
               </div>
             )}
@@ -127,13 +135,13 @@ export default function NewNotePage() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium leading-none">Tags (comma separated)</label>
-                <Input 
-                  value={tags} 
-                  onChange={e => setTags(e.target.value)} 
-                  placeholder="docker, kubernetes, cicd" 
-                  required 
+                <label className="text-sm font-medium leading-none">Tags</label>
+                <TagInput 
+                  tags={tags} 
+                  setTags={setTags} 
+                  placeholder="Type tag and press Enter..." 
                 />
+                <p className="text-[10px] text-muted-foreground mt-1">Press enter or comma to add a tag.</p>
               </div>
 
               <div className="space-y-2">
