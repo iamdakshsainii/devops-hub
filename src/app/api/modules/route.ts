@@ -55,22 +55,53 @@ export async function POST(req: Request) {
 
     const status = payloadStatus || (session.user.role === "SUPER_ADMIN" ? "PUBLISHED" : "PENDING");
 
-    const step = await prisma.roadmapStep.create({
-      data: {
-        title,
-        description: description || "",
-        icon: icon || "📦",
-        order: (maxOrder._max.order ?? -1) + 1,
-        roadmapId: targetRoadmapId,
-        status,
-        authorId: session.user.id,
-        topics: {
-           create: topics?.map((t: any, idx: number) => ({ title: t.title, content: t.content || "", order: idx })) || []
-        },
-        resources: {
-          create: resources?.map((r: any, idx: number) => ({ title: r.title, url: r.url, type: r.type || "ARTICLE", order: idx })) || []
-        }
-      }
+    const step = await prisma.$transaction(async (tx) => {
+       const s = await tx.roadmapStep.create({
+          data: {
+             title,
+             description: description || "",
+             icon: icon || "📦",
+             order: (maxOrder._max.order ?? -1) + 1,
+             roadmapId: targetRoadmapId,
+             status,
+             authorId: session.user.id,
+             topics: {
+                create: topics?.map((t: any, idx: number) => ({ title: t.title, content: t.content || "", order: idx })) || []
+             }
+          }
+       });
+
+       if (resources?.length) {
+          for (let idx = 0; idx < resources.length; idx++) {
+             const r = resources[idx];
+             await tx.roadmapResource.create({
+                data: {
+                   stepId: s.id,
+                   title: r.title || "",
+                   url: r.url || "",
+                   type: r.type || "ARTICLE",
+                   description: r.description || "",
+                   order: idx,
+                }
+             });
+
+             const existingGlobal = await tx.resource.findFirst({ where: { url: r.url } });
+             if (!existingGlobal) {
+                await tx.resource.create({
+                   data: {
+                      title: r.title || "Module Resource",
+                      url: r.url || "",
+                      type: r.type || "ARTICLE",
+                      description: r.description || `Resource from module: ${title || "Standalone"}`,
+                      tags: "Module",
+                      status: "PUBLISHED",
+                      authorId: session.user.id
+                   }
+                });
+             }
+          }
+       }
+       return s;
     });
 
     return NextResponse.json({ message: "Created", step }, { status: 201 });

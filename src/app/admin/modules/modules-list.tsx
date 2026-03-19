@@ -5,18 +5,48 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
-import { PlusCircle, Edit, Search, Filter } from "lucide-react";
+import { PlusCircle, Edit, Search, Trash2, Eye, EyeOff, Loader2 } from "lucide-react";
 
 export default function AdminModulesList({ modules }: { modules: any[] }) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const [localModules, setLocalModules] = useState(modules);
+  const [loadingId, setLoadingId] = useState<string | null>(null);
 
-  const filteredModules = modules.filter((mod) => {
+  const filteredModules = localModules.filter((mod) => {
     const matchesSearch = mod.title.toLowerCase().includes(search.toLowerCase()) || 
                          (mod.description && mod.description.toLowerCase().includes(search.toLowerCase()));
     const matchesStatus = statusFilter === "ALL" || mod.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  const handleToggleStatus = async (id: string, currentStatus: string) => {
+    setLoadingId(id);
+    const newStatus = currentStatus === "PUBLISHED" ? "PENDING" : "PUBLISHED";
+    try {
+      const res = await fetch(`/api/modules/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus })
+      });
+      if (res.ok) {
+        setLocalModules(localModules.map(m => m.id === id ? { ...m, status: newStatus } : m));
+      }
+    } catch (err) { console.error(err); }
+    setLoadingId(null);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this module? This action is permanent!")) return;
+    setLoadingId(id);
+    try {
+      const res = await fetch(`/api/modules/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setLocalModules(localModules.filter(m => m.id !== id));
+      }
+    } catch (err) { console.error(err); }
+    setLoadingId(null);
+  };
 
   return (
     <div className="space-y-6">
@@ -80,10 +110,30 @@ export default function AdminModulesList({ modules }: { modules: any[] }) {
                         <span>{mod._count.topics} Topics</span>
                         <span>{mod._count.resources} Resources</span>
                      </div>
-                     <div className="flex gap-2">
+                     <div className="flex gap-1.5">
+                        <Button 
+                           variant="outline" 
+                           size="sm" 
+                           onClick={() => handleToggleStatus(mod.id, mod.status)} 
+                           disabled={loadingId === mod.id}
+                           className="h-8 text-xs font-medium"
+                        >
+                           {loadingId === mod.id ? <Loader2 className="h-3 w-3 animate-spin"/> : mod.status === "PUBLISHED" ? <><EyeOff className="h-3 w-3 mr-1"/> Delist</> : <><Eye className="h-3 w-3 mr-1"/> Publish</>}
+                        </Button>
+
                         <Link href={`/admin/modules/${mod.id}`}>
-                           <Button variant="secondary" size="sm" className="h-8 text-xs"><Edit className="h-3 w-3 mr-1" /> Edit</Button>
+                           <Button variant="secondary" size="sm" className="h-8 text-xs font-medium"><Edit className="h-3 w-3 mr-1" /> Edit</Button>
                         </Link>
+
+                        <Button 
+                           variant="outline" 
+                           size="sm" 
+                           onClick={() => handleDelete(mod.id)} 
+                           disabled={loadingId === mod.id}
+                           className="h-8 text-xs text-destructive hover:bg-destructive/10 border-destructive/20 font-medium"
+                        >
+                           <Trash2 className="h-3 w-3" />
+                        </Button>
                      </div>
                   </div>
                </CardContent>

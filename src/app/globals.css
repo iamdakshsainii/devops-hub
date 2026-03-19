@@ -90,3 +90,27 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
+
+/* 🌙 Direct absolute overrides to fix dim blue dark layout colors */
+.dark .prose {
+  --tw-prose-body: #d4d4d8 !important; /* zinc-300 */
+  --tw-prose-headings: #fafafa !important; /* zinc-50 */
+  --tw-prose-bold: #ffffff !important;
+  --tw-prose-links: #38bdf8 !important; /* sky-400 */
+  --tw-prose-quotes: #e4e4e7 !important;
+}
+
+.dark .prose p, 
+.dark .prose li, 
+.dark .prose span,
+.dark .prose ul,
+.dark .prose ol {
+  color: #e4e4e7 !important; /* Make Paragraphs Bright zinc-200 */
+}
+
+.dark .prose h1, 
+.dark .prose h2, 
+.dark .prose h3, 
+.dark .prose h4 {
+  color: #fafafa !important; /* Headers white */
+}

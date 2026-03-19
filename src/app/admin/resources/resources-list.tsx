@@ -5,14 +5,42 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
-import { PlusCircle, Edit, Search, ExternalLink } from "lucide-react";
+import { PlusCircle, Edit, Search, ExternalLink, Trash2, Eye, EyeOff, Loader2 } from "lucide-react";
 
 export default function AdminResourcesList({ resources }: { resources: any[] }) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [typeFilter, setTypeFilter] = useState<string>("ALL");
+  const [localResources, setLocalResources] = useState(resources);
+  const [loadingId, setLoadingId] = useState<string | null>(null);
 
-  const filteredResources = resources.filter((res) => {
+  const handleToggleStatus = async (id: string, currentStatus: string) => {
+    setLoadingId(id);
+    const newStatus = currentStatus === "PUBLISHED" ? "PENDING" : "PUBLISHED";
+    try {
+      const res = await fetch(`/api/admin/resources/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus })
+      });
+      if (res.ok) {
+        setLocalResources(localResources.map(r => r.id === id ? { ...r, status: newStatus } : r));
+      }
+    } catch (err) { console.error(err); }
+    setLoadingId(null);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this resource?")) return;
+    setLoadingId(id);
+    try {
+      const res = await fetch(`/api/admin/resources/${id}`, { method: "DELETE" });
+      if (res.ok) setLocalResources(localResources.filter(r => r.id !== id));
+    } catch { alert("Failed to delete resource"); }
+    setLoadingId(null);
+  };
+
+  const filteredResources = localResources.filter((res) => {
     const matchesSearch = res.title.toLowerCase().includes(search.toLowerCase()) || 
                          (res.description && res.description.toLowerCase().includes(search.toLowerCase()));
     const matchesStatus = statusFilter === "ALL" || res.status === statusFilter;
@@ -83,13 +111,31 @@ export default function AdminResourcesList({ resources }: { resources: any[] }) 
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                      <span>By {res.author?.fullName || "Admin"}</span>
                   </div>
-                  <div className="flex gap-2 w-full">
-                     <a href={res.url} target="_blank" rel="noopener noreferrer" className="flex-1">
-                        <Button variant="outline" size="sm" className="w-full h-8 text-xs"><ExternalLink className="h-3 w-3 mr-1" /> Visit</Button>
+                  <div className="flex gap-1 w-full border-t pt-3 border-muted/50">
+                     <a href={res.url} target="_blank" rel="noopener noreferrer">
+                        <Button variant="outline" size="sm" className="h-8 w-8 px-1"><ExternalLink className="h-4 w-4" /></Button>
                      </a>
                      <Link href={`/admin/resources/${res.id}`} className="flex-1">
-                        <Button variant="secondary" size="sm" className="w-full h-8 text-xs"><Edit className="h-3 w-3 mr-1" /> Edit</Button>
+                        <Button variant="secondary" size="sm" className="w-full h-8 text-xs font-medium"><Edit className="h-3 w-3 mr-1" /> Edit</Button>
                      </Link>
+                     <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => handleToggleStatus(res.id, res.status)} 
+                        disabled={loadingId === res.id}
+                        className="h-8 text-xs px-2"
+                     >
+                        {loadingId === res.id ? <Loader2 className="h-3.5 w-3.5 animate-spin"/> : res.status === "PUBLISHED" ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                     </Button>
+                     <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => handleDelete(res.id)} 
+                        disabled={loadingId === res.id}
+                        className="h-8 text-xs px-2 text-destructive hover:bg-destructive/10 border-destructive/20"
+                     >
+                        <Trash2 className="h-3.5 w-3.5" />
+                     </Button>
                   </div>
                </CardContent>
             </Card>

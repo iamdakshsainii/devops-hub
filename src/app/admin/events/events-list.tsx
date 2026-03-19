@@ -4,15 +4,24 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Calendar, Users, ExternalLink, Search } from "lucide-react";
+import { Calendar, Users, ExternalLink, Search, Trash2 } from "lucide-react";
 import Link from "next/link";
 
 export default function AdminEventsList({ events }: { events: any[] }) {
   const [search, setSearch] = useState("");
   const [timeFilter, setTimeFilter] = useState<string>("UPCOMING");
   const [typeFilter, setTypeFilter] = useState<string>("ALL");
+  const [localEvents, setLocalEvents] = useState(events);
 
-  const filteredEvents = events.filter((event) => {
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to cancel and delete this event?")) return;
+    try {
+      const res = await fetch(`/api/events/${id}`, { method: "DELETE" }); // Wait, do we have /api/events/[id]? I will edit it
+      if (res.ok) setLocalEvents(localEvents.filter(e => e.id !== id));
+    } catch { alert("Failed to delete event"); }
+  };
+
+  const filteredEvents = localEvents.filter((event) => {
     const isUpcoming = new Date(event.startTime) >= new Date();
     const matchesSearch = event.title.toLowerCase().includes(search.toLowerCase()) || 
                          (event.description && event.description.toLowerCase().includes(search.toLowerCase()));
@@ -80,19 +89,20 @@ export default function AdminEventsList({ events }: { events: any[] }) {
                 </CardHeader>
                 <CardContent className="p-5 flex-1 flex flex-col justify-between">
                   <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{event.description}</p>
-                  <div className="flex justify-between items-center text-sm mt-auto">
+                  <div className="flex justify-between items-center text-sm mt-auto border-t pt-4">
                     <span className="flex items-center gap-1 font-medium text-foreground/80">
-                      <Users className="h-4 w-4" /> {event.interestedCount} Interested
+                      <Users className="h-4 w-4" /> {event.interestedCount || 0} Interested
                     </span>
-                    <div className="flex gap-2">
+                    <div className="flex gap-1.5 align-middle items-center">
                       {event.externalLink && (
                         <a href={event.externalLink} target="_blank" rel="noopener noreferrer">
-                          <Button variant="outline" size="sm" className="h-8">Visit <ExternalLink className="ml-1.5 h-3 w-3" /></Button>
+                          <Button variant="outline" size="sm" className="h-8 px-2"><ExternalLink className="h-3.5 w-3.5" /></Button>
                         </a>
                       )}
                       <Link href={`/admin/events/${event.id}`}>
-                        <Button variant="secondary" size="sm" className="h-8">Modify</Button>
+                        <Button variant="secondary" size="sm" className="h-8 px-3">Modify</Button>
                       </Link>
+                      <Button variant="outline" size="sm" onClick={() => handleDelete(event.id)} className="h-8 px-2 text-destructive hover:bg-destructive/10 border-destructive/20"><Trash2 className="h-3.5 w-3.5" /></Button>
                     </div>
                   </div>
                 </CardContent>

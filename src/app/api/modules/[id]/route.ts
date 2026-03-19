@@ -68,18 +68,38 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
       }
 
       // 3. Re-create resources
-      if (resources?.length) {
-        await tx.roadmapResource.createMany({
-          data: resources.map((r: any, idx: number) => ({
-            stepId: id,
-            title: r.title || "",
-            url: r.url || "",
-            type: r.type || "ARTICLE",
-            description: r.description || "",
-            order: idx,
-          }))
-        });
-      }
+        // 3. Re-create resources and Mirror to Global Resources implicitly
+        if (resources?.length) {
+           for (let idx = 0; idx < resources.length; idx++) {
+              const r = resources[idx];
+              await tx.roadmapResource.create({
+                 data: {
+                    stepId: id,
+                    title: r.title || "",
+                    url: r.url || "",
+                    type: r.type || "ARTICLE",
+                    description: r.description || "",
+                    order: idx,
+                 }
+              });
+
+              // Smart Mirroring Node 
+              const existingGlobal = await tx.resource.findFirst({ where: { url: r.url } });
+              if (!existingGlobal) {
+                 await tx.resource.create({
+                    data: {
+                       title: r.title || "Module Resource",
+                       url: r.url || "",
+                       type: r.type || "ARTICLE",
+                       description: r.description || `Resource from module: ${title || "Standalone"}`,
+                       tags: "Module",
+                       status: "PUBLISHED",
+                       authorId: session.user.id
+                    }
+                 });
+              }
+           }
+        }
 
       return tx.roadmapStep.update({
         where: { id },
@@ -106,8 +126,8 @@ export async function DELETE(req: Request, context: { params: Promise<{ id: stri
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
     const { id } = await context.params;
-    await prisma.roadmapStep.delete({ where: { id } });
-    return NextResponse.json({ message: "Deleted" });
+    await prisma.roadmapStep.update({ where: { id }, data: { status: "DELETED" } });
+    return NextResponse.json({ message: "Soft Deleted" });
   } catch (err) {
     return NextResponse.json({ message: "Failed to delete" }, { status: 500 });
   }
