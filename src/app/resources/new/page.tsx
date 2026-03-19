@@ -14,6 +14,7 @@ export default function NewResourcePage() {
   const [type, setType] = useState("LINK");
   const [url, setUrl] = useState("");
   const [tags, setTags] = useState("");
+  const [file, setFile] = useState<File | null>(null);
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -24,10 +25,24 @@ export default function NewResourcePage() {
     setError("");
 
     try {
+      let imageUrl = undefined;
+      
+      if (file) {
+        const uploadData = new FormData();
+        uploadData.append("file", file);
+        const uploadRes = await fetch("/api/upload", {
+          method: "POST",
+          body: uploadData,
+        });
+        if (!uploadRes.ok) throw new Error("Image upload failed");
+        const json = await uploadRes.json();
+        imageUrl = json.url;
+      }
+
       const res = await fetch("/api/resources", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, description, type, url, tags }),
+        body: JSON.stringify({ title, description, type, url, tags, imageUrl }),
       });
 
       const data = await res.json();
@@ -111,6 +126,17 @@ export default function NewResourcePage() {
                 placeholder="What is this resource and why is it useful?"
                 required
               />
+            </div>
+
+            <div className="space-y-2 pt-2 border-t mt-4">
+              <label className="text-sm font-medium leading-none">Cover Image (Optional)</label>
+              <Input 
+                type="file" 
+                accept="image/*" 
+                onChange={e => setFile(e.target.files?.[0] || null)}
+                className="cursor-pointer file:cursor-pointer" 
+              />
+              <p className="text-xs text-muted-foreground">Upload an image to make this resource stand out on the dashboard.</p>
             </div>
 
             <div className="flex justify-end pt-4 border-t">
