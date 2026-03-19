@@ -23,7 +23,7 @@ export async function POST(req: Request) {
       if (itemType === "EVENT" && !perms.includes("MANAGE_EVENTS")) return NextResponse.json({ message: "Missing MANAGE_EVENTS permission" }, { status: 403 });
     }
 
-    if (!["PUBLISHED", "REJECTED", "DELETED"].includes(status)) {
+    if (!["PUBLISHED", "REJECTED", "DELETED", "PENDING"].includes(status)) {
       return NextResponse.json({ message: "Invalid status" }, { status: 400 });
     }
 

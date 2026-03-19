@@ -58,19 +58,8 @@ export default async function ResourcesPage({
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight">Community Resources</h1>
-          <p className="text-muted-foreground mt-1">Curated links, PDFs, tools, and videos shared by the community.</p>
+          <p className="text-muted-foreground mt-1">Curated links, PDFs, tools, and videos published by modern Admins.</p>
         </div>
-        <Link href="/resources/new">
-          <Button className="rounded-full shadow-md px-6">+ Share Resource</Button>
-        </Link>
-      </div>
-
-      <div className="bg-primary/10 border border-primary/20 rounded-xl p-4 flex items-start sm:items-center gap-3 shadow-sm text-primary">
-         <span className="flex shrink-0 h-6 w-6 items-center justify-center rounded-full bg-background border">🎯</span>
-         <div>
-           <p className="text-sm font-semibold">Earn Community Credits!</p>
-           <p className="text-xs text-foreground/80 mt-0.5">Share high-quality resources. Once approved, you earn +10 Score on your profile and get notified!</p>
-         </div>
       </div>
         
       <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-muted/30 p-4 rounded-xl border">
@@ -140,12 +129,9 @@ export default async function ResourcesPage({
           <div className="col-span-full flex flex-col items-center justify-center p-12 text-center border rounded-xl border-dashed bg-muted/10">
               <Database className="h-10 w-10 text-muted-foreground mb-4 opacity-50" />
               <h3 className="text-lg font-medium mb-2">No resources found</h3>
-              <p className="text-muted-foreground max-w-sm mx-auto mb-6">
-                Be the first to share a helpful link, video, or document.
+              <p className="text-muted-foreground max-w-sm mx-auto">
+                Try adjusting your search filters.
               </p>
-              <Link href="/resources/new">
-                <Button>Share Resource</Button>
-              </Link>
           </div>
         )}
       </div>

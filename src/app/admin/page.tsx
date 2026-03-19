@@ -86,27 +86,13 @@ export default async function AdminOverviewPage() {
       </div>
 
       {/* Alerts */}
-      {(pendingNotes > 0 || pendingResources > 0 || (isSuperAdmin && pendingAdminRequests > 0)) && (
+      {(isSuperAdmin && pendingAdminRequests > 0) && (
         <div className="bg-destructive/10 border border-destructive/20 text-destructive p-4 rounded-lg flex items-start gap-4">
           <AlertCircle className="h-5 w-5 mt-0.5 shrink-0" />
           <div>
             <h4 className="font-semibold mb-1">Action Required</h4>
             <p className="text-sm">You have items waiting for approval.</p>
             <div className="flex flex-wrap gap-3 mt-3">
-              {pendingNotes > 0 && (
-                <Link href="/admin/notes">
-                  <Button variant="outline" size="sm" className="bg-background text-foreground h-8 gap-1">
-                    <FileText className="h-3 w-3" /> {pendingNotes} Notes Pending
-                  </Button>
-                </Link>
-              )}
-              {pendingResources > 0 && (
-                <Link href="/admin/resources">
-                  <Button variant="outline" size="sm" className="bg-background text-foreground h-8 gap-1">
-                    <Database className="h-3 w-3" /> {pendingResources} Resources Pending
-                  </Button>
-                </Link>
-              )}
               {isSuperAdmin && pendingAdminRequests > 0 && (
                 <Link href="/admin/roles">
                   <Button variant="outline" size="sm" className="bg-background text-foreground h-8 gap-1 border-amber-500/30 text-amber-600">

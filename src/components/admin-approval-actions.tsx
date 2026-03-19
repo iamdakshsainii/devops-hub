@@ -45,6 +45,15 @@ export function AdminApprovalActions({ itemId, itemType, initialStatus }: Action
           {status === "PUBLISHED" ? "Approved" : "Rejected"}
         </span>
         <Button 
+          variant="outline" 
+          size="sm" 
+          className="h-7 text-xs ml-2"
+          onClick={() => handleAction("PENDING" as any)} // Forcing state back to reconsider
+          disabled={loading}
+        >
+          Reconsider
+        </Button>
+        <Button 
           variant="ghost" 
           size="icon" 
           className="h-7 w-7 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors ml-2"

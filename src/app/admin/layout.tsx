@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Shield, LayoutDashboard, FileText, Database, Calendar, Users, Map, ShieldCheck } from "lucide-react";
+import { Shield, LayoutDashboard, FileText, Database, Calendar, Users, Map, ShieldCheck, Library } from "lucide-react";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession(authOptions);
@@ -25,14 +25,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <Link href="/admin" className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors">
             <LayoutDashboard className="h-4 w-4" /> Overview
           </Link>
-          <Link href="/admin/roadmaps" className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors">
-            <Map className="h-4 w-4" /> Roadmaps
+          <Link href="/admin/modules" className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors">
+             <Library className="h-4 w-4 text-primary" /> Modules Manager
           </Link>
-          <Link href="/admin/notes" className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors">
-            <FileText className="h-4 w-4" /> Notes Queue
+          <Link href="/admin/roadmaps" className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors">
+            <Map className="h-4 w-4" /> Roadmaps / Templates
           </Link>
           <Link href="/admin/resources" className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors">
-            <Database className="h-4 w-4" /> Resources Queue
+             <Database className="h-4 w-4" /> Resources
           </Link>
           <Link href="/admin/events" className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors">
              <Calendar className="h-4 w-4" /> Events

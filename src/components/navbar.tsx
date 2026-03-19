@@ -65,11 +65,15 @@ export function Navbar() {
                 )}
                <NotificationsDropdown />
                <DropdownMenu>
-                 <DropdownMenuTrigger asChild>
-                   <Button variant="ghost" size="icon" className="rounded-full">
-                     <UserIcon className="h-5 w-5" />
-                   </Button>
-                 </DropdownMenuTrigger>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="rounded-full overflow-hidden">
+                      {session.user.image ? (
+                        <img src={session.user.image} alt="User" className="h-8 w-8 object-cover" />
+                      ) : (
+                        <UserIcon className="h-5 w-5" />
+                      )}
+                    </Button>
+                  </DropdownMenuTrigger>
                  <DropdownMenuContent align="end">
                    <DropdownMenuLabel className="font-normal border-b mb-1 pb-2">
                      <div className="flex flex-col space-y-1">

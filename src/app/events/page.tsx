@@ -67,7 +67,9 @@ function EventCard({ event, isPast = false }: { event: any; isPast?: boolean }) 
       {images.length > 0 && (
         <div className={`grid gap-0.5 w-full bg-muted border-b ${images.length === 1 ? 'grid-cols-1 h-48' : images.length === 2 ? 'grid-cols-2 h-40' : 'grid-cols-3 h-32'}`}>
           {images.slice(0, 3).map((url: string, idx: number) => (
-             <img key={idx} src={url} alt="Event Gallery" className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
+             <div key={idx} className="overflow-hidden h-full w-full">
+                <img src={url} alt="Event Gallery" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+             </div>
           ))}
         </div>
       )}

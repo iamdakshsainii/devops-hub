@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     }
 
     // Role-based publishing
-    const status = session.user.role === "ADMIN" ? "PUBLISHED" : "PENDING";
+    const status = ["ADMIN", "SUPER_ADMIN"].includes(session.user.role) ? "PUBLISHED" : "PENDING";
 
     const note = await prisma.note.create({
       data: {

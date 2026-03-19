@@ -52,19 +52,8 @@ export default async function NotesPage({
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight">Architecture Notes</h1>
-          <p className="text-muted-foreground mt-1">Explore and share system design concepts, setups, and references.</p>
+          <p className="text-muted-foreground mt-1">Explore and leverage system design concepts, setups, and references.</p>
         </div>
-        <Link href="/notes/new">
-          <Button className="rounded-full shadow-md px-6">+ Share a Note</Button>
-        </Link>
-      </div>
-
-      <div className="bg-primary/10 border border-primary/20 rounded-xl p-4 flex items-start sm:items-center gap-3 shadow-sm text-primary">
-         <span className="flex shrink-0 h-6 w-6 items-center justify-center rounded-full bg-background border">🎯</span>
-         <div>
-           <p className="text-sm font-semibold">Earn Community Credits!</p>
-           <p className="text-xs text-foreground/80 mt-0.5">Share your notes with the community. Once approved by an Admin, you will earn +10 Score to your profile!</p>
-         </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
         {/* Sidebar Filters */}
@@ -163,12 +152,9 @@ export default async function NotesPage({
             <div className="flex flex-col items-center justify-center p-12 text-center border rounded-xl border-dashed bg-muted/10">
               <FileText className="h-10 w-10 text-muted-foreground mb-4 opacity-50" />
               <h3 className="text-lg font-medium mb-2">No notes found</h3>
-              <p className="text-muted-foreground max-w-sm mx-auto mb-6">
-                Try adjusting your search or filters, or be the first to write a note on this topic.
+              <p className="text-muted-foreground max-w-sm mx-auto">
+                Try adjusting your search filters.
               </p>
-              <Link href="/notes/new">
-                <Button>Write a Note</Button>
-              </Link>
             </div>
           )}
         </div>

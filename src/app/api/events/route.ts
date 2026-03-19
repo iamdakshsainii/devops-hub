@@ -17,7 +17,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "Missing required fields" }, { status: 400 });
     }
 
-    const status = session.user.role === "ADMIN" ? "PUBLISHED" : "PENDING";
+    const status = ["ADMIN", "SUPER_ADMIN"].includes(session.user.role) ? "PUBLISHED" : "PENDING";
 
     const event = await prisma.event.create({
       data: {

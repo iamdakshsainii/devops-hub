@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { AdminApprovalActions } from "@/components/admin-approval-actions";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Edit, Trash } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -24,9 +24,14 @@ export default async function AdminNotesPage() {
   return (
     <div className="space-y-12">
       <section className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Notes Moderation Queue</h1>
-          <p className="text-muted-foreground mt-1">Review notes submitted by the community.</p>
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Notes & Modules Queue</h1>
+            <p className="text-muted-foreground mt-1">Direct master panel managing community-submitted learning payloads.</p>
+          </div>
+          <Link href="/notes/new">
+             <Button size="sm">+ Create Note</Button>
+          </Link>
         </div>
 
         {pendingNotes.length > 0 ? (
@@ -43,7 +48,12 @@ export default async function AdminNotesPage() {
                         Pending
                       </span>
                     </div>
-                    <AdminApprovalActions itemId={note.id} itemType="NOTE" initialStatus={note.status} />
+                    <div className="flex items-center gap-2">
+                       <Link href={`/notes/${note.id}/edit`}>
+                          <Button variant="ghost" size="icon" className="h-7 w-7"><Edit className="h-3.5 w-3.5" /></Button>
+                       </Link>
+                       <AdminApprovalActions itemId={note.id} itemType="NOTE" initialStatus={note.status} />
+                    </div>
                   </div>
                   <CardTitle className="text-xl mt-3">{note.title}</CardTitle>
                   <CardDescription>Submitted by {note.author.fullName} ({note.author.email})</CardDescription>
@@ -80,7 +90,12 @@ export default async function AdminNotesPage() {
                </CardHeader>
                <CardContent className="p-4 pt-0 flex justify-between items-end">
                  <p className="text-xs text-muted-foreground">By {note.author.fullName}</p>
-                 <AdminApprovalActions itemId={note.id} itemType="NOTE" initialStatus={note.status} />
+                 <div className="flex items-center gap-1">
+                    <Link href={`/notes/${note.id}/edit`}>
+                       <Button variant="ghost" size="icon" className="h-7 w-7"><Edit className="h-3.5 w-3.5" /></Button>
+                    </Link>
+                    <AdminApprovalActions itemId={note.id} itemType="NOTE" initialStatus={note.status} />
+                 </div>
                </CardContent>
              </Card>
           ))}
