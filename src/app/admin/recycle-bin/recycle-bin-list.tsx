@@ -1,16 +1,28 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Trash2, RefreshCcw, Archive, Loader2 } from "lucide-react";
 
-export default function RecycleBinList({ initialModules, initialResources }: { initialModules: any[], initialResources: any[] }) {
+export default function RecycleBinList({ 
+  initialModules = [], 
+  initialResources = [],
+  initialEvents = [],
+  initialRoadmaps = []
+}: { 
+  initialModules?: any[], 
+  initialResources?: any[],
+  initialEvents?: any[],
+  initialRoadmaps?: any[]
+}) {
   const [modules, setModules] = useState(initialModules);
   const [resources, setResources] = useState(initialResources);
+  const [events, setEvents] = useState(initialEvents);
+  const [roadmaps, setRoadmaps] = useState(initialRoadmaps);
   const [loadingId, setLoadingId] = useState<string | null>(null);
 
-  const totalItems = modules.length + resources.length;
+  const totalItems = modules.length + resources.length + events.length + roadmaps.length;
 
   const handleAction = async (id: string, type: string, action: "restore" | "purge") => {
     setLoadingId(id);
@@ -28,7 +40,9 @@ export default function RecycleBinList({ initialModules, initialResources }: { i
 
       if (res.ok) {
          if (type === "MODULE") setModules(modules.filter(m => m.id !== id));
-         else setResources(resources.filter(r => r.id !== id));
+         else if (type === "RESOURCE") setResources(resources.filter(r => r.id !== id));
+         else if (type === "EVENT") setEvents(events.filter(e => e.id !== id));
+         else if (type === "ROADMAP") setRoadmaps(roadmaps.filter(r => r.id !== id));
       } else { alert("Operation failed"); }
     } catch (err) { console.error(err); }
     setLoadingId(null);
@@ -50,24 +64,30 @@ export default function RecycleBinList({ initialModules, initialResources }: { i
       ) : (
         <div className="grid gap-6">
           {modules.length > 0 && (
-            <div className="space-y-4">
-              <h2 className="text-lg font-semibold flex items-center gap-2"><div className="h-2 w-2 rounded-full bg-blue-500"/> Modules ({modules.length})</h2>
-              <div className="grid gap-3">
-                {modules.map((m) => (
-                  <DeletedCard key={m.id} item={m} type="MODULE" loading={loadingId === m.id} onAction={handleAction}/>
-                ))}
-              </div>
+            <div className="space-y-3">
+              <h2 className="text-sm font-semibold flex items-center gap-2 text-blue-500">Modules ({modules.length})</h2>
+              {modules.map((m) => <DeletedCard key={m.id} item={m} type="MODULE" loading={loadingId === m.id} onAction={handleAction}/>)}
             </div>
           )}
 
           {resources.length > 0 && (
-            <div className="space-y-4">
-              <h2 className="text-lg font-semibold flex items-center gap-2"><div className="h-2 w-2 rounded-full bg-emerald-500"/> Resources ({resources.length})</h2>
-              <div className="grid gap-3">
-                {resources.map((r) => (
-                  <DeletedCard key={r.id} item={r} type="RESOURCE" loading={loadingId === r.id} onAction={handleAction}/>
-                ))}
-              </div>
+            <div className="space-y-3">
+              <h2 className="text-sm font-semibold flex items-center gap-2 text-emerald-500">Resources ({resources.length})</h2>
+              {resources.map((r) => <DeletedCard key={r.id} item={r} type="RESOURCE" loading={loadingId === r.id} onAction={handleAction}/>)}
+            </div>
+          )}
+
+          {events.length > 0 && (
+            <div className="space-y-3">
+              <h2 className="text-sm font-semibold flex items-center gap-2 text-amber-500">Events ({events.length})</h2>
+              {events.map((e) => <DeletedCard key={e.id} item={e} type="EVENT" loading={loadingId === e.id} onAction={handleAction}/>)}
+            </div>
+          )}
+
+          {roadmaps.length > 0 && (
+            <div className="space-y-3">
+              <h2 className="text-sm font-semibold flex items-center gap-2 text-purple-500">Roadmaps ({roadmaps.length})</h2>
+              {roadmaps.map((r) => <DeletedCard key={r.id} item={r} type="ROADMAP" loading={loadingId === r.id} onAction={handleAction}/>)}
             </div>
           )}
         </div>
@@ -78,12 +98,13 @@ export default function RecycleBinList({ initialModules, initialResources }: { i
 
 function DeletedCard({ item, type, loading, onAction }: { item: any; type: string; loading: boolean; onAction: any }) {
   return (
-    <Card className="flex items-center justify-between p-4 bg-muted/5 hover:bg-muted/10 transition-colors">
+    <Card className="flex items-center justify-between p-4 bg-muted/5 hover:bg-muted/10 transition-colors border-dashed">
       <div>
          <h4 className="font-medium text-sm">{item.title}</h4>
          <p className="text-xs text-muted-foreground mt-1">
-             Type: <span className="uppercase font-semibold text-primary/80">{type}</span> 
+             <span className="uppercase font-semibold text-primary/80">{type}</span> 
              {item.roadmap && ` | Roadmap: ${item.roadmap.title}`}
+             {item.type && ` | Type: ${item.type}`}
          </p>
       </div>
       <div className="flex gap-1.5 border-l pl-4 border-muted-foreground/20">
