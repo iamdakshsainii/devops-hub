@@ -45,6 +45,27 @@ export default function AdminRequestsPage() {
          <p className="text-muted-foreground mt-1 text-sm">Manage user upgrades and continuous requests streams natively.</p>
       </div>
 
+      <div className="p-4 bg-muted/30 rounded-xl border flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+         <div>
+            <h3 className="font-bold text-sm">Application Cooldown (Days)</h3>
+            <p className="text-xs text-muted-foreground">Wait time a user must clear after rejection before re-applying.</p>
+         </div>
+         <div className="flex items-center gap-2">
+             <input 
+               type="number" 
+               defaultValue="7" 
+               onChange={async (e) => {
+                  await fetch("/api/admin/settings", {
+                     method: "POST",
+                     headers: { "Content-Type": "application/json" },
+                     body: JSON.stringify({ key: "COOLDOWN_DAYS", value: e.target.value })
+                  });
+               }} 
+               className="h-8 w-20 text-center rounded-md border bg-background text-sm font-bold"
+             />
+         </div>
+      </div>
+
       <div className="grid md:grid-cols-2 gap-8">
          <div className="space-y-4">
             <h2 className="text-lg font-bold flex items-center gap-2"><Shield className="h-5 w-5 text-amber-500" /> Admin Applications ({adminReqs.length})</h2>
