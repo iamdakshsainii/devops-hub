@@ -1,0 +1,25 @@
+# Never let agent read these
+node_modules/
+.next/
+out/
+.git/
+
+# Lock files (huge, useless for agent)
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Prisma generated
+prisma/migrations/
+
+# Logs & reports
+*.log
+eslint_report.json
+eslint_report_utf8.json
+tsc_errors.txt
+tsc.txt
+
+# Build artifacts
+.turbo/
+dist/
+build/

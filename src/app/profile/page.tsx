@@ -42,6 +42,7 @@ export default async function ProfilePage() {
               initialData={{
                 fullName: user.fullName,
                 email: user.email,
+                bio: user.bio || "",
                 avatarUrl: user.avatarUrl || "",
                 resumeUrl: user.resumeUrl || "",
                 githubUrl: user.githubUrl || "",

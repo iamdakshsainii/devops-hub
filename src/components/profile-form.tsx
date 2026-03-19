@@ -11,6 +11,7 @@ export function ProfileForm({ initialData }: { initialData: any }) {
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({
     fullName: initialData.fullName || "",
+    bio: initialData.bio || "",
     avatarUrl: initialData.avatarUrl || "",
     resumeUrl: initialData.resumeUrl || "",
     githubUrl: initialData.githubUrl || "",
@@ -89,6 +90,17 @@ export function ProfileForm({ initialData }: { initialData: any }) {
           <div className="space-y-2">
             <label className="text-sm font-medium">Email Address (Read-only)</label>
             <Input value={initialData.email} disabled className="bg-muted" />
+          </div>
+          <div className="space-y-2 sm:col-span-2">
+            <label className="text-sm font-medium">Bio</label>
+            <textarea 
+              value={formData.bio} 
+              onChange={e => setFormData({ ...formData, bio: e.target.value })} 
+              placeholder="Tell the community about yourself..." 
+              className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring min-h-[80px]"
+              maxLength={300}
+            />
+            <p className="text-xs text-muted-foreground">{formData.bio.length}/300 characters</p>
           </div>
         </div>
 

@@ -1,10 +1,15 @@
 import { prisma } from "@/lib/prisma";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminUsersPage() {
+  const session = await getServerSession(authOptions);
+  const isSuperAdmin = session?.user.role === "SUPER_ADMIN";
+
   const users = await prisma.user.findMany({
     orderBy: { createdAt: "desc" },
     include: {
@@ -12,11 +17,19 @@ export default async function AdminUsersPage() {
     }
   });
 
+  const roleColor = (role: string) => {
+    switch (role) {
+      case "SUPER_ADMIN": return "bg-primary/20 text-primary border-primary/30";
+      case "ADMIN": return "bg-amber-500/20 text-amber-600 border-amber-500/30";
+      default: return "bg-muted text-muted-foreground border-transparent";
+    }
+  };
+
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Members Directory</h1>
-        <p className="text-muted-foreground mt-1">Manage all registered users on the platform.</p>
+        <p className="text-muted-foreground mt-1">{users.length} registered users on the platform.</p>
       </div>
 
       <Card>
@@ -42,8 +55,8 @@ export default async function AdminUsersPage() {
                     {new Date(user.createdAt).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded ${user.role === 'ADMIN' ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`}>
-                      {user.role}
+                    <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded border ${roleColor(user.role)}`}>
+                      {user.role.replace("_", " ")}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-muted-foreground">
@@ -53,9 +66,19 @@ export default async function AdminUsersPage() {
                     </div>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <Button variant="outline" size="sm" className="h-8 shadow-none" disabled={user.role === 'ADMIN'}>
-                      Ban User
-                    </Button>
+                    {/* SUPER_ADMIN cannot be banned by anyone */}
+                    {user.role === "SUPER_ADMIN" ? (
+                      <span className="text-[10px] text-primary font-medium">Protected</span>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 shadow-none"
+                        disabled={!isSuperAdmin}
+                      >
+                        Ban User
+                      </Button>
+                    )}
                   </td>
                 </tr>
               ))}

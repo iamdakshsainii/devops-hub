@@ -13,3 +13,4 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
     return NextResponse.json({ message: "Failed to mark interested" }, { status: 500 });
   }
 }
+

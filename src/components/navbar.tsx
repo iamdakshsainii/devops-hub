@@ -58,11 +58,11 @@ export function Navbar() {
              <div className="h-9 w-20 animate-pulse bg-muted rounded ml-2"></div>
           ) : session ? (
              <div className="flex items-center space-x-2 pl-2 border-l ml-2">
-               {session.user.role === "ADMIN" && (
-                 <Link href="/admin">
-                   <Button variant="ghost" size="sm" className="hidden sm:inline-flex">Admin</Button>
-                 </Link>
-               )}
+                {["ADMIN", "SUPER_ADMIN"].includes(session.user.role) && (
+                  <Link href="/admin">
+                    <Button variant="ghost" size="sm" className="hidden sm:inline-flex">Admin</Button>
+                  </Link>
+                )}
                <NotificationsDropdown />
                <DropdownMenu>
                  <DropdownMenuTrigger asChild>
@@ -80,11 +80,11 @@ export function Navbar() {
                    <DropdownMenuItem asChild>
                      <Link href="/dashboard" className="cursor-pointer w-full">Dashboard</Link>
                    </DropdownMenuItem>
-                   {session.user.role === "ADMIN" && (
-                     <DropdownMenuItem className="cursor-pointer" asChild>
-                      <Link href="/admin" className="flex items-center w-full"><Shield className="mr-2 h-4 w-4" /> Moderation Panel</Link>
-                    </DropdownMenuItem>
-                  )}
+                    {["ADMIN", "SUPER_ADMIN"].includes(session.user.role) && (
+                      <DropdownMenuItem className="cursor-pointer" asChild>
+                       <Link href="/admin" className="flex items-center w-full"><Shield className="mr-2 h-4 w-4" /> Moderation Panel</Link>
+                     </DropdownMenuItem>
+                   )}
                   
                   {session.user.role === "SUPER_ADMIN" && (
                     <DropdownMenuItem className="cursor-pointer font-bold text-amber-500 hover:text-amber-600 focus:text-amber-600 focus:bg-amber-500/10" asChild>

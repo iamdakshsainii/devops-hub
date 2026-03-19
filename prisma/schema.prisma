@@ -1,6 +1,7 @@
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 generator client {
@@ -14,6 +15,11 @@ model User {
   fullName      String?
   avatarUrl     String?
   bio           String?
+  resumeUrl     String?
+  githubUrl     String?
+  twitterUrl    String?
+  linkedinUrl   String?
+  certifications String?
   role          String    @default("MEMBER") // "MEMBER", "ADMIN", "SUPER_ADMIN"
   permissions   String?   // comma-separated rules like "MANAGE_NOTES,MANAGE_EVENTS"
   score         Int       @default(0)
@@ -184,3 +190,58 @@ model AdminRequest {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+model Roadmap {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  icon        String   @default("🗺️")
+  color       String   @default("#3B82F6")
+  order       Int      @default(0)
+  status      String   @default("PUBLISHED")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  steps       RoadmapStep[]
+}
+
+model RoadmapStep {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  icon        String   @default("📦")
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  roadmapId   String
+  roadmap     Roadmap  @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+
+  topics      RoadmapTopic[]
+  resources   RoadmapResource[]
+}
+
+model RoadmapTopic {
+  id          String   @id @default(cuid())
+  title       String
+  content     String
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  stepId      String
+  step        RoadmapStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
+}
+
+model RoadmapResource {
+  id          String   @id @default(cuid())
+  title       String
+  url         String
+  type        String
+  description String?
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  stepId      String
+  step        RoadmapStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
+}

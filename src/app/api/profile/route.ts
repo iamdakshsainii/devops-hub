@@ -13,12 +13,13 @@ export async function PUT(req: Request) {
     const data = await req.json();
     
     // Validate inputs
-    const { fullName, avatarUrl, resumeUrl, githubUrl, twitterUrl, linkedinUrl, certifications } = data;
+    const { fullName, bio, avatarUrl, resumeUrl, githubUrl, twitterUrl, linkedinUrl, certifications } = data;
 
     const updatedUser = await prisma.user.update({
       where: { id: session.user.id },
       data: {
         fullName: fullName !== undefined ? fullName : undefined,
+        bio: bio !== undefined ? bio : undefined,
         avatarUrl: avatarUrl !== undefined ? avatarUrl : undefined,
         resumeUrl: resumeUrl !== undefined ? resumeUrl : undefined,
         githubUrl: githubUrl !== undefined ? githubUrl : undefined,

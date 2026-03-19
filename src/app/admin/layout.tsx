@@ -2,14 +2,16 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Shield, LayoutDashboard, FileText, Database, Calendar, Users } from "lucide-react";
+import { Shield, LayoutDashboard, FileText, Database, Calendar, Users, Map, ShieldCheck } from "lucide-react";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession(authOptions);
 
-  if (!session || session.user.role !== "ADMIN") {
+  if (!session || !["ADMIN", "SUPER_ADMIN"].includes(session.user.role)) {
     redirect("/dashboard");
   }
+
+  const isSuperAdmin = session.user.role === "SUPER_ADMIN";
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl flex flex-col md:flex-row gap-8 min-h-[calc(100vh-4rem)]">
@@ -23,6 +25,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <Link href="/admin" className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors">
             <LayoutDashboard className="h-4 w-4" /> Overview
           </Link>
+          <Link href="/admin/roadmaps" className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors">
+            <Map className="h-4 w-4" /> Roadmaps
+          </Link>
           <Link href="/admin/notes" className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors">
             <FileText className="h-4 w-4" /> Notes Queue
           </Link>
@@ -35,6 +40,17 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <Link href="/admin/users" className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors">
              <Users className="h-4 w-4" /> Users
           </Link>
+
+          {/* SUPER_ADMIN Only */}
+          {isSuperAdmin && (
+            <>
+              <div className="h-px bg-border my-2" />
+              <p className="px-3 text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Super Admin</p>
+              <Link href="/admin/roles" className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors text-primary">
+                <ShieldCheck className="h-4 w-4" /> Role Management
+              </Link>
+            </>
+          )}
         </nav>
       </aside>
       <main className="flex-1 bg-card border rounded-xl shadow-sm p-6 overflow-x-auto">

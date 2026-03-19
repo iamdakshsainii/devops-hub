@@ -28,8 +28,9 @@ export async function POST(req: Request) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Auto-assign admin if specific email
-    const role = email === "sainidaksh70@gmail.com" ? "ADMIN" : "MEMBER";
+    // Platform owner gets SUPER_ADMIN (full control, can't be demoted)
+    const SUPER_ADMIN_EMAILS = ["sainidaksh70@gmail.com"];
+    const role = SUPER_ADMIN_EMAILS.includes(email) ? "SUPER_ADMIN" : "MEMBER";
 
     // Create user
     const user = await prisma.user.create({

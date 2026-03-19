@@ -18,6 +18,10 @@ export default function NewEventPage() {
     setLoading(true);
     setError("");
 
+    // IMPORTANT: Capture form data BEFORE any async operations.
+    // React synthetic events lose e.currentTarget after an await.
+    const formData = new FormData(e.currentTarget);
+
     // Upload files first if any
     let imageUrlsStr = "";
     try {
@@ -42,7 +46,6 @@ export default function NewEventPage() {
       return;
     }
 
-    const formData = new FormData(e.currentTarget);
     const data = {
       title: formData.get("title"),
       description: formData.get("description"),
