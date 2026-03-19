@@ -17,31 +17,31 @@ export default async function AdminOverviewPage() {
 
   const [
     totalUsers,
-    totalNotes,
-    pendingNotes,
+    totalModules,
+    pendingModules,
     totalResources,
     pendingResources,
     totalEvents,
     totalRoadmaps,
     pendingAdminRequests,
     recentUsers,
-    recentNotes,
+    recentModules,
     recentResources,
   ] = await Promise.all([
     prisma.user.count(),
-    prisma.note.count(),
-    prisma.note.count({ where: { status: "PENDING" } }),
+    prisma.roadmapStep.count(),
+    prisma.roadmapStep.count({ where: { status: "PENDING" } }),
     prisma.resource.count(),
     prisma.resource.count({ where: { status: "PENDING" } }),
     prisma.event.count(),
     prisma.roadmap.count(),
     prisma.adminRequest.count({ where: { status: "PENDING" } }),
     prisma.user.findMany({ take: 5, orderBy: { createdAt: "desc" }, select: { fullName: true, email: true, createdAt: true, role: true } }),
-    prisma.note.findMany({ take: 5, orderBy: { createdAt: "desc" }, select: { title: true, status: true, createdAt: true, author: { select: { fullName: true } } } }),
+    prisma.roadmapStep.findMany({ take: 5, orderBy: { createdAt: "desc" }, select: { title: true, status: true, createdAt: true, author: { select: { fullName: true } } } }),
     prisma.resource.findMany({ take: 5, orderBy: { createdAt: "desc" }, select: { title: true, status: true, createdAt: true, author: { select: { fullName: true } } } }),
   ]);
 
-  const publishedNotes = totalNotes - pendingNotes;
+  const publishedModules = totalModules - pendingModules;
   const publishedResources = totalResources - pendingResources;
 
   let dbSizeMB = 0;
@@ -61,7 +61,7 @@ export default async function AdminOverviewPage() {
 
   // Data for the bar chart (CSS-based, no library)
   const chartData = [
-    { label: "Notes", value: totalNotes, color: "#3B82F6" },
+    { label: "Modules", value: totalModules, color: "#3B82F6" },
     { label: "Resources", value: totalResources, color: "#10B981" },
     { label: "Events", value: totalEvents, color: "#F59E0B" },
     { label: "Roadmaps", value: totalRoadmaps, color: "#8B5CF6" },
@@ -122,17 +122,17 @@ export default async function AdminOverviewPage() {
           </Card>
         </Link>
 
-        <Link href="/admin/notes" className="group">
+        <Link href="/admin/modules" className="group">
           <Card className="h-full hover:border-blue-500/40 hover:shadow-md transition-all cursor-pointer">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Notes</CardTitle>
-              <FileText className="h-4 w-4 text-blue-500" />
+              <CardTitle className="text-sm font-medium">Modules</CardTitle>
+              <Database className="h-4 w-4 text-blue-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{publishedNotes}</div>
+              <div className="text-3xl font-bold">{publishedModules}</div>
               <p className="text-xs text-muted-foreground mt-1">
-                {pendingNotes > 0 && <span className="text-amber-500 font-medium">{pendingNotes} pending · </span>}
-                {totalNotes} total
+                {pendingModules > 0 && <span className="text-amber-500 font-medium">{pendingModules} pending · </span>}
+                {totalModules} total
               </p>
             </CardContent>
           </Card>
@@ -260,22 +260,22 @@ export default async function AdminOverviewPage() {
                 </div>
               ))}
 
-              {/* Recent notes */}
-              {recentNotes.map((note, i) => (
-                <div key={`n-${i}`} className="flex items-center gap-3 text-sm">
+              {/* Recent modules */}
+              {recentModules.map((module, i) => (
+                <div key={`m-${i}`} className="flex items-center gap-3 text-sm">
                   <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center shrink-0">
-                    <FileText className="h-3.5 w-3.5 text-blue-500" />
+                    <Database className="h-3.5 w-3.5 text-blue-500" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{note.title}</p>
+                    <p className="font-medium truncate">{module.title}</p>
                     <p className="text-xs text-muted-foreground">
-                      by {note.author?.fullName || "Unknown"} ·{" "}
-                      <span className={note.status === "PENDING" ? "text-amber-500 font-medium" : "text-emerald-500"}>
-                        {note.status}
+                      by {module.author?.fullName || "Unknown"} ·{" "}
+                      <span className={module.status === "PENDING" ? "text-amber-500 font-medium" : "text-emerald-500"}>
+                        {module.status === "PENDING" ? "DRAFT" : "PUBLISHED"}
                       </span>
                     </p>
                   </div>
-                  <span className="text-xs text-muted-foreground shrink-0">{timeAgo(note.createdAt)}</span>
+                  <span className="text-xs text-muted-foreground shrink-0">{timeAgo(module.createdAt)}</span>
                 </div>
               ))}
 
@@ -298,7 +298,7 @@ export default async function AdminOverviewPage() {
                 </div>
               ))}
 
-              {recentUsers.length === 0 && recentNotes.length === 0 && recentResources.length === 0 && (
+              {recentUsers.length === 0 && recentModules.length === 0 && recentResources.length === 0 && (
                 <p className="text-sm text-muted-foreground text-center py-8">No recent activity yet.</p>
               )}
             </div>
@@ -313,9 +313,10 @@ export default async function AdminOverviewPage() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-3">
+            <Link href="/admin/modules/new"><Button variant="outline" size="sm" className="gap-2"><Database className="h-3.5 w-3.5" /> New Module</Button></Link>
             <Link href="/admin/roadmaps/new"><Button variant="outline" size="sm" className="gap-2"><Map className="h-3.5 w-3.5" /> New Roadmap</Button></Link>
             <Link href="/admin/events/new"><Button variant="outline" size="sm" className="gap-2"><Calendar className="h-3.5 w-3.5" /> New Event</Button></Link>
-            {pendingNotes > 0 && <Link href="/admin/notes"><Button size="sm" className="gap-2"><FileText className="h-3.5 w-3.5" /> Review {pendingNotes} Notes</Button></Link>}
+            {pendingModules > 0 && <Link href="/admin/modules"><Button size="sm" className="gap-2"><Database className="h-3.5 w-3.5" /> Review {pendingModules} Modules</Button></Link>}
             {pendingResources > 0 && <Link href="/admin/resources"><Button size="sm" className="gap-2"><Database className="h-3.5 w-3.5" /> Review {pendingResources} Resources</Button></Link>}
             {isSuperAdmin && <Link href="/admin/roles"><Button variant="outline" size="sm" className="gap-2"><Shield className="h-3.5 w-3.5" /> Role Management</Button></Link>}
           </div>

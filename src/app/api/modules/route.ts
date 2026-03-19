@@ -31,7 +31,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const { title, description, icon, roadmapId, topics, resources } = await req.json();
+    const { title, description, icon, status: payloadStatus, roadmapId, topics, resources } = await req.json();
 
     if (!title) return NextResponse.json({ message: "Title required" }, { status: 400 });
 
@@ -53,7 +53,7 @@ export async function POST(req: Request) {
        _max: { order: true }
     });
 
-    const status = session.user.role === "SUPER_ADMIN" ? "PUBLISHED" : "PENDING";
+    const status = payloadStatus || (session.user.role === "SUPER_ADMIN" ? "PUBLISHED" : "PENDING");
 
     const step = await prisma.roadmapStep.create({
       data: {

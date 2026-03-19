@@ -6,33 +6,37 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Save, Plus, ChevronDown, ChevronRight, Code2, Type,
-  ArrowUp, ArrowDown, Loader2, X, Trash2
+  Save, Plus, Code2, Type, FileText,
+  Loader2, X, Trash2, ChevronDown, ChevronRight, Image as ImageIcon
 } from "lucide-react";
 import { Editor } from "@/components/editor";
 
-interface TopicForm { title: string; content: string; }
-interface ResourceForm { title: string; url: string; type: string; }
+interface SubtopicForm { title: string; content: string; }
+interface TopicForm { title: string; content: string; subtopics: SubtopicForm[]; expanded: boolean; }
+interface ResourceForm { title: string; url: string; type: string; description: string; }
 
 interface ModuleForm {
   title: string;
   description: string;
   icon: string;
+  status?: string;
   topics: TopicForm[];
   resources: ResourceForm[];
 }
 
-const emptyTopic = (): TopicForm => ({ title: "", content: "" });
-const emptyResource = (): ResourceForm => ({ title: "", url: "", type: "ARTICLE" });
+const emptySubtopic = (): SubtopicForm => ({ title: "", content: "" });
+const emptyTopic = (): TopicForm => ({ title: "", content: "", subtopics: [], expanded: true });
+const emptyResource = (): ResourceForm => ({ title: "", url: "", type: "ARTICLE", description: "" });
 
 export default function EditModulePage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const [moduleId, setModuleId] = useState("");
-  const [mode, setMode] = useState<"FORM" | "JSON">("FORM");
+  const [mode, setMode] = useState<"FORM" | "JSON" | "MARKDOWN">("FORM");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [jsonInput, setJsonInput] = useState("");
+  const [markdownInput, setMarkdownInput] = useState("");
 
   const [form, setForm] = useState<ModuleForm>({
     title: "", description: "", icon: "📦", topics: [], resources: []
@@ -48,8 +52,19 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
             title: data.title,
             description: data.description || "",
             icon: data.icon || "📦",
-            topics: data.topics || [],
-            resources: data.resources || [],
+            status: data.status || "PENDING",
+            topics: (data.topics || []).map((t: any) => ({
+              title: t.title,
+              content: t.content || "",
+              subtopics: (t.subtopics || []).map((s: any) => ({
+                title: s.title,
+                content: s.content || ""
+              })),
+              expanded: false,
+            })),
+            resources: (data.resources || []).map((r: any) => ({
+              title: r.title, url: r.url, type: r.type || "ARTICLE", description: r.description || ""
+            })),
           });
           setLoading(false);
         })
@@ -57,6 +72,7 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
     });
   }, [params]);
 
+  // ── JSON parse ──────────────────────────────────────────────────────────
   const handleJsonParse = () => {
     try {
       const p = JSON.parse(jsonInput);
@@ -64,24 +80,80 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
         title: p.title || form.title,
         description: p.description || form.description,
         icon: p.icon || form.icon,
-        topics: (p.topics || []).map((t: any) => ({ title: t.title || "", content: t.content || "" })),
-        resources: (p.resources || []).map((r: any) => ({ title: r.title || "", url: r.url || "", type: r.type || "ARTICLE" }))
+        topics: (p.topics || []).map((t: any) => ({
+          title: t.title || "",
+          content: t.content || "",
+          subtopics: (t.subtopics || []).map((s: any) => ({ title: s.title || "", content: s.content || "" })),
+          expanded: false,
+        })),
+        resources: (p.resources || []).map((r: any) => ({
+          title: r.title || "", url: r.url || "", type: r.type || "ARTICLE", description: r.description || ""
+        }))
       });
       setMode("FORM"); setError("");
     } catch { setError("Invalid JSON format"); }
   };
 
-  const exportJson = () => {
-    setJsonInput(JSON.stringify(form, null, 2)); setMode("JSON");
+  // ── Markdown / AI Paste parse ────────────────────────────────────────────
+  const handleMarkdownParse = () => {
+    try {
+      const lines = markdownInput.split("\n");
+      let currentTopic: TopicForm | null = null;
+      let currentSubtopic: SubtopicForm | null = null;
+      const topics: TopicForm[] = [];
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+
+        if (trimmed.startsWith("## ")) {
+          // New Topic
+          currentSubtopic = null;
+          currentTopic = {
+            title: trimmed.replace(/^## /, "").trim(),
+            content: "",
+            subtopics: [],
+            expanded: false,
+          };
+          topics.push(currentTopic);
+        } else if (trimmed.startsWith("### ") && currentTopic) {
+          // New Subtopic under current topic
+          currentSubtopic = {
+            title: trimmed.replace(/^### /, "").trim(),
+            content: "",
+          };
+          currentTopic.subtopics.push(currentSubtopic);
+        } else if (currentSubtopic) {
+          currentSubtopic.content += line + "\n";
+        } else if (currentTopic) {
+          currentTopic.content += line + "\n";
+        }
+      }
+
+      setForm({ ...form, topics: [...form.topics, ...topics] });
+      setMode("FORM");
+      setMarkdownInput("");
+      setError("");
+    } catch {
+      setError("Failed to parse markdown content");
+    }
   };
 
-  const handleSave = async () => {
+  const exportJson = () => {
+    setJsonInput(JSON.stringify(form, null, 2));
+    setMode("JSON");
+  };
+
+  // ── Save ────────────────────────────────────────────────────────────────
+  const handleSave = async (forceStatus?: "PENDING" | "PUBLISHED") => {
     setSaving(true); setError("");
     try {
+      const payload = { ...form };
+      if (forceStatus) payload.status = forceStatus;
+
       const res = await fetch(`/api/modules/${moduleId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error("Save failed");
       router.push("/admin/modules"); router.refresh();
@@ -91,55 +163,132 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
   const handleDelete = async () => {
     if (!confirm("Are you sure you want to delete this module?")) return;
     try {
-       await fetch(`/api/modules/${moduleId}`, { method: "DELETE" });
-       router.push("/admin/modules"); router.refresh();
-    } catch (e) {}
+      await fetch(`/api/modules/${moduleId}`, { method: "DELETE" });
+      router.push("/admin/modules"); router.refresh();
+    } catch {}
   };
 
-  if (loading) return <div className="p-8 text-center text-muted-foreground"><Loader2 className="h-6 w-6 animate-spin mx-auto mb-2"/> Preparing Setup...</div>;
+  // ── Topic helpers ───────────────────────────────────────────────────────
+  const updateTopic = (i: number, data: Partial<TopicForm>) => {
+    const topics = [...form.topics];
+    topics[i] = { ...topics[i], ...data };
+    setForm({ ...form, topics });
+  };
+
+  const updateSubtopic = (ti: number, si: number, data: Partial<SubtopicForm>) => {
+    const topics = [...form.topics];
+    const subtopics = [...topics[ti].subtopics];
+    subtopics[si] = { ...subtopics[si], ...data };
+    topics[ti] = { ...topics[ti], subtopics };
+    setForm({ ...form, topics });
+  };
+
+  if (loading) return (
+    <div className="p-12 text-center text-muted-foreground flex flex-col items-center gap-3">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <p className="text-sm">Loading module...</p>
+    </div>
+  );
 
   return (
     <div className="space-y-8 max-w-4xl">
+      {/* Header */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Edit Module</h1>
-          <p className="text-muted-foreground mt-1 text-sm">Update direct standalone module nodes contents.</p>
+          <p className="text-muted-foreground mt-1 text-sm">
+            <span className="text-xl mr-2">{form.icon}</span>
+            {form.title || "Untitled Module"}
+          </p>
         </div>
         <div className="flex gap-2">
-           <Button variant="outline" className="border-destructive hover:bg-destructive hover:text-white" onClick={handleDelete}><Trash2 className="h-4 w-4 mr-2" /> Delete</Button>
-           <Button onClick={handleSave} disabled={saving || !form.title} className="min-w-[120px]">
-             {saving ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...</> : <><Save className="h-4 w-4 mr-2" /> Save</>}
-           </Button>
+          <Button variant="outline" size="sm" className="border-destructive/40 text-destructive hover:bg-destructive/10" onClick={handleDelete}>
+            <Trash2 className="h-4 w-4 mr-2" /> Delete
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => handleSave("PENDING")} disabled={saving || !form.title}>
+            Save as Draft
+          </Button>
+          <Button size="sm" onClick={() => handleSave("PUBLISHED")} disabled={saving || !form.title} className="bg-primary">
+            {saving ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...</> : "Publish Live"}
+          </Button>
         </div>
       </div>
 
       {error && <div className="p-3 bg-destructive/15 text-destructive border border-destructive/20 rounded-md text-sm">{error}</div>}
 
-      <div className="flex bg-muted p-1 rounded-lg w-fit">
-        <Button variant={mode === "FORM" ? "secondary" : "ghost"} size="sm" onClick={() => setMode("FORM")}><Type className="h-4 w-4 mr-2" /> Form Builder</Button>
-        <Button variant={mode === "JSON" ? "secondary" : "ghost"} size="sm" onClick={exportJson}><Code2 className="h-4 w-4 mr-2" /> JSON Mode</Button>
+      {/* Mode toggle */}
+      <div className="flex bg-muted p-1 rounded-lg w-fit gap-0.5">
+        <Button variant={mode === "FORM" ? "secondary" : "ghost"} size="sm" onClick={() => setMode("FORM")}>
+          <Type className="h-4 w-4 mr-2" /> Form Builder
+        </Button>
+        <Button variant={mode === "JSON" ? "secondary" : "ghost"} size="sm" onClick={exportJson}>
+          <Code2 className="h-4 w-4 mr-2" /> JSON Mode
+        </Button>
+        <Button variant={mode === "MARKDOWN" ? "secondary" : "ghost"} size="sm" onClick={() => setMode("MARKDOWN")}>
+          <FileText className="h-4 w-4 mr-2" /> AI/Markdown Paste
+        </Button>
       </div>
 
+      {/* JSON Mode */}
       {mode === "JSON" && (
         <Card>
           <CardContent className="pt-6 space-y-4">
-            <textarea value={jsonInput} onChange={e => setJsonInput(e.target.value)}
-              className="w-full h-96 rounded-md border border-input bg-background px-3 py-2 text-xs font-mono ring-offset-background focus-visible:outline-none focus:ring-1 focus:ring-ring"
+            <p className="text-xs text-muted-foreground">Paste or edit the complete module JSON. Click "Apply" to load into the form.</p>
+            <textarea
+              value={jsonInput}
+              onChange={(e) => setJsonInput(e.target.value)}
+              className="w-full h-96 rounded-md border border-input bg-background px-3 py-2 text-xs font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
             <Button onClick={handleJsonParse}>Apply JSON to Form</Button>
           </CardContent>
         </Card>
       )}
 
+      {/* Markdown / AI Paste Mode */}
+      {mode === "MARKDOWN" && (
+        <Card className="border-primary/20 bg-primary/5">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary" />
+              AI / Markdown Paste Importer
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="text-sm text-muted-foreground space-y-1 bg-muted/50 rounded-lg p-3 border">
+              <p className="font-medium text-foreground mb-2">📋 Paste format:</p>
+              <p><span className="font-mono text-xs bg-muted px-1 rounded">## Topic Title</span> → creates a Topic</p>
+              <p><span className="font-mono text-xs bg-muted px-1 rounded">### Subtopic Title</span> → creates a Subtopic inside the topic above</p>
+              <p>Everything below a heading becomes its content (markdown, tables, code blocks, images all work)</p>
+              <p className="text-xs mt-2 text-muted-foreground/70">💡 Images: use <span className="font-mono">![alt](https://url.to/image.jpg)</span> inline in content</p>
+            </div>
+            <textarea
+              value={markdownInput}
+              onChange={(e) => setMarkdownInput(e.target.value)}
+              className="w-full h-[400px] rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring font-mono"
+              placeholder={`## What is Docker?\nDocker is a containerization platform...\n\n### The Shipping Analogy\n![Container](https://images.unsplash.com/photo-xxx)\nBefore containers, shipping software was chaos...\n\n### Containers vs VMs\n| Feature | Containers | VMs |\n| :--- | :--- | :--- |\n| Size | 5-500MB | 3-20GB |\n\n## Core Docker Commands\nAll essential commands you need...\n\n### docker run\nRuns a container from an image...`}
+            />
+            <div className="flex items-center gap-3">
+              <Button onClick={handleMarkdownParse} className="gap-2">
+                <FileText className="h-4 w-4" />
+                Parse & Append to Module
+              </Button>
+              <p className="text-xs text-muted-foreground">Topics will be appended to existing ones. You can then edit before saving.</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Form Mode */}
       {mode === "FORM" && (
         <div className="space-y-6">
+          {/* Basic Details */}
           <Card>
-            <CardHeader className="pb-4"><CardTitle className="text-base">Identity & Core Details</CardTitle></CardHeader>
+            <CardHeader className="pb-4"><CardTitle className="text-base">Module Details</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="grid sm:grid-cols-[1fr_80px] gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Title</label>
-                  <Input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="Title" />
+                  <Input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="e.g. Docker & Containers" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Icon</label>
@@ -148,61 +297,162 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Description</label>
-                <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} className="flex w-full rounded-md border px-3 py-2 text-sm min-h-[80px]" />
+                <textarea
+                  value={form.description}
+                  onChange={e => setForm({ ...form, description: e.target.value })}
+                  className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm min-h-[80px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  placeholder="What will learners gain from this module?"
+                />
               </div>
             </CardContent>
           </Card>
 
           {/* Topics */}
-          <Card>
-             <CardHeader className="pb-4 flex flex-row items-center justify-between">
-                <CardTitle className="text-base">📄 Topics ({form.topics.length})</CardTitle>
-                <Button size="sm" variant="outline" onClick={() => setForm({ ...form, topics: [...form.topics, emptyTopic()] })}><Plus className="h-3 w-3 mr-1" /> Add Topic</Button>
-             </CardHeader>
-             <CardContent className="space-y-4">
-                {form.topics.map((t, i) => (
-                   <div key={i} className="border rounded-xl p-4 bg-muted/5 space-y-3">
-                      <div className="flex gap-2 items-center">
-                         <Input value={t.title} onChange={e => {
-                            const nt = [...form.topics]; nt[i].title = e.target.value; setForm({ ...form, topics: nt });
-                         }} placeholder="Topic Name" />
-                         <button onClick={() => setForm({ ...form, topics: form.topics.filter((_, j) => j !== i) })} className="p-2 hover:bg-destructive/10 rounded"><X className="h-4 w-4 text-destructive" /></button>
-                      </div>
-                      <Editor 
-                         content={t.content} 
-                         onChange={(html) => {
-                            const nt = [...form.topics]; 
-                            nt[i].content = html; 
-                            setForm({ ...form, topics: nt });
-                         }} 
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-bold">📄 Topics ({form.topics.length})</h2>
+              <Button size="sm" variant="outline" onClick={() => setForm({ ...form, topics: [...form.topics, emptyTopic()] })}>
+                <Plus className="h-3 w-3 mr-1" /> Add Topic
+              </Button>
+            </div>
+
+            {form.topics.length === 0 && (
+              <div className="border border-dashed rounded-xl p-10 text-center bg-muted/10 text-muted-foreground">
+                <FileText className="h-8 w-8 mx-auto mb-3 opacity-40" />
+                <p className="text-sm">No topics yet. Add manually or use the <strong>AI/Markdown Paste</strong> tab to import from ChatGPT.</p>
+              </div>
+            )}
+
+            {form.topics.map((topic, ti) => (
+              <Card key={ti} className="overflow-hidden">
+                {/* Topic header */}
+                <div
+                  className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-muted/40 transition-colors border-b"
+                  onClick={() => updateTopic(ti, { expanded: !topic.expanded })}
+                >
+                  <span className="text-xs font-mono font-bold text-muted-foreground/60 shrink-0">{String(ti + 1).padStart(2, "0")}</span>
+                  <span className="text-sm font-semibold flex-1 truncate">{topic.title || `Topic ${ti + 1}`}</span>
+                  <span className="text-xs text-muted-foreground hidden sm:inline">{topic.subtopics.length} subtopics</span>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setForm({ ...form, topics: form.topics.filter((_, j) => j !== ti) }); }}
+                    className="p-1 hover:bg-destructive/10 rounded ml-1"
+                  >
+                    <X className="h-3.5 w-3.5 text-destructive" />
+                  </button>
+                  {topic.expanded ? <ChevronDown className="h-4 w-4 shrink-0" /> : <ChevronRight className="h-4 w-4 shrink-0" />}
+                </div>
+
+                {topic.expanded && (
+                  <CardContent className="pt-4 space-y-5">
+                    {/* Topic title */}
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Topic Title</label>
+                      <Input
+                        value={topic.title}
+                        onChange={e => updateTopic(ti, { title: e.target.value })}
+                        placeholder="Topic title"
                       />
-                   </div>
-                ))}
-             </CardContent>
-          </Card>
+                    </div>
+
+                    {/* Topic content (intro text before subtopics) */}
+                    <div className="space-y-2">
+                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Intro Content (optional — shown before subtopics)</label>
+                      <Editor
+                        content={topic.content}
+                        onChange={(html) => updateTopic(ti, { content: html })}
+                      />
+                    </div>
+
+                    {/* Subtopics */}
+                    <div className="space-y-3 pt-2 border-t">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Subtopics ({topic.subtopics.length})</h4>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-xs h-7"
+                          onClick={() => updateTopic(ti, { subtopics: [...topic.subtopics, emptySubtopic()] })}
+                        >
+                          <Plus className="h-3 w-3 mr-1" /> Add Subtopic
+                        </Button>
+                      </div>
+
+                      {topic.subtopics.map((sub, si) => (
+                        <div key={si} className="border rounded-lg p-4 space-y-3 bg-muted/5 border-l-2 border-l-primary/20">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-mono text-primary/60">{String(si + 1).padStart(2, "0")}</span>
+                            <Input
+                              value={sub.title}
+                              onChange={e => updateSubtopic(ti, si, { title: e.target.value })}
+                              placeholder="Subtopic title"
+                              className="flex-1 h-8 text-sm"
+                            />
+                            <button
+                              onClick={() => updateTopic(ti, { subtopics: topic.subtopics.filter((_, j) => j !== si) })}
+                              className="p-1.5 hover:bg-destructive/10 rounded"
+                            >
+                              <X className="h-3.5 w-3.5 text-destructive" />
+                            </button>
+                          </div>
+                          <Editor
+                            content={sub.content}
+                            onChange={(html) => updateSubtopic(ti, si, { content: html })}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                )}
+              </Card>
+            ))}
+          </div>
 
           {/* Resources */}
           <Card>
-             <CardHeader className="pb-4 flex flex-row items-center justify-between">
-                <CardTitle className="text-base">📚 Resources ({form.resources.length})</CardTitle>
-                <Button size="sm" variant="outline" onClick={() => setForm({ ...form, resources: [...form.resources, emptyResource()] })}><Plus className="h-3 w-3 mr-1" /> Add Resource</Button>
-             </CardHeader>
-             <CardContent className="space-y-4">
-                {form.resources.map((r, i) => (
-                   <div key={i} className="flex gap-2 items-center">
-                      <Input value={r.title} onChange={e => {
-                         const nr = [...form.resources]; nr[i].title = e.target.value; setForm({ ...form, resources: nr });
-                      }} placeholder="Name" className="flex-1" />
-                      <Input value={r.url} onChange={e => {
-                         const nr = [...form.resources]; nr[i].url = e.target.value; setForm({ ...form, resources: nr });
-                      }} placeholder="https://..." className="flex-1" />
-                      <select value={r.type} onChange={e => {
-                         const nr = [...form.resources]; nr[i].type = e.target.value; setForm({ ...form, resources: nr });
-                      }} className="border h-10 px-2 rounded text-sm"><option value="ARTICLE">Article</option><option value="VIDEO">Video</option></select>
-                      <button onClick={() => setForm({ ...form, resources: form.resources.filter((_, j) => j !== i) })} className="p-2.5 hover:bg-destructive/10 rounded"><X className="h-4 w-4 text-destructive" /></button>
-                   </div>
-                ))}
-             </CardContent>
+            <CardHeader className="pb-4 flex flex-row items-center justify-between">
+              <CardTitle className="text-base">📚 Resources ({form.resources.length})</CardTitle>
+              <Button size="sm" variant="outline" onClick={() => setForm({ ...form, resources: [...form.resources, emptyResource()] })}>
+                <Plus className="h-3 w-3 mr-1" /> Add Resource
+              </Button>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {form.resources.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-4">No resources yet.</p>
+              )}
+              {form.resources.map((r, ri) => (
+                <div key={ri} className="flex flex-wrap gap-2 items-center border rounded-lg p-3 bg-muted/5">
+                  <Input
+                    value={r.title}
+                    onChange={e => { const nr = [...form.resources]; nr[ri].title = e.target.value; setForm({ ...form, resources: nr }); }}
+                    placeholder="Resource title"
+                    className="flex-1 min-w-[150px] h-9 text-sm"
+                  />
+                  <Input
+                    value={r.url}
+                    onChange={e => { const nr = [...form.resources]; nr[ri].url = e.target.value; setForm({ ...form, resources: nr }); }}
+                    placeholder="https://..."
+                    className="flex-1 min-w-[180px] h-9 text-sm"
+                  />
+                  <select
+                    value={r.type}
+                    onChange={e => { const nr = [...form.resources]; nr[ri].type = e.target.value; setForm({ ...form, resources: nr }); }}
+                    className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+                  >
+                    <option value="ARTICLE">Article</option>
+                    <option value="VIDEO">Video</option>
+                    <option value="DOCS">Docs</option>
+                    <option value="PDF">PDF</option>
+                    <option value="TOOL">Tool</option>
+                  </select>
+                  <button
+                    onClick={() => setForm({ ...form, resources: form.resources.filter((_, j) => j !== ri) })}
+                    className="p-2 hover:bg-destructive/10 rounded"
+                  >
+                    <X className="h-4 w-4 text-destructive" />
+                  </button>
+                </div>
+              ))}
+            </CardContent>
           </Card>
         </div>
       )}

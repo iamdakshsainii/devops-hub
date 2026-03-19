@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { marked } from "marked";
@@ -74,6 +74,57 @@ export function StepViewer({ roadmap, step }: { roadmap: PartialRoadmap; step: S
   );
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Notion-style Copy Button Injector for Code Blocks
+  useEffect(() => {
+    // Timeout gives marked time to fully sync innerHTML rendering layout offsets securely
+    const timer = setTimeout(() => {
+      const container = document.getElementById("topic-content-container");
+      if (!container) return;
+
+      const preBlocks = container.querySelectorAll("pre");
+      preBlocks.forEach((pre) => {
+        if (pre.getAttribute("data-copy-added")) return;
+        pre.setAttribute("data-copy-added", "true");
+
+        // Add class for grouping
+        pre.classList.add("relative", "group");
+
+        const btn = document.createElement("button");
+        btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`;
+        btn.className = "absolute top-3 right-3 p-1.5 rounded-md bg-zinc-800/80 text-zinc-400 opacity-0 group-hover:opacity-100 transition-all hover:bg-zinc-700 hover:text-zinc-100 border border-zinc-700/50 backdrop-blur-sm z-10 cursor-pointer";
+        btn.type = "button";
+
+        btn.addEventListener("click", () => {
+          const code = pre.querySelector("code")?.innerText || "";
+          navigator.clipboard.writeText(code);
+          btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check text-emerald-500"><path d="M20 6 9 17l-5-5"/></svg>`;
+          setTimeout(() => {
+            btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`;
+          }, 2000);
+        });
+
+        // Add label if language is present
+        const codeEl = pre.querySelector("code");
+        if (codeEl) {
+          const classes = Array.from(codeEl.classList);
+          const langClass = classes.find((c) => c.startsWith("language-"));
+          if (langClass) {
+            const lang = langClass.replace("language-", "");
+            const label = document.createElement("span");
+            label.innerText = lang.toUpperCase();
+            label.className = "absolute top-3 left-4 text-[10px] font-mono tracking-wider font-bold text-zinc-500/80";
+            pre.appendChild(label);
+            codeEl.style.paddingTop = "2rem"; // Push down code content to avoid overlaying label setups
+          }
+        }
+
+        pre.appendChild(btn);
+      });
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [activeTopicId]);
 
   const activeTopic = step.topics.find((t) => t.id === activeTopicId) || null;
   const currentIndex = activeTopic ? step.topics.findIndex((t) => t.id === activeTopicId) : -1;
@@ -257,7 +308,7 @@ export function StepViewer({ roadmap, step }: { roadmap: PartialRoadmap; step: S
         {/* Right Content Area */}
         <main className="flex-1 min-w-0 px-4 md:px-10 py-8 lg:py-12 md:border-l bg-card/10">
           {activeTopic ? (
-            <div className="max-w-4xl mx-auto space-y-10">
+            <div id="topic-content-container" className="max-w-4xl mx-auto space-y-10">
               {/* Topic Header */}
               <div className="space-y-4 border-b pb-8">
                 <div className="flex flex-wrap gap-2 items-center">
@@ -278,12 +329,14 @@ export function StepViewer({ roadmap, step }: { roadmap: PartialRoadmap; step: S
               {activeTopic.content && (
                 <div
                   className="prose prose-base md:prose-lg dark:prose-invert max-w-none mb-8
-                    prose-headings:tracking-tight prose-headings:scroll-mt-24
+                    dark:text-zinc-100 dark:prose-p:text-zinc-200 dark:prose-headings:text-zinc-50 dark:prose-strong:text-zinc-50 dark:prose-code:text-zinc-100
+                    prose-headings:tracking-tight prose-headings:scroll-mt-24 prose-headings:mb-4 prose-headings:mt-10
+                    prose-p:mb-6 prose-p:leading-relaxed prose-ul:mb-6 prose-li:mb-3
                     prose-a:text-primary prose-a:font-medium prose-a:underline-offset-4
-                    prose-code:bg-muted/80 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:before:content-none prose-code:after:content-none prose-code:font-semibold prose-code:text-[0.9em]
-                    prose-pre:bg-zinc-950 prose-pre:text-zinc-50 prose-pre:border prose-pre:shadow-xl
-                    prose-img:rounded-xl prose-img:border prose-img:shadow-lg prose-img:bg-muted/50
-                    prose-blockquote:border-l-primary prose-blockquote:bg-muted/20 prose-blockquote:py-1 prose-blockquote:pr-4 prose-blockquote:rounded-r-lg"
+                    prose-code:bg-muted prose-code:text-foreground prose-code:border prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:font-semibold prose-code:text-[0.85em] prose-code:before:content-none prose-code:after:content-none
+                    prose-pre:bg-zinc-900 prose-pre:text-zinc-50 prose-pre:border-zinc-800/60 prose-pre:shadow-xl hover:prose-pre:border-zinc-700/80 prose-pre:transition-all prose-pre:rounded-xl prose-pre:p-4
+                    prose-img:rounded-2xl prose-img:border prose-img:shadow-xl prose-img:bg-muted/50
+                    prose-blockquote:border-l-4 prose-blockquote:border-l-primary prose-blockquote:bg-primary/5 prose-blockquote:py-4 prose-blockquote:px-6 prose-blockquote:rounded-r-xl prose-blockquote:not-italic prose-blockquote:shadow-sm"
                   dangerouslySetInnerHTML={{ __html: marked.parse(activeTopic.content as string) as string }}
                 />
               )}
@@ -301,10 +354,13 @@ export function StepViewer({ roadmap, step }: { roadmap: PartialRoadmap; step: S
                          </div>
                          <div
                             className="prose prose-base md:prose-lg dark:prose-invert max-w-none
-                              prose-headings:tracking-tight prose-headings:scroll-mt-24
+                              dark:text-zinc-100 dark:prose-p:text-zinc-200 dark:prose-headings:text-zinc-50 dark:prose-strong:text-zinc-50 dark:prose-code:text-zinc-100
+                              prose-headings:tracking-tight prose-headings:scroll-mt-24 prose-headings:mb-4 prose-headings:mt-10
+                              prose-p:mb-6 prose-p:leading-relaxed prose-ul:mb-6 prose-li:mb-3
                               prose-a:text-primary prose-a:font-medium prose-a:underline-offset-4
-                              prose-code:bg-muted/80 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md
-                              prose-img:rounded-xl prose-img:border prose-img:bg-muted/50"
+                              prose-code:bg-muted prose-code:text-foreground prose-code:border prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:font-semibold prose-code:text-[0.85em] prose-code:before:content-none prose-code:after:content-none
+                              prose-pre:bg-zinc-900 prose-pre:text-zinc-50 prose-pre:border-zinc-800/60 prose-pre:shadow-xl hover:prose-pre:border-zinc-700/80 prose-pre:transition-all prose-pre:rounded-xl prose-pre:p-4
+                              prose-img:rounded-2xl prose-img:border prose-img:shadow-xl prose-img:bg-muted/50"
                             dangerouslySetInnerHTML={{ __html: marked.parse(sub.content as string) as string }}
                          />
                       </div>

@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Save, Plus, ChevronDown, ChevronRight, Code2, Type,
-  ArrowUp, ArrowDown, Loader2, X
+  ArrowUp, ArrowDown, Loader2, X, FileText
 } from "lucide-react";
 
 import { Editor } from "@/components/editor";
@@ -19,6 +19,7 @@ interface ModuleForm {
   title: string;
   description: string;
   icon: string;
+  status?: string;
   topics: TopicForm[];
   resources: ResourceForm[];
 }
@@ -28,10 +29,11 @@ const emptyResource = (): ResourceForm => ({ title: "", url: "", type: "ARTICLE"
 
 export default function NewModulePage() {
   const router = useRouter();
-  const [mode, setMode] = useState<"FORM" | "JSON">("FORM");
+  const [mode, setMode] = useState<"FORM" | "JSON" | "MARKDOWN">("FORM");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [jsonInput, setJsonInput] = useState("");
+  const [markdownInput, setMarkdownInput] = useState("");
 
   const [form, setForm] = useState<ModuleForm>({
     title: "", description: "", icon: "📦", topics: [], resources: []
@@ -56,13 +58,35 @@ export default function NewModulePage() {
     setMode("JSON");
   };
 
-  const handleSave = async () => {
+  // ── Markdown / AI Paste parse ────────────────────────────────────────────
+  const handleMarkdownParse = () => {
+    try {
+      const lines = markdownInput.split("\n");
+      const topics: TopicForm[] = [];
+      let currentTopic: TopicForm | null = null;
+      for (const line of lines) {
+        if (line.startsWith("## ")) {
+           currentTopic = { title: line.replace("## ", ""), content: "" };
+           topics.push(currentTopic);
+        } else if (currentTopic) {
+           currentTopic.content += line + "\n";
+        }
+      }
+      setForm({ ...form, topics: [...form.topics, ...topics] });
+      setMode("FORM"); setMarkdownInput(""); setError("");
+    } catch { setError("Failed to parse markdown"); }
+  };
+
+  const handleSave = async (forceStatus?: "PENDING" | "PUBLISHED") => {
     setSaving(true); setError("");
     try {
+      const payload = { ...form };
+      if (forceStatus) payload.status = forceStatus;
+
       const res = await fetch("/api/modules", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
       if (!res.ok) { const d = await res.json(); throw new Error(d.message || "Save failed"); }
       router.push("/admin/modules"); router.refresh();
@@ -76,16 +100,22 @@ export default function NewModulePage() {
           <h1 className="text-2xl font-bold tracking-tight">Create Standalone Module</h1>
           <p className="text-muted-foreground mt-1 text-sm">Standalone pages explaining elite system design concepts.</p>
         </div>
-        <Button onClick={handleSave} disabled={saving || !form.title} className="min-w-[120px]">
-          {saving ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...</> : <><Save className="h-4 w-4 mr-2" /> Create</>}
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => handleSave("PENDING")} disabled={saving || !form.title}>
+            Save as Draft
+          </Button>
+          <Button size="sm" onClick={() => handleSave("PUBLISHED")} disabled={saving || !form.title} className="bg-primary">
+            {saving ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...</> : "Publish Live"}
+          </Button>
+        </div>
       </div>
 
       {error && <div className="p-3 bg-destructive/15 text-destructive border border-destructive/20 rounded-md text-sm">{error}</div>}
 
-      <div className="flex bg-muted p-1 rounded-lg w-fit">
+      <div className="flex bg-muted p-1 rounded-lg w-fit gap-0.5">
         <Button variant={mode === "FORM" ? "secondary" : "ghost"} size="sm" onClick={() => setMode("FORM")}><Type className="h-4 w-4 mr-2" /> Form Builder</Button>
         <Button variant={mode === "JSON" ? "secondary" : "ghost"} size="sm" onClick={exportJson}><Code2 className="h-4 w-4 mr-2" /> JSON Mode</Button>
+        <Button variant={mode === "MARKDOWN" ? "secondary" : "ghost"} size="sm" onClick={() => setMode("MARKDOWN")}><FileText className="h-4 w-4 mr-2" /> AI/Markdown Paste</Button>
       </div>
 
       {mode === "JSON" && (
@@ -96,6 +126,25 @@ export default function NewModulePage() {
               placeholder={'{\n  "title": "Module Name",\n  "topics": [{"title": "Basics", "content":"..."}]\n}'}
             />
             <Button onClick={handleJsonParse}>Apply JSON to Form</Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {mode === "MARKDOWN" && (
+        <Card className="border-primary/20 bg-primary/5">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+               <FileText className="h-5 w-5 text-primary" />
+               AI / Markdown Paste Importer
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-xs text-muted-foreground">Pasting notes? Use `## Topic Title` for sections. Code blocks work correctly.</p>
+            <textarea value={markdownInput} onChange={e => setMarkdownInput(e.target.value)}
+              className="w-full h-96 rounded-md border border-input bg-background px-3 py-2 text-xs font-mono focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              placeholder={'## Introduction\nWelcome to Docker note details...\n\n## Next Chapter\nContainerization involves...'}
+            />
+            <Button onClick={handleMarkdownParse}>Apply Markdown to Form</Button>
           </CardContent>
         </Card>
       )}
