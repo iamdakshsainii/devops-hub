@@ -24,7 +24,7 @@ export function Navbar() {
 
   return (
     <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
-      <div className="container mx-auto flex h-16 items-center flex-wrap px-4 sm:px-8">
+      <div className="container mx-auto flex h-16 items-center px-4 sm:px-8">
         <Link href="/" className="flex items-center space-x-2 mr-6 hover:opacity-80 transition-opacity">
           <Terminal className="h-6 w-6 text-primary" />
           <span className="font-bold inline-block leading-none tracking-tight">
@@ -32,12 +32,14 @@ export function Navbar() {
           </span>
         </Link>
         
-        <div className="flex-1 hidden md:flex items-center justify-between mr-4 space-x-6">
+        <div className="flex-1 hidden md:flex items-center justify-between mr-4 space-x-8">
           <nav className="flex items-center space-x-6 text-sm font-medium">
-            <Link href="/modules" className="transition-colors hover:text-foreground/80 text-foreground/60">Modules</Link>
-            <Link href="/roadmap" className="transition-colors hover:text-foreground/80 text-foreground/60">Roadmap</Link>
-            <Link href="/resources" className="transition-colors hover:text-foreground/80 text-foreground/60">Resources</Link>
-            <Link href="/events" className="transition-colors hover:text-foreground/80 text-foreground/60">Events</Link>
+            <Link href="/" className="transition-colors hover:text-foreground text-foreground/70">Home</Link>
+            <Link href="/modules" className="transition-colors hover:text-foreground text-foreground/70">Modules</Link>
+            <Link href="/roadmap" className="transition-colors hover:text-foreground text-foreground/70">Roadmap</Link>
+            <Link href="/resources" className="transition-colors hover:text-foreground text-foreground/70">Resources</Link>
+            <Link href="/events" className="transition-colors hover:text-foreground text-foreground/70">Events</Link>
+            <Link href="/about" className="transition-colors hover:text-foreground text-foreground/70">About</Link>
           </nav>
           <div className="w-full max-w-sm relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -84,6 +86,12 @@ export function Navbar() {
                    <DropdownMenuItem asChild>
                      <Link href="/dashboard" className="cursor-pointer w-full">Dashboard</Link>
                    </DropdownMenuItem>
+
+                    {session?.user?.role === "MEMBER" && (
+                      <DropdownMenuItem className="cursor-pointer text-amber-500 font-semibold" asChild>
+                         <Link href="/request-admin" className="flex items-center w-full"><Shield className="mr-2 h-4 w-4" /> Apply for Admin</Link>
+                      </DropdownMenuItem>
+                    )}
                     {["ADMIN", "SUPER_ADMIN"].includes(session.user.role) && (
                       <DropdownMenuItem className="cursor-pointer" asChild>
                        <Link href="/admin" className="flex items-center w-full"><Shield className="mr-2 h-4 w-4" /> Moderation Panel</Link>

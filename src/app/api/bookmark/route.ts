@@ -11,7 +11,11 @@ export async function POST(req: Request) {
     const { itemId, itemType } = await req.json();
 
     const existing = await prisma.bookmark.findFirst({
-      where: { userId: session.user.id, itemType, ...(itemType === "NOTE" ? { noteId: itemId } : { resourceId: itemId }) }
+      where: { 
+         userId: session.user.id, 
+         itemType, 
+         ...(itemType === "NOTE" ? { noteId: itemId } : itemType === "MODULE" ? { stepId: itemId } : { resourceId: itemId }) 
+      }
     });
 
     if (existing) {
@@ -24,6 +28,7 @@ export async function POST(req: Request) {
           itemType,
           noteId: itemType === "NOTE" ? itemId : null,
           resourceId: itemType === "RESOURCE" ? itemId : null,
+          stepId: itemType === "MODULE" ? itemId : null,
         }
       });
       return NextResponse.json({ message: "Bookmarked", status: "added" });

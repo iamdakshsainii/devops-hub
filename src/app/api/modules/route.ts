@@ -4,9 +4,13 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 // GET ALL standalone modules
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const { searchParams } = new URL(req.url);
+    const all = searchParams.get("all") === "true";
+    
     const steps = await prisma.roadmapStep.findMany({
+      where: all ? {} : { status: "PUBLISHED" },
       orderBy: { createdAt: "desc" },
       include: {
         roadmap: { select: { title: true, color: true } },
@@ -49,6 +53,8 @@ export async function POST(req: Request) {
        _max: { order: true }
     });
 
+    const status = session.user.role === "SUPER_ADMIN" ? "PUBLISHED" : "PENDING";
+
     const step = await prisma.roadmapStep.create({
       data: {
         title,
@@ -56,8 +62,10 @@ export async function POST(req: Request) {
         icon: icon || "📦",
         order: (maxOrder._max.order ?? -1) + 1,
         roadmapId: targetRoadmapId,
+        status,
+        authorId: session.user.id,
         topics: {
-          create: topics?.map((t: any, idx: number) => ({ title: t.title, content: t.content || "", order: idx })) || []
+           create: topics?.map((t: any, idx: number) => ({ title: t.title, content: t.content || "", order: idx })) || []
         },
         resources: {
           create: resources?.map((r: any, idx: number) => ({ title: r.title, url: r.url, type: r.type || "ARTICLE", order: idx })) || []

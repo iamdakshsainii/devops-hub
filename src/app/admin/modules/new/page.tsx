@@ -10,6 +10,8 @@ import {
   ArrowUp, ArrowDown, Loader2, X
 } from "lucide-react";
 
+import { Editor } from "@/components/editor";
+
 interface TopicForm { title: string; content: string; }
 interface ResourceForm { title: string; url: string; type: string; }
 
@@ -135,9 +137,14 @@ export default function NewModulePage() {
                          }} placeholder="Topic Name" />
                          <button onClick={() => setForm({ ...form, topics: form.topics.filter((_, j) => j !== i) })} className="p-2 hover:bg-destructive/10 rounded"><X className="h-4 w-4 text-destructive" /></button>
                       </div>
-                      <textarea value={t.content} onChange={e => {
-                         const nt = [...form.topics]; nt[i].content = e.target.value; setForm({ ...form, topics: nt });
-                      }} placeholder="Supports HTML tags/scripts" className="w-full rounded-md border p-2 text-xs font-mono min-h-[120px]" />
+                      <Editor 
+                         content={t.content} 
+                         onChange={(html) => {
+                            const nt = [...form.topics]; 
+                            nt[i].content = html; 
+                            setForm({ ...form, topics: nt });
+                         }} 
+                      />
                    </div>
                 ))}
              </CardContent>

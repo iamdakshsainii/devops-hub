@@ -15,6 +15,7 @@ export default async function StepDetailPage({ params }: { params: Promise<{ id:
         include: {
           topics: { orderBy: { order: "asc" } },
           resources: { orderBy: { order: "asc" } },
+          author: { select: { fullName: true, avatarUrl: true } }
         }
       }
     }

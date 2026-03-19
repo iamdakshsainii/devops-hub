@@ -41,6 +41,7 @@ interface Step {
   order: number;
   topics: Topic[];
   resources: Resource[];
+  author?: { fullName?: string | null; avatarUrl?: string | null } | null;
 }
 
 interface PartialRoadmap {
@@ -80,6 +81,32 @@ export function StepViewer({ roadmap, step }: { roadmap: PartialRoadmap; step: S
     setSidebarOpen(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
+
+  const [subtopics, setSubtopics] = useState<{ text: string, level: number }[]>([]);
+
+  const scrollToHeading = (text: string) => {
+    const divs = document.querySelectorAll('.prose h2, .prose h3');
+    for (const div of Array.from(divs)) {
+      if (div.textContent?.trim() === text) {
+         div.scrollIntoView({ behavior: 'smooth', block: 'start' });
+         break;
+      }
+    }
+  };
+
+  // Parse sub-headings on content change
+  useState(() => {
+     const t = setTimeout(() => {
+        const divs = document.querySelectorAll('.prose h2, .prose h3');
+        const list: { text: string, level: number }[] = [];
+        divs.forEach(div => {
+            const text = div.textContent?.trim() || "";
+            if (text) list.push({ text, level: div.tagName === 'H2' ? 2 : 3 });
+        });
+        setSubtopics(list);
+     }, 500);
+     return () => clearTimeout(t);
+  });
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -151,6 +178,20 @@ export function StepViewer({ roadmap, step }: { roadmap: PartialRoadmap; step: S
               </div>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
+            
+            {step.author && (
+              <div className="mt-4 pt-3 border-t border-dashed flex items-center gap-2">
+                 {step.author.avatarUrl ? (
+                    <img src={step.author.avatarUrl} className="h-6 w-6 rounded-full overflow-hidden object-cover border"/>
+                 ) : (
+                    <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold">🎯</div>
+                 )}
+                 <div className="flex flex-col">
+                    <span className="text-[10px] text-muted-foreground uppercase font-semibold">Contributor</span>
+                    <span className="text-xs font-bold">{step.author.fullName || "Admin"}</span>
+                 </div>
+              </div>
+            )}
           </div>
 
           <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground/70 mb-4 px-2">Table of Contents</h3>
@@ -158,20 +199,35 @@ export function StepViewer({ roadmap, step }: { roadmap: PartialRoadmap; step: S
           {/* Topics List */}
           <nav className="space-y-1">
              {step.topics.map((topic, i) => (
-                <button
-                  key={topic.id}
-                  onClick={() => goToTopic(topic.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all text-left ${
-                     activeTopicId === topic.id
-                        ? "bg-primary/10 text-primary font-bold shadow-sm border border-primary/20"
-                        : "text-muted-foreground hover:bg-muted/60 hover:text-foreground border border-transparent"
-                  }`}
-                >
-                  <span className={`text-[10px] font-mono shrink-0 ${activeTopicId===topic.id?"text-primary/70":"text-muted-foreground/40"}`}>
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                  <span className="flex-1 truncate">{topic.title}</span>
-                </button>
+                <div key={topic.id} className="space-y-0.5">
+                   <button
+                     onClick={() => goToTopic(topic.id)}
+                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all text-left ${
+                        activeTopicId === topic.id
+                           ? "bg-primary/10 text-primary font-bold shadow-sm border border-primary/20"
+                           : "text-muted-foreground hover:bg-muted/60 hover:text-foreground border border-transparent"
+                     }`}
+                   >
+                     <span className={`text-[10px] font-mono shrink-0 ${activeTopicId===topic.id?"text-primary/70":"text-muted-foreground/40"}`}>
+                       {String(i + 1).padStart(2, "0")}
+                     </span>
+                     <span className="flex-1 truncate">{topic.title}</span>
+                   </button>
+                   
+                   {activeTopicId === topic.id && subtopics.length > 0 && (
+                      <div className="pl-6 flex flex-col space-y-1 mt-1 border-l-2 ml-4 border-muted/50">
+                        {subtopics.map((sub, j) => (
+                          <button
+                            key={j}
+                            onClick={() => scrollToHeading(sub.text)}
+                            className={`text-xs text-left py-1 px-2 rounded-md hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors truncate ${sub.level === 3 ? "pl-4 text-[11px]" : ""}`}
+                          >
+                             {sub.text}
+                          </button>
+                        ))}
+                      </div>
+                   )}
+                </div>
              ))}
 
              {step.topics.length === 0 && (

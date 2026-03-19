@@ -33,6 +33,7 @@ model User {
   events        Event[]
   notifications Notification[]
   adminRequests AdminRequest[]
+  steps         RoadmapStep[]
 }
 
 model Note {
@@ -157,12 +158,14 @@ model Bookmark {
   resourceId String?
   toolId    String?
   certId    String?
+  stepId    String?
 
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   note      Note?     @relation(fields: [noteId], references: [id], onDelete: Cascade)
   resource  Resource? @relation(fields: [resourceId], references: [id], onDelete: Cascade)
   tool      ToolComparison? @relation(fields: [toolId], references: [id], onDelete: Cascade)
   cert      CertGuide? @relation(fields: [certId], references: [id], onDelete: Cascade)
+  step      RoadmapStep? @relation(fields: [stepId], references: [id], onDelete: Cascade)
 }
 
 model Upvote {
@@ -173,21 +176,42 @@ model Upvote {
 
   noteId    String?
   resourceId String?
+  stepId    String?
 
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   note      Note?     @relation(fields: [noteId], references: [id], onDelete: Cascade)
   resource  Resource? @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  step      RoadmapStep? @relation(fields: [stepId], references: [id], onDelete: Cascade)
 }
 
 model AdminRequest {
   id        String   @id @default(cuid())
   userId    String
   reason    String?
+  category  String   @default("GENERAL") // GENERAL, MODULES, RESOURCES, EVENTS
   status    String   @default("PENDING") // PENDING, APPROVED, REJECTED
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ContactRequest {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  reason    String
+  message   String
+  status    String   @default("PENDING") // PENDING, READ, RESOLVED
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SystemSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
 }
 
 model Roadmap {
@@ -210,14 +234,20 @@ model RoadmapStep {
   description String
   icon        String   @default("📦")
   order       Int      @default(0)
+  status      String   @default("PENDING") // PENDING, PUBLISHED
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  roadmapId   String
-  roadmap     Roadmap  @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+  roadmapId   String?
+  roadmap     Roadmap?  @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+
+  authorId    String?
+  author      User?     @relation(fields: [authorId], references: [id], onDelete: SetNull)
 
   topics      RoadmapTopic[]
   resources   RoadmapResource[]
+  bookmarks   Bookmark[]
+  upvotes     Upvote[]
 }
 
 model RoadmapTopic {

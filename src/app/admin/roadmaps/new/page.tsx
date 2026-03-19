@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { Editor } from "@/components/editor";
+
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -238,9 +240,10 @@ export default function NewRoadmapPage() {
                             <Input value={topic.title} onChange={e=>updateTopic(si,ti,{title:e.target.value})} placeholder="Topic title" className="flex-1"/>
                             <button onClick={()=>removeTopic(si,ti)} className="p-2 hover:bg-destructive/10 rounded"><X className="h-4 w-4 text-destructive"/></button>
                           </div>
-                          <textarea value={topic.content} onChange={e=>updateTopic(si,ti,{content:e.target.value})}
-                            placeholder="HTML content (supports <h2>, <p>, <ul>, <code>, etc.)"
-                            className="w-full rounded-md border border-input bg-background px-3 py-2 text-xs font-mono min-h-[100px]"/>
+                          <Editor 
+                            content={topic.content} 
+                            onChange={(html) => updateTopic(si, ti, { content: html })} 
+                          />
                         </div>
                       ))}
                     </div>

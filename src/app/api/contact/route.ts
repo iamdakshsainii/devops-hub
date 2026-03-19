@@ -9,7 +9,11 @@ export async function POST(req: Request) {
        return NextResponse.json({ message: "Missing required fields" }, { status: 400 });
     }
 
-    // Direct system notification for SUPER_ADMINs that someone contacted
+    // Save to database
+    const contactReq = await prisma.contactRequest.create({
+      data: { name, email, reason, message }
+    });
+
     const superAdmins = await prisma.user.findMany({ where: { role: "SUPER_ADMIN" } });
 
     if (superAdmins.length > 0) {
@@ -18,8 +22,8 @@ export async function POST(req: Request) {
           userId: admin.id,
           type: "SYSTEM",
           title: "New Contact/Request",
-          message: `${name} (${email}) requested: ${reason.replace(/_/g, " ")}.`,
-          link: "/admin" // Can redirect to dashboard alerts 
+          message: `${name} requested: ${reason.replace(/_/g, " ")}.`,
+          link: `/admin/requests` // Redirect to detailed panel
         }))
       });
     }

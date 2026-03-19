@@ -10,6 +10,8 @@ import {
   GripVertical, ArrowUp, ArrowDown, Loader2, X
 } from "lucide-react";
 
+import { Editor } from "@/components/editor";
+
 interface TopicForm {
   title: string;
   content: string;
@@ -513,11 +515,9 @@ export default function RoadmapEditorPage({ params }: { params: Promise<{ id: st
                               <X className="h-4 w-4 text-destructive" />
                             </button>
                           </div>
-                          <textarea
-                            value={topic.content}
-                            onChange={(e) => updateTopic(si, ti, { content: e.target.value })}
-                            placeholder="HTML content for this topic (supports <h2>, <p>, <ul>, <code>, etc.)"
-                            className="w-full rounded-md border border-input bg-background px-3 py-2 text-xs font-mono min-h-[100px]"
+                          <Editor 
+                            content={topic.content} 
+                            onChange={(html) => updateTopic(si, ti, { content: html })} 
                           />
                         </div>
                       ))}

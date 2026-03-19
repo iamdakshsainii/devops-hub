@@ -40,6 +40,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <Link href="/admin/users" className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors">
              <Users className="h-4 w-4" /> Users
           </Link>
+          <Link href="/admin/requests" className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors">
+             <Shield className="h-4 w-4 text-amber-500" /> Requests & Inbox
+          </Link>
 
           {/* SUPER_ADMIN Only */}
           {isSuperAdmin && (

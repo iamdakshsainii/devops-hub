@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Terminal, Lightbulb, Map, Bookmark, Lock, Bell, Calendar, FileText, Database, ArrowRight, ArrowUpRight } from "lucide-react";
+import { Terminal, Lightbulb, Map, Bookmark, Lock, Bell, Calendar, FileText, Database, ArrowRight, ArrowUpRight, Shield } from "lucide-react";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -22,12 +22,11 @@ export default async function DashboardPage() {
     orderBy: { createdAt: "desc" }
   });
 
-  // Fetch latest notes
-  const latestNotes = await prisma.note.findMany({
-    where: { status: "PUBLISHED" },
+  // Fetch latest modules (steps)
+  const latestModules = await prisma.roadmapStep.findMany({
     orderBy: { createdAt: "desc" },
     take: 4,
-    include: { author: { select: { fullName: true } } }
+    include: { roadmap: { select: { title: true, color: true } }, _count: { select: { topics: true } } }
   });
 
   // Fetch latest resources
@@ -67,9 +66,14 @@ export default async function DashboardPage() {
               Here's your highly customized dashboard. Discover new architectures, prepare for certifications, and expand your DevOps skills.
             </p>
             <div className="flex gap-4 pt-2">
-              <Link href="/notes/new">
-                <Button className="rounded-full shadow-lg">Write a Note</Button>
+              <Link href="/modules">
+                <Button className="rounded-full shadow-lg">Explore Modules</Button>
               </Link>
+               {session?.user?.role === "MEMBER" && (
+                 <Link href="/request-admin">
+                    <Button variant="outline" className="rounded-full border-amber-500/20 hover:bg-amber-500/10 text-amber-500"><Shield className="h-4 w-4 mr-1.5" /> Apply for Admin</Button>
+                 </Link>
+               )}
               <Link href="/roadmap">
                 <Button variant="secondary" className="rounded-full">View Roadmap</Button>
               </Link>
@@ -103,50 +107,42 @@ export default async function DashboardPage() {
         {/* Main Feed */}
         <div className="lg:col-span-2 space-y-12">
           
-          {/* Latest Notes */}
+          {/* Latest Modules */}
           <section className="space-y-6">
             <div className="flex items-center justify-between border-b pb-4">
               <h2 className="text-2xl font-bold flex items-center gap-2">
-                <FileText className="h-6 w-6 text-primary" /> Latest Notes
+                <Terminal className="h-6 w-6 text-primary" /> Latest Modules
               </h2>
-              <Link href="/notes"><Button variant="ghost" size="sm" className="group">View all <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" /></Button></Link>
+              <Link href="/modules"><Button variant="ghost" size="sm" className="group">View all <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" /></Button></Link>
             </div>
             
-            {latestNotes.length > 0 ? (
+            {latestModules.length > 0 ? (
               <div className="grid sm:grid-cols-2 gap-6">
-                {latestNotes.map(note => (
-                  <Card key={note.id} className="group overflow-hidden flex flex-col hover:border-foreground/30 transition-all hover:shadow-md cursor-pointer">
-                    <Link href={`/notes/${note.id}`} className="absolute inset-0 z-10">
-                      <span className="sr-only">View Note</span>
+                {latestModules.map(mod => (
+                  <Card key={mod.id} className="group overflow-hidden flex flex-col hover:border-foreground/30 transition-all hover:shadow-md cursor-pointer relative">
+                    <Link href={`/modules?id=${mod.id}`} className="absolute inset-0 z-10">
+                      <span className="sr-only">View Module</span>
                     </Link>
-                    {note.coverImage && (
-                      <div className="h-32 w-full overflow-hidden bg-muted border-b">
-                        <img src={note.coverImage} alt={note.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                      </div>
-                    )}
-                    <CardHeader className={note.coverImage ? "p-4 pb-2" : "p-6 pb-2"}>
+                    <div className="h-1" style={{ backgroundColor: mod.roadmap?.color || "#3B82F6" }} />
+                    <CardHeader className="p-5 pb-2">
                       <div className="flex justify-between items-start mb-2">
                         <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground bg-muted px-2 py-0.5 rounded">
-                          {note.tags.split(',')[0]}
+                          {mod.icon} Module 
                         </span>
-                        <span className="text-xs text-muted-foreground">{note.readTime} min read</span>
+                        <span className="text-xs text-muted-foreground">{mod._count.topics} Topics</span>
                       </div>
-                      <CardTitle className="text-lg leading-tight group-hover:text-primary transition-colors">{note.title}</CardTitle>
+                      <CardTitle className="text-lg leading-tight group-hover:text-primary transition-colors">{mod.title}</CardTitle>
                     </CardHeader>
-                    <CardContent className="px-4 pb-4 pt-1 mt-auto">
-                      <div className="flex items-center justify-between mt-4">
-                        <p className="text-xs font-medium text-muted-foreground">By {note.author.fullName || "Community Member"}</p>
-                        <ArrowUpRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                      </div>
+                    <CardContent className="px-5 pb-5 pt-1 mt-auto">
+                      <p className="text-xs text-muted-foreground line-clamp-2">{mod.description || "Standalone knowledge node."}</p>
                     </CardContent>
                   </Card>
                 ))}
               </div>
             ) : (
               <div className="text-center p-12 py-16 border rounded-2xl bg-muted/5 border-dashed">
-                <FileText className="h-10 w-10 text-muted-foreground/30 mx-auto mb-4" />
-                <p className="text-muted-foreground mb-4">No notes published yet.</p>
-                <Link href="/notes/new"><Button variant="secondary">Write the first note</Button></Link>
+                <Terminal className="h-10 w-10 text-muted-foreground/30 mx-auto mb-4" />
+                <p className="text-muted-foreground">No modules published yet.</p>
               </div>
             )}
           </section>
@@ -187,8 +183,7 @@ export default async function DashboardPage() {
             ) : (
               <div className="text-center p-12 py-16 border rounded-2xl bg-muted/5 border-dashed">
                 <Database className="h-10 w-10 text-muted-foreground/30 mx-auto mb-4" />
-                <p className="text-muted-foreground mb-4">No resources shared yet.</p>
-                <Link href="/resources/new"><Button variant="secondary">Share a resource</Button></Link>
+                <p className="text-muted-foreground">No resources shared yet.</p>
               </div>
             )}
           </section>
