@@ -25,13 +25,13 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
     if (isAdmin) {
       updateData = { status: status || "PUBLISHED" };
       if (note) {
-         let history: any[] = [];
-         const evt: any = existingEvent;
-         try { history = JSON.parse(evt.feedback || "[]") } catch {
-            if (evt.feedback) history = [{ note: evt.feedback, timestamp: new Date().toLocaleDateString() }];
-         }
-         history.push({ note, timestamp: new Date().toLocaleString() });
-         updateData.feedback = JSON.stringify(history);
+        let history: any[] = [];
+        const evt: any = existingEvent;
+        try { history = JSON.parse(evt.feedback || "[]") } catch {
+          if (evt.feedback) history = [{ note: evt.feedback, timestamp: new Date().toLocaleDateString() }];
+        }
+        history.push({ note, timestamp: new Date().toLocaleString() });
+        updateData.feedback = JSON.stringify(history);
       }
     } else if (isAuthor) {
       if (title) updateData.title = title;
@@ -62,7 +62,7 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
           }))
         });
       }
-    } 
+    }
     else if (isAdmin && status === "REJECTED" && note && event.authorId) {
       await prisma.notification.create({
         data: {
@@ -75,26 +75,26 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
       });
     } else if (isAuthor && event.authorId) {
       const admins = await prisma.user.findMany({
-         where: { role: { in: ["ADMIN", "SUPER_ADMIN"] } },
-         select: { id: true }
+        where: { role: { in: ["ADMIN", "SUPER_ADMIN"] } },
+        select: { id: true }
       });
       if (admins.length > 0) {
-         await prisma.notification.createMany({
-            data: admins.map(admin => ({
-               userId: admin.id,
-               type: "NEW_SUBMISSION",
-               title: "🔔 Event Resubmitted for Approval",
-               message: `${session.user.name || "User"} resubmitted details for "${event.title}".`,
-               link: `/admin/events`
-            }))
-         });
+        await prisma.notification.createMany({
+          data: admins.map(admin => ({
+            userId: admin.id,
+            type: "NEW_SUBMISSION",
+            title: "🔔 Event Resubmitted for Approval",
+            message: `${session.user.name || "User"} resubmitted details for "${event.title}".`,
+            link: `/admin/events`
+          }))
+        });
       }
     }
 
     return NextResponse.json({ message: "Updated", event });
-  } catch (error) { 
+  } catch (error) {
     console.error("PUT Error:", error);
-    return NextResponse.json({ message: "Failed to update" }, { status: 500 }); 
+    return NextResponse.json({ message: "Failed to update" }, { status: 500 });
   }
 }
 

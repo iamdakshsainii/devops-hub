@@ -95,7 +95,7 @@ export default function ContactPage() {
                      rows={5}
                      value={form.message} 
                      onChange={e => setForm({...form, message: e.target.value})} 
-                     placeholder="Provide links or specific descriptions of what you'd like added to the DevOps Hub..." 
+                     placeholder="Provide links or specific descriptions of what you'd like added to the DevOps Network..." 
                   />
                </div>
 

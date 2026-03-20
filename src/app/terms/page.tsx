@@ -4,12 +4,12 @@ export default function TermsPage() {
       <h1 className="text-4xl font-extrabold mb-8 tracking-tight">Terms of Service</h1>
       <div className="prose prose-base dark:prose-invert max-w-none">
         <p className="lead text-xl text-muted-foreground mb-8">
-          Welcome to DevOps Hub. By using our platform, you agree to these terms.
+          Welcome to DevOps Network. By using our platform, you agree to these terms.
         </p>
 
         <h2>1. Acceptance of Terms</h2>
         <p>
-          By accessing and using DevOps Hub, you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to abide by these terms, please do not use our service.
+          By accessing and using DevOps Network, you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to abide by these terms, please do not use our service.
         </p>
 
         <h2>2. User Content and Conduct</h2>
@@ -25,7 +25,7 @@ export default function TermsPage() {
 
         <h2>3. Intellectual Property</h2>
         <p>
-          The roadmaps, curated content, design, and original resources provided by DevOps Hub are protected by intellectual property laws. You may not reproduce our core platform code or premium content without explicit permission.
+          The roadmaps, curated content, design, and original resources provided by DevOps Network are protected by intellectual property laws. You may not reproduce our core platform code or premium content without explicit permission.
         </p>
 
         <h2>4. Disclaimer of Warranties</h2>
@@ -35,7 +35,7 @@ export default function TermsPage() {
 
         <h2>5. Limitation of Liability</h2>
         <p>
-          In no event shall DevOps Hub or its creators be liable for any direct, indirect, incidental, or consequential damages arising out of the use or inability to use our platform.
+          In no event shall DevOps Network or its creators be liable for any direct, indirect, incidental, or consequential damages arising out of the use or inability to use our platform.
         </p>
         
         <p className="text-sm text-muted-foreground mt-12 pt-8 border-t">

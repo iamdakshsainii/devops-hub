@@ -9,7 +9,7 @@ import { FloatingContact } from "@/components/floating-contact";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "DevOps Hub",
+  title: "DevOps Network",
   description: "A one-stop platform for DevOps engineers and students.",
 };
 

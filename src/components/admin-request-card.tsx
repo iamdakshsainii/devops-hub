@@ -13,7 +13,7 @@ export function AdminRequestCard({ hasPendingRequest, isAdmin }: { hasPendingReq
     return (
       <div className="bg-primary/10 border border-primary/20 rounded-xl p-6 shadow-sm">
         <h3 className="text-lg font-bold text-primary mb-1">Administrative Access Active</h3>
-        <p className="text-sm text-foreground/80">You currently hold Admin or Super Admin privileges on DevOps Hub.</p>
+        <p className="text-sm text-foreground/80">You currently hold Admin or Super Admin privileges on DevOps Network.</p>
       </div>
     );
   }

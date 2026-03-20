@@ -20,8 +20,8 @@ model User {
   twitterUrl    String?
   linkedinUrl   String?
   certifications String?
-  role          String    @default("MEMBER") // "MEMBER", "ADMIN", "SUPER_ADMIN"
-  permissions   String?   // comma-separated rules like "MANAGE_NOTES,MANAGE_EVENTS"
+  role          String    @default("MEMBER")
+  permissions   String?
   score         Int       @default(0)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -75,22 +75,23 @@ model Resource {
 }
 
 model Event {
-  id           String   @id @default(cuid())
+  id           String    @id @default(cuid())
   title        String
   description  String
   type         String
   startTime    DateTime
+  endTime      DateTime? // Optional end time — used to detect ongoing events
   externalLink String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  status       String   @default("PENDING")
-  imageUrls    String?  // comma-separated list of image URLs for the gallery
-  feedback     String?  // Note/Feedback from Admin
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  status       String    @default("PENDING")
+  imageUrls    String?
+  feedback     String?
 
-  authorId     String?
-  author       User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  authorId        String?
+  author          User?      @relation(fields: [authorId], references: [id], onDelete: SetNull)
 
-  interestedCount Int   @default(0)
+  interestedCount Int        @default(0)
   bookmarks       Bookmark[]
 }
 
@@ -108,7 +109,7 @@ model Notification {
   title     String
   message   String
   link      String?
-  type      String   // e.g "APPROVAL", "NEW_SUBMISSION", "SYSTEM"
+  type      String
   isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
 
@@ -162,6 +163,7 @@ model Bookmark {
   certId     String?
   stepId     String?
   eventId    String?
+  remindMe   Boolean   @default(false)
 
   user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   note       Note?           @relation(fields: [noteId], references: [id], onDelete: Cascade)
@@ -192,8 +194,8 @@ model AdminRequest {
   id        String   @id @default(cuid())
   userId    String
   reason    String?
-  category  String   @default("GENERAL") // GENERAL, MODULES, RESOURCES, EVENTS
-  status    String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  category  String   @default("GENERAL")
+  status    String   @default("PENDING")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -206,7 +208,7 @@ model ContactRequest {
   email     String
   reason    String
   message   String
-  status    String   @default("PENDING") // PENDING, READ, RESOLVED
+  status    String   @default("PENDING")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -238,7 +240,7 @@ model RoadmapStep {
   description String
   icon        String   @default("📦")
   order       Int      @default(0)
-  status      String   @default("PENDING") // PENDING, PUBLISHED
+  status      String   @default("PENDING")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -257,7 +259,7 @@ model RoadmapStep {
 model RoadmapTopic {
   id        String   @id @default(cuid())
   title     String
-  content   String?  // Optional if using subtopics
+  content   String?
   order     Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -290,10 +292,6 @@ model RoadmapResource {
   order            Int      @default(0)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
-
-  // Back-link to the mirrored row in the global Resource table.
-  // Set when the module editor creates or updates a resource.
-  // Used to keep both tables in sync on edit and delete.
   globalResourceId String?
 
   stepId           String

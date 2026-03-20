@@ -10,7 +10,7 @@ export function Footer() {
             <Link href="/" className="flex items-center space-x-2">
               <Terminal className="h-6 w-6 text-foreground" />
               <span className="font-bold inline-block leading-none tracking-tight">
-                DevOps Hub
+                DevOps Network
               </span>
             </Link>
             <p className="text-sm text-muted-foreground w-full max-w-xs leading-relaxed">
@@ -54,7 +54,7 @@ export function Footer() {
           </div>
         </div>
         <div className="border-t mt-12 pt-8 flex flex-col md:flex-row items-center justify-between text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} DevOps Hub. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} DevOps Network. All rights reserved.</p>
           <p className="mt-4 md:mt-0">
             Engineered with passion for the community.
           </p>

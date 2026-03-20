@@ -4,7 +4,7 @@ export default function PrivacyPage() {
       <h1 className="text-4xl font-extrabold mb-8 tracking-tight">Privacy Policy</h1>
       <div className="prose prose-base dark:prose-invert max-w-none">
         <p className="lead text-xl text-muted-foreground mb-8">
-          At DevOps Hub, we take your privacy seriously. This policy outlines what data we collect and how we use it.
+          At DevOps Network, we take your privacy seriously. This policy outlines what data we collect and how we use it.
         </p>
 
         <h2>1. Information We Collect</h2>
@@ -14,7 +14,7 @@ export default function PrivacyPage() {
         <ul>
           <li><strong>Account Information:</strong> Your name, email address, and profile picture (via Google OAuth).</li>
           <li><strong>Usage Data:</strong> How you interact with our roadmaps, notes, and community resources.</li>
-          <li><strong>Content Provided:</strong> Any notes, comments, or links you securely submit to DevOps Hub.</li>
+          <li><strong>Content Provided:</strong> Any notes, comments, or links you securely submit to DevOps Network.</li>
         </ul>
 
         <h2>2. How We Use Your Data</h2>
