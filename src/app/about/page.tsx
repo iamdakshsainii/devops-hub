@@ -1,88 +1,246 @@
-import { Button } from "@/components/ui/button";
-import { Github, Linkedin, Twitter, Mail, Globe, Heart, Shield, Award } from "lucide-react";
-import Link from "next/link";
+"use client";
 
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Github, Linkedin, Instagram, Mail, ArrowUpRight, CheckCircle2, XCircle } from "lucide-react";
+import Link from "next/link";
+import Image from "next/image";
+
+// ── Typewriter ────────────────────────────────────────────────────────────────
+function Typewriter({ words }: { words: string[] }) {
+  const [wi, setWi] = useState(0);
+  const [text, setText] = useState("");
+  const [del, setDel] = useState(false);
+
+  useEffect(() => {
+    const word = words[wi];
+    let t: ReturnType<typeof setTimeout>;
+    if (!del && text.length < word.length)
+      t = setTimeout(() => setText(word.slice(0, text.length + 1)), 75);
+    else if (!del)
+      t = setTimeout(() => setDel(true), 2000);
+    else if (del && text.length > 0)
+      t = setTimeout(() => setText(text.slice(0, -1)), 35);
+    else { setDel(false); setWi((i) => (i + 1) % words.length); }
+    return () => clearTimeout(t);
+  }, [text, del, wi, words]);
+
+  return <span className="text-primary">{text}<span className="animate-pulse">|</span></span>;
+}
+
+// ── Contact row ───────────────────────────────────────────────────────────────
+function CRow({ label, sub, href, icon: Icon }:
+  { label: string; sub: string; href: string; icon: React.ElementType }) {
+  return (
+    <Link href={href} target={href.startsWith("http") ? "_blank" : undefined}>
+      <div className="group flex items-center justify-between p-4 rounded-xl border border-border
+        hover:border-primary/40 hover:bg-muted/40 transition-all duration-200">
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center
+            group-hover:bg-primary/10 transition-colors">
+            <Icon className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold">{label}</p>
+            <p className="text-xs text-muted-foreground">{sub}</p>
+          </div>
+        </div>
+        <ArrowUpRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-primary transition-colors" />
+      </div>
+    </Link>
+  );
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
 export default function AboutPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Hero Section */}
-      <div className="relative overflow-hidden border-b bg-muted/30">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5 z-0" />
-        <div className="container mx-auto max-w-5xl px-4 py-20 md:py-28 text-center relative z-10 space-y-4">
-          <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight">
-            About <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary/80">DevOps Network</span>
-          </h1>
-          <p className="text-muted-foreground text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">
-            A comprehensive, structured platform designed to bridge the gap between core systems and modern continuous delivery.
+
+      {/* ── Creator intro — brief, human, not the focus ── */}
+      <section className="container mx-auto max-w-4xl px-6 pt-20 pb-16">
+        <div className="grid md:grid-cols-[1fr_auto] gap-10 items-center">
+          <div className="space-y-5">
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+              <span className="h-px w-6 bg-primary inline-block" />
+              Who built this
+            </div>
+
+            <div className="space-y-2">
+              <h1 className="text-4xl md:text-5xl font-black tracking-tight leading-tight">
+                Hey, I'm Daksh.
+              </h1>
+              <p className="text-lg text-muted-foreground font-light">
+                DevOps engineer, full-stack enthusiast, and the{" "}
+                <Typewriter words={["founder.", "creator.", "admin.", "person who built this."]} />
+              </p>
+            </div>
+
+            <p className="text-muted-foreground leading-relaxed max-w-lg">
+              I built DevOps Hub because I was tired of the same problem every engineer faces
+              when trying to get serious about DevOps — too much content, no structure, and
+              nothing that reflects what production actually looks like.
+            </p>
+
+            <div className="flex gap-2 pt-1">
+              {[
+                { href: "https://github.com/iamdakshsainii", icon: Github, label: "GitHub" },
+                { href: "https://www.linkedin.com/in/daksh-saini", icon: Linkedin, label: "LinkedIn" },
+                { href: "https://instagram.com/iamdakshsainii", icon: Instagram, label: "Instagram" },
+                { href: "mailto:sainidaksh70@gmail.com", icon: Mail, label: "Email" },
+              ].map((s) => (
+                <Link key={s.label} href={s.href} target="_blank">
+                  <Button variant="outline" size="icon" className="h-9 w-9 rounded-full">
+                    <s.icon className="h-4 w-4" />
+                  </Button>
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          {/* Avatar — small, not the hero */}
+          <div className="hidden md:flex flex-col items-center gap-3">
+            <div className="relative">
+              <div className="absolute -inset-3 rounded-3xl bg-primary/10 blur-xl" />
+              <div className="relative h-36 w-36 rounded-3xl bg-muted border overflow-hidden">
+                <Image src="/admin.jpg" alt="Daksh Saini" fill className="object-cover" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div className="border-t border-dashed" />
+
+      {/* ── The problem ── */}
+      <section className="container mx-auto max-w-4xl px-6 py-16 grid md:grid-cols-[180px_1fr] gap-12">
+        <div className="space-y-2">
+          <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">The problem</p>
+          <h2 className="text-3xl font-black leading-tight">Learning<br />DevOps is<br />broken.</h2>
+        </div>
+
+        <div className="space-y-6">
+          <p className="text-muted-foreground leading-7">
+            Every engineer starting out in DevOps hits the same wall. There's no shortage of content —
+            there's a shortage of <em>structure</em>. Tutorials exist in isolation. YouTube playlists
+            cover tools, not systems. Documentation assumes you already know everything.
+            And nothing connects the dots between learning a tool and using it in production.
+          </p>
+
+          {/* Pain points */}
+          <div className="grid sm:grid-cols-2 gap-3">
+            {[
+              "Scattered tutorials with no clear progression",
+              "Outdated content that doesn't reflect real infra",
+              "No community that speaks plainly about production",
+              "Resources dumped with no context or sequence",
+              "Roadmaps that list tools but skip the why",
+              "Nowhere to find what actually works at scale",
+            ].map((p) => (
+              <div key={p} className="flex items-start gap-2.5 p-3 rounded-lg bg-destructive/5 border border-destructive/10">
+                <XCircle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+                <p className="text-sm text-muted-foreground leading-snug">{p}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <div className="border-t border-dashed" />
+
+      {/* ── The solution ── */}
+      <section className="container mx-auto max-w-4xl px-6 py-16 grid md:grid-cols-[180px_1fr] gap-12">
+        <div className="space-y-2">
+          <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">The solution</p>
+          <h2 className="text-3xl font-black leading-tight">That's what<br />we're here<br />to fix.</h2>
+        </div>
+
+        <div className="space-y-6">
+          <p className="text-muted-foreground leading-7">
+            DevOps Hub is built around one idea: structure beats volume. You don't need more
+            content — you need a map, vetted resources that actually matter, and a community
+            of engineers sharing what works in the real world.
+          </p>
+
+          {/* Solutions */}
+          <div className="grid sm:grid-cols-2 gap-3">
+            {[
+              "Structured roadmaps that mirror how real teams operate",
+              "Curated resources — no noise, no affiliate filler",
+              "Module-based learning with production-level context",
+              "Community-submitted tools, notes, and events",
+              "Admin-vetted content so quality stays high",
+              "Free. Always. No paywalls, no subscriptions",
+            ].map((s) => (
+              <div key={s} className="flex items-start gap-2.5 p-3 rounded-lg bg-primary/5 border border-primary/10">
+                <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                <p className="text-sm text-muted-foreground leading-snug">{s}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <div className="border-t border-dashed" />
+
+      {/* ── Values ── */}
+      <section className="container mx-auto max-w-4xl px-6 py-16 space-y-10">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">Principles</p>
+          <h2 className="text-2xl font-black">Three things this platform never compromises on.</h2>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-px bg-border rounded-2xl overflow-hidden border">
+          {[
+            {
+              n: "01",
+              title: "Honest over hyped",
+              desc: "If a tool is hard to operate in production, we say so. No sugarcoating difficulty to seem more beginner-friendly.",
+            },
+            {
+              n: "02",
+              title: "Structure over noise",
+              desc: "Every resource, module, and roadmap connects to a bigger map. Nothing here is a random dump of links.",
+            },
+            {
+              n: "03",
+              title: "Community over solo",
+              desc: "The best knowledge comes from engineers shipping real systems. This platform exists to surface and share that.",
+            },
+          ].map((v) => (
+            <div key={v.n} className="bg-background p-8 space-y-3">
+              <p className="text-5xl font-black text-muted-foreground/10 leading-none">{v.n}</p>
+              <h3 className="font-bold leading-tight">{v.title}</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">{v.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <div className="border-t border-dashed" />
+
+      {/* ── Contact ── */}
+      <section className="container mx-auto max-w-4xl px-6 py-20 grid md:grid-cols-2 gap-12 items-center">
+        <div className="space-y-4">
+          <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Get in touch</p>
+          <h2 className="text-4xl font-black leading-tight">
+            Want to help<br />build this?
+          </h2>
+          <p className="text-muted-foreground leading-relaxed">
+            Feature ideas, resource suggestions, collaboration proposals, or just feedback —
+            everything helps. Reach out on any platform.
           </p>
         </div>
-      </div>
 
-      {/* Profile & Handles */}
-      <div className="container mx-auto max-w-5xl px-4 py-16 grid md:grid-cols-[280px_1fr] gap-12 items-start">
-        <div className="space-y-6 sticky top-24">
-          <div className="relative group mx-auto md:mx-0 w-max">
-            <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-primary to-primary/40 blur-xl opacity-30 group-hover:opacity-50 transition-all duration-500"></div>
-            <div className="h-48 w-48 rounded-3xl bg-secondary border flex items-center justify-center relative overflow-hidden">
-              <span className="text-5xl">👑</span>
-            </div>
-          </div>
-
-          <div className="text-center md:text-left">
-            <h2 className="text-2xl font-bold">Admin / Creator</h2>
-            <p className="text-sm text-muted-foreground mt-1">Full-Stack & DevOps Engineer</p>
-          </div>
-
-          <div className="flex flex-wrap justify-center md:justify-start gap-2">
-            <Link href="https://github.com" target="_blank">
-              <Button variant="outline" size="icon" className="h-9 w-9 rounded-full"><Github className="h-4 w-4" /></Button>
-            </Link>
-            <Link href="https://linkedin.com" target="_blank">
-              <Button variant="outline" size="icon" className="h-9 w-9 rounded-full text-blue-600"><Linkedin className="h-4 w-4" /></Button>
-            </Link>
-            <Link href="https://twitter.com" target="_blank">
-              <Button variant="outline" size="icon" className="h-9 w-9 rounded-full text-sky-400"><Twitter className="h-4 w-4" /></Button>
-            </Link>
-            <Link href="mailto:admin@example.com">
-              <Button variant="outline" size="icon" className="h-9 w-9 rounded-full"><Mail className="h-4 w-4" /></Button>
-            </Link>
-          </div>
+        <div className="space-y-2">
+          {[
+            { label: "Drop a message", sub: "Via the contact form", href: "/contact", icon: Mail },
+            { label: "Connect on LinkedIn", sub: "Professional enquiries", href: "https://www.linkedin.com/in/daksh-saini", icon: Linkedin },
+            { label: "Follow on Instagram", sub: "Behind the scenes", href: "https://instagram.com/iamdakshsainii", icon: Instagram },
+            { label: "See the code", sub: "github.com/iamdakshsainii", href: "https://github.com/iamdakshsainii", icon: Github },
+          ].map((c) => <CRow key={c.label} {...c} />)}
         </div>
+      </section>
 
-        <div className="space-y-10">
-          <section className="space-y-4">
-            <h3 className="text-2xl font-bold">Our Vision</h3>
-            <p className="text-muted-foreground leading-relaxed">
-              DevOps Network was built with a single goal in mind: simplifying complexity.
-              The infrastructure and cloud-native landscape moves incredibly fast. Typical guides are either overloaded with theory or outdated static files.
-            </p>
-            <p className="text-muted-foreground leading-relaxed">
-              This platform acts as a lived visual layout, providing structured roadmaps, independent standalone module trackers, and curated feeds ensuring you learn continuous operations natively bounding standards.
-            </p>
-          </section>
-
-          <section className="grid sm:grid-cols-2 gap-4">
-            <div className="p-5 border rounded-2xl bg-card/50 space-y-2">
-              <Heart className="h-6 w-6 text-primary" />
-              <h4 className="font-bold">Community Driven</h4>
-              <p className="text-xs text-muted-foreground">Built to serve the ecosystem without corporate paywalls workflows.</p>
-            </div>
-            <div className="p-5 border rounded-2xl bg-card/50 space-y-2">
-              <Shield className="h-6 w-6 text-emerald-500" />
-              <h4 className="font-bold">Production Graded</h4>
-              <p className="text-xs text-muted-foreground">Standard setups extracted directly from live configurations maps models.</p>
-            </div>
-          </section>
-
-          <section className="pt-8 border-t space-y-4">
-            <h4 className="font-bold text-lg">Reach Out & Feedbacks</h4>
-            <p className="text-sm text-muted-foreground">Have feature requests, notes to share, or consulting inquires? Drop a suggestions on the contact form below or reach natively directly inside social feeds lists bounding streams!</p>
-            <Link href="/contact">
-              <Button className="rounded-full">Get In Touch</Button>
-            </Link>
-          </section>
-        </div>
-      </div>
     </div>
-  )
+  );
 }

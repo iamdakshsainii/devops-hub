@@ -6,20 +6,27 @@ import { Button } from "@/components/ui/button";
 import { marked } from "marked";
 import hljs from "highlight.js";
 import {
-  FileText, ExternalLink, Youtube, BookOpen,
+  FileText, Youtube, BookOpen,
   Download, Link as LinkIcon, ArrowLeft, ArrowRight,
-  Menu, X, Map,
+  Menu, X, Map, ChevronDown, ChevronRight,
 } from "lucide-react";
 import { ResourceCard } from "@/components/resource-card";
 
 // ── Types ──────────────────────────────────────────────────────────────────
+
+interface Subtopic {
+  id: string;
+  title: string;
+  content: string;
+  order: number;
+}
 
 interface Topic {
   id: string;
   title: string;
   content: string | null;
   order: number;
-  subtopics?: { id: string; title: string; content: string; order: number }[];
+  subtopics?: Subtopic[];
 }
 
 interface Resource {
@@ -50,6 +57,11 @@ interface PartialRoadmap {
   color: string;
 }
 
+// Active view — either a topic (shows intro + all subtopics) or a single subtopic
+type ActiveView =
+  | { kind: "topic"; topicId: string }
+  | { kind: "subtopic"; topicId: string; subtopicId: string };
+
 // ── Resource icon helper ───────────────────────────────────────────────────
 
 const resourceIcon = (type: string) => {
@@ -74,14 +86,11 @@ function buildRenderer() {
   const renderer = new marked.Renderer();
 
   renderer.code = function ({ text, lang }: { text: string; lang?: string }) {
-    // Preserve internal blank lines (spacing fix) — only trim outer blank lines
     const trimmed = text.replace(/^\n+/, "").replace(/\n+$/, "");
-
     const isPlain = !lang || !hljs.getLanguage(lang);
     const validLang = isPlain ? "plaintext" : lang!;
     const highlighted = hljs.highlight(trimmed, { language: validLang }).value;
 
-    // Give plaintext/no-lang blocks a meaningful label + terminal style
     let label: string;
     let blockClass: string;
     if (isPlain) {
@@ -159,27 +168,104 @@ const PROSE = [
   "prose-pre:p-0 prose-pre:m-0 prose-pre:bg-transparent prose-pre:shadow-none prose-pre:border-0 prose-pre:rounded-none",
 ].join(" ");
 
+// ── Build a flat sequential list for prev/next navigation ─────────────────
+// Order: topic (overview) → its subtopics → next topic → its subtopics → ...
+
+function buildNavSequence(topics: Topic[]): ActiveView[] {
+  const seq: ActiveView[] = [];
+  for (const topic of topics) {
+    // Only add topic overview if it has intro content OR no subtopics
+    if (topic.content || !topic.subtopics || topic.subtopics.length === 0) {
+      seq.push({ kind: "topic", topicId: topic.id });
+    }
+    if (topic.subtopics) {
+      for (const sub of topic.subtopics) {
+        seq.push({ kind: "subtopic", topicId: topic.id, subtopicId: sub.id });
+      }
+    }
+    // If topic has subtopics but no intro content, still add a topic entry
+    // so the sidebar topic button is navigable — skip it in sequence if no content
+    if (!topic.content && topic.subtopics && topic.subtopics.length > 0) {
+      // already added subtopics above; topic overview skipped in sequence
+    }
+  }
+  return seq;
+}
+
+function viewKey(v: ActiveView): string {
+  return v.kind === "topic" ? `t:${v.topicId}` : `s:${v.subtopicId}`;
+}
+
 // ── Component ─────────────────────────────────────────────────────────────
 
 export function StepViewer({ roadmap, step }: { roadmap: PartialRoadmap; step: Step }) {
-  const [activeTopicId, setActiveTopicId] = useState<string | null>(
-    step.topics.length > 0 ? step.topics[0].id : null
-  );
+  // Default to first subtopic if first topic has subtopics and no intro content
+  const getDefaultView = (): ActiveView => {
+    const first = step.topics[0];
+    if (!first) return { kind: "topic", topicId: "" };
+    if (!first.content && first.subtopics && first.subtopics.length > 0) {
+      return { kind: "subtopic", topicId: first.id, subtopicId: first.subtopics[0].id };
+    }
+    return { kind: "topic", topicId: first.id };
+  };
+
+  const [activeView, setActiveView] = useState<ActiveView>(getDefaultView);
+  const [expandedTopics, setExpandedTopics] = useState<Set<string>>(() => {
+    // Auto-expand the first topic's subtopics
+    const s = new Set<string>();
+    if (step.topics[0]) s.add(step.topics[0].id);
+    return s;
+  });
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const activeTopic = step.topics.find((t) => t.id === activeTopicId) ?? null;
-  const currentIndex = activeTopic ? step.topics.findIndex((t) => t.id === activeTopicId) : -1;
+  const navSequence = buildNavSequence(step.topics);
+  const currentNavIndex = navSequence.findIndex((v) => viewKey(v) === viewKey(activeView));
+
+  // Derive active topic and subtopic from view state
+  const activeTopic = step.topics.find((t) => t.id === activeView.topicId) ?? null;
+  const activeSubtopic =
+    activeView.kind === "subtopic"
+      ? activeTopic?.subtopics?.find((s) => s.id === activeView.subtopicId) ?? null
+      : null;
 
   useEffect(() => {
     const t = setTimeout(() => wireCopyButtons("devhub-content-area"), 150);
     return () => clearTimeout(t);
-  }, [activeTopicId]);
+  }, [activeView]);
 
-  const goToTopic = useCallback((topicId: string) => {
-    setActiveTopicId(topicId);
+  const navigate = useCallback((view: ActiveView) => {
+    setActiveView(view);
     setSidebarOpen(false);
+    // Auto-expand the parent topic in sidebar
+    setExpandedTopics((prev) => {
+      const next = new Set(prev);
+      next.add(view.topicId);
+      return next;
+    });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
+
+  const toggleTopicExpand = useCallback((topicId: string) => {
+    setExpandedTopics((prev) => {
+      const next = new Set(prev);
+      if (next.has(topicId)) next.delete(topicId);
+      else next.add(topicId);
+      return next;
+    });
+  }, []);
+
+  const goToNav = useCallback((idx: number) => {
+    if (idx >= 0 && idx < navSequence.length) navigate(navSequence[idx]);
+  }, [navSequence, navigate]);
+
+  // Label for prev/next buttons
+  const getNavLabel = (view: ActiveView): string => {
+    const topic = step.topics.find((t) => t.id === view.topicId);
+    if (!topic) return "";
+    if (view.kind === "topic") return topic.title;
+    const sub = topic.subtopics?.find((s) => s.id === view.subtopicId);
+    return sub?.title ?? "";
+  };
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -198,12 +284,25 @@ export function StepViewer({ roadmap, step }: { roadmap: PartialRoadmap; step: S
             {roadmap.title}
           </Link>
           <span className="text-muted-foreground/40">/</span>
-          <span className="font-bold shrink-0" style={{ color: roadmap.color }}>
+          <Link href={`/roadmap/${roadmap.id}`} className="font-bold shrink-0 hover:text-foreground transition-colors" style={{ color: roadmap.color }}>
             {step.icon} {step.title}
-          </span>
+          </Link>
           {activeTopic && (
-            <><span className="text-muted-foreground/40">/</span>
-              <span className="text-foreground font-medium truncate">{activeTopic.title}</span></>
+            <>
+              <span className="text-muted-foreground/40">/</span>
+              <span
+                className="text-foreground/70 font-medium truncate cursor-pointer hover:text-foreground transition-colors"
+                onClick={() => navigate({ kind: "topic", topicId: activeTopic.id })}
+              >
+                {activeTopic.title}
+              </span>
+            </>
+          )}
+          {activeSubtopic && (
+            <>
+              <span className="text-muted-foreground/40">/</span>
+              <span className="text-foreground font-medium truncate">{activeSubtopic.title}</span>
+            </>
           )}
         </div>
       </div>
@@ -221,6 +320,7 @@ export function StepViewer({ roadmap, step }: { roadmap: PartialRoadmap; step: S
           ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
           shrink-0 px-4 py-8
         `}>
+          {/* Module info */}
           <div className="mb-8 pb-6 border-b">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white text-lg font-bold shadow-sm shrink-0"
@@ -247,33 +347,84 @@ export function StepViewer({ roadmap, step }: { roadmap: PartialRoadmap; step: S
           <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground/60 mb-3 px-2">Table of Contents</p>
 
           <nav className="space-y-1">
-            {step.topics.map((topic, i) => (
-              <div key={topic.id}>
-                <button
-                  onClick={() => goToTopic(topic.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all text-left ${activeTopicId === topic.id
-                      ? "bg-primary/10 text-primary font-bold border border-primary/20 shadow-sm"
-                      : "text-muted-foreground hover:bg-muted/60 hover:text-foreground border border-transparent"
-                    }`}
-                >
-                  <span className={`text-[10px] font-mono shrink-0 ${activeTopicId === topic.id ? "text-primary/70" : "text-muted-foreground/40"}`}>
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                  <span className="flex-1 truncate">{topic.title}</span>
-                </button>
-                {activeTopicId === topic.id && topic.subtopics && topic.subtopics.length > 0 && (
-                  <div className="ml-4 pl-3 mt-1 border-l-2 border-muted/50 flex flex-col gap-0.5">
-                    {topic.subtopics.map((sub) => (
-                      <button key={sub.id}
-                        onClick={() => document.getElementById(`subtopic-${sub.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" })}
-                        className="text-xs text-left py-1.5 px-2 rounded-md hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors truncate">
-                        {sub.title}
+            {step.topics.map((topic, i) => {
+              const isTopicActive = activeView.topicId === topic.id;
+              const isExpanded = expandedTopics.has(topic.id);
+              const hasSubtopics = topic.subtopics && topic.subtopics.length > 0;
+              const hasIntro = !!topic.content;
+
+              return (
+                <div key={topic.id}>
+                  {/* Topic row */}
+                  <div className={`flex items-center gap-1 rounded-lg transition-all ${isTopicActive && activeView.kind === "topic"
+                      ? "bg-primary/10 border border-primary/20"
+                      : "border border-transparent"
+                    }`}>
+                    {/* Topic label button — navigates to topic overview if it has intro content */}
+                    <button
+                      onClick={() => {
+                        if (hasIntro) {
+                          navigate({ kind: "topic", topicId: topic.id });
+                        } else if (hasSubtopics) {
+                          // No intro — just expand/collapse subtopics
+                          toggleTopicExpand(topic.id);
+                          // Auto-navigate to first subtopic if not already in this topic
+                          if (!isTopicActive && topic.subtopics![0]) {
+                            navigate({ kind: "subtopic", topicId: topic.id, subtopicId: topic.subtopics![0].id });
+                          }
+                        } else {
+                          navigate({ kind: "topic", topicId: topic.id });
+                        }
+                      }}
+                      className={`flex-1 flex items-center gap-3 px-3 py-2.5 text-sm text-left transition-all rounded-lg ${isTopicActive && activeView.kind === "topic"
+                          ? "text-primary font-bold"
+                          : "text-muted-foreground hover:text-foreground"
+                        }`}
+                    >
+                      <span className={`text-[10px] font-mono shrink-0 ${isTopicActive ? "text-primary/70" : "text-muted-foreground/40"}`}>
+                        {String(i + 1).padStart(2, "0")}
+                      </span>
+                      <span className="flex-1 truncate">{topic.title}</span>
+                    </button>
+
+                    {/* Expand/collapse arrow — only shown if topic has subtopics */}
+                    {hasSubtopics && (
+                      <button
+                        onClick={() => toggleTopicExpand(topic.id)}
+                        className="p-2 hover:bg-muted/60 rounded-md shrink-0 text-muted-foreground hover:text-foreground transition-colors"
+                        aria-label={isExpanded ? "Collapse" : "Expand"}
+                      >
+                        {isExpanded
+                          ? <ChevronDown className="h-3.5 w-3.5" />
+                          : <ChevronRight className="h-3.5 w-3.5" />}
                       </button>
-                    ))}
+                    )}
                   </div>
-                )}
-              </div>
-            ))}
+
+                  {/* Subtopics — shown when expanded */}
+                  {hasSubtopics && isExpanded && (
+                    <div className="ml-4 pl-3 mt-1 mb-1 border-l-2 border-muted/50 flex flex-col gap-0.5">
+                      {topic.subtopics!.map((sub) => {
+                        const isSubActive = activeView.kind === "subtopic" && activeView.subtopicId === sub.id;
+                        return (
+                          <button
+                            key={sub.id}
+                            onClick={() => navigate({ kind: "subtopic", topicId: topic.id, subtopicId: sub.id })}
+                            className={`text-xs text-left py-2 px-2.5 rounded-md transition-all ${isSubActive
+                                ? "bg-primary/10 text-primary font-semibold border border-primary/20"
+                                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground border border-transparent"
+                              }`}
+                          >
+                            {sub.title}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
             {step.topics.length === 0 && (
               <p className="px-3 py-4 text-xs text-muted-foreground italic border border-dashed rounded-lg bg-muted/20">No topics yet.</p>
             )}
@@ -283,7 +434,7 @@ export function StepViewer({ roadmap, step }: { roadmap: PartialRoadmap; step: S
             <div className="mt-8 pt-6 border-t">
               <div className="bg-muted/30 border rounded-xl p-4">
                 <p className="text-sm font-bold mb-1">📚 {step.resources.length} Resources</p>
-                <p className="text-xs text-muted-foreground">PDFs, videos, articles — at the bottom of each topic.</p>
+                <p className="text-xs text-muted-foreground">PDFs, videos, articles — at the bottom of this module.</p>
               </div>
             </div>
           )}
@@ -291,7 +442,7 @@ export function StepViewer({ roadmap, step }: { roadmap: PartialRoadmap; step: S
 
         {/* Main content */}
         <main className="flex-1 min-w-0 px-4 md:px-10 py-8 lg:py-12 md:border-l">
-          {activeTopic ? (
+          {(activeTopic || activeSubtopic) ? (
             <article id="devhub-content-area" className="max-w-4xl mx-auto">
 
               {/* Header */}
@@ -304,39 +455,96 @@ export function StepViewer({ roadmap, step }: { roadmap: PartialRoadmap; step: S
                     style={{ backgroundColor: roadmap.color }}>
                     Module {step.order + 1}: {step.title}
                   </span>
+                  {/* Show parent topic as breadcrumb when viewing a subtopic */}
+                  {activeView.kind === "subtopic" && activeTopic && (
+                    <button
+                      onClick={() => activeTopic.content && navigate({ kind: "topic", topicId: activeTopic.id })}
+                      className="text-[10px] uppercase tracking-wider font-bold px-2.5 py-1 rounded border border-primary/30 text-primary bg-primary/5 hover:bg-primary/10 transition-colors"
+                    >
+                      {activeTopic.title}
+                    </button>
+                  )}
                 </div>
-                <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight leading-tight">{activeTopic.title}</h1>
+
+                {/* Title — subtopic name when viewing subtopic, topic name otherwise */}
+                <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight leading-tight">
+                  {activeView.kind === "subtopic" && activeSubtopic
+                    ? activeSubtopic.title
+                    : activeTopic?.title}
+                </h1>
+
+                {/* If viewing a topic with subtopics, show subtopic chips for quick jump */}
+                {activeView.kind === "topic" && activeTopic?.subtopics && activeTopic.subtopics.length > 0 && (
+                  <div className="flex flex-wrap gap-2 pt-2">
+                    <span className="text-xs text-muted-foreground font-medium self-center">Sections:</span>
+                    {activeTopic.subtopics.map((sub) => (
+                      <button
+                        key={sub.id}
+                        onClick={() => navigate({ kind: "subtopic", topicId: activeTopic.id, subtopicId: sub.id })}
+                        className="text-xs px-3 py-1.5 rounded-full border border-primary/20 bg-primary/5 text-primary hover:bg-primary/15 hover:border-primary/40 transition-all font-medium"
+                      >
+                        {sub.title}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </header>
 
-              {/* Topic content */}
-              {activeTopic.content && (
-                <div className={PROSE} dangerouslySetInnerHTML={{ __html: parseMarkdown(activeTopic.content) }} />
-              )}
+              {/* Content */}
+              {activeView.kind === "subtopic" && activeSubtopic ? (
+                // ── Subtopic view — single subtopic full content ──
+                <div className={PROSE} dangerouslySetInnerHTML={{ __html: parseMarkdown(activeSubtopic.content) }} />
+              ) : activeView.kind === "topic" && activeTopic ? (
+                // ── Topic view — intro content + subtopic previews ──
+                <>
+                  {activeTopic.content && (
+                    <div className={PROSE} dangerouslySetInnerHTML={{ __html: parseMarkdown(activeTopic.content) }} />
+                  )}
 
-              {/* Subtopics */}
-              {activeTopic.subtopics && activeTopic.subtopics.length > 0 && (
-                <div className="mt-14 space-y-16">
-                  {activeTopic.subtopics.map((sub, idx) => (
-                    <section key={sub.id} id={`subtopic-${sub.id}`} className="scroll-mt-24">
-                      <div className="flex items-center gap-3 mb-6 pb-3 border-b">
-                        <span className="text-xs font-mono font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">#{idx + 1}</span>
-                        <h2 className="text-2xl font-bold tracking-tight">{sub.title}</h2>
+                  {/* Subtopic cards — click to open full content */}
+                  {activeTopic.subtopics && activeTopic.subtopics.length > 0 && (
+                    <div className={`${activeTopic.content ? "mt-12 pt-8 border-t" : ""} space-y-3`}>
+                      {activeTopic.content && (
+                        <h3 className="text-lg font-bold mb-4 text-muted-foreground uppercase tracking-wider text-sm">
+                          Sections in this topic
+                        </h3>
+                      )}
+                      <div className="grid sm:grid-cols-2 gap-3">
+                        {activeTopic.subtopics.map((sub, idx) => (
+                          <button
+                            key={sub.id}
+                            onClick={() => navigate({ kind: "subtopic", topicId: activeTopic.id, subtopicId: sub.id })}
+                            className="group flex items-center gap-4 p-4 border rounded-xl hover:border-primary/40 hover:bg-primary/5 transition-all text-left"
+                          >
+                            <span className="text-lg font-black text-muted-foreground/30 group-hover:text-primary/40 transition-colors font-mono shrink-0">
+                              {String(idx + 1).padStart(2, "0")}
+                            </span>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-sm group-hover:text-primary transition-colors truncate">{sub.title}</p>
+                              {sub.content && (
+                                <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                                  {sub.content.replace(/<[^>]*>/g, "").replace(/[#*`]/g, "").slice(0, 80)}
+                                </p>
+                              )}
+                            </div>
+                            <ChevronRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
+                          </button>
+                        ))}
                       </div>
-                      <div className={PROSE} dangerouslySetInnerHTML={{ __html: parseMarkdown(sub.content) }} />
-                    </section>
-                  ))}
-                </div>
-              )}
+                    </div>
+                  )}
 
-              {!activeTopic.content && (!activeTopic.subtopics || activeTopic.subtopics.length === 0) && (
-                <div className="border border-dashed rounded-2xl p-16 text-center bg-muted/5">
-                  <FileText className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
-                  <h3 className="text-xl font-bold mb-2">Content Coming Soon</h3>
-                  <p className="text-muted-foreground">Still being written.</p>
-                </div>
-              )}
+                  {!activeTopic.content && (!activeTopic.subtopics || activeTopic.subtopics.length === 0) && (
+                    <div className="border border-dashed rounded-2xl p-16 text-center bg-muted/5">
+                      <FileText className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
+                      <h3 className="text-xl font-bold mb-2">Content Coming Soon</h3>
+                      <p className="text-muted-foreground">Still being written.</p>
+                    </div>
+                  )}
+                </>
+              ) : null}
 
-              {/* Resources */}
+              {/* Resources — shown at the bottom of the last item in sequence, or always */}
               {step.resources.length > 0 && (
                 <div className="mt-20 pt-10 border-t space-y-6">
                   <div>
@@ -346,39 +554,49 @@ export function StepViewer({ roadmap, step }: { roadmap: PartialRoadmap; step: S
                   <div className="grid sm:grid-cols-2 gap-4">
                     {step.resources.map((resource) => (
                       <ResourceCard key={resource.id} resource={{
-                         ...resource,
-                         description: resource.description || "",
-                         imageUrl: (resource as any).imageUrl || "", 
-                         tags: ""
+                        ...resource,
+                        description: resource.description || "",
+                        imageUrl: (resource as any).imageUrl || "",
+                        tags: ""
                       }} />
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* Prev / Next */}
+              {/* Prev / Next navigation */}
               <div className="mt-16 pt-8 border-t flex gap-4">
-                {currentIndex > 0 ? (
-                  <button onClick={() => goToTopic(step.topics[currentIndex - 1].id)}
-                    className="flex-1 flex flex-col items-start gap-1 p-4 border rounded-2xl hover:bg-muted hover:border-foreground/30 transition-all text-left group">
+                {currentNavIndex > 0 ? (
+                  <button
+                    onClick={() => goToNav(currentNavIndex - 1)}
+                    className="flex-1 flex flex-col items-start gap-1 p-4 border rounded-2xl hover:bg-muted hover:border-foreground/30 transition-all text-left group"
+                  >
                     <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
                       <ArrowLeft className="h-3.5 w-3.5 group-hover:-translate-x-1 transition-transform" /> Previous
                     </span>
-                    <p className="text-base font-bold group-hover:text-primary transition-colors line-clamp-2">{step.topics[currentIndex - 1].title}</p>
+                    <p className="text-base font-bold group-hover:text-primary transition-colors line-clamp-2">
+                      {getNavLabel(navSequence[currentNavIndex - 1])}
+                    </p>
                   </button>
                 ) : <div className="flex-1" />}
 
-                {currentIndex < step.topics.length - 1 ? (
-                  <button onClick={() => goToTopic(step.topics[currentIndex + 1].id)}
-                    className="flex-1 flex flex-col items-end gap-1 p-4 border rounded-2xl hover:bg-muted hover:border-foreground/30 transition-all text-right group">
+                {currentNavIndex < navSequence.length - 1 ? (
+                  <button
+                    onClick={() => goToNav(currentNavIndex + 1)}
+                    className="flex-1 flex flex-col items-end gap-1 p-4 border rounded-2xl hover:bg-muted hover:border-foreground/30 transition-all text-right group"
+                  >
                     <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
                       Next <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
                     </span>
-                    <p className="text-base font-bold group-hover:text-primary transition-colors line-clamp-2">{step.topics[currentIndex + 1].title}</p>
+                    <p className="text-base font-bold group-hover:text-primary transition-colors line-clamp-2">
+                      {getNavLabel(navSequence[currentNavIndex + 1])}
+                    </p>
                   </button>
                 ) : (
-                  <Link href={`/roadmap/${roadmap.id}`}
-                    className="flex-1 flex flex-col items-end gap-1 p-4 border rounded-2xl bg-primary/5 hover:bg-primary/10 border-primary/20 hover:border-primary/40 transition-all text-right group">
+                  <Link
+                    href={`/roadmap/${roadmap.id}`}
+                    className="flex-1 flex flex-col items-end gap-1 p-4 border rounded-2xl bg-primary/5 hover:bg-primary/10 border-primary/20 hover:border-primary/40 transition-all text-right group"
+                  >
                     <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-primary font-bold">
                       Module Complete <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
                     </span>
