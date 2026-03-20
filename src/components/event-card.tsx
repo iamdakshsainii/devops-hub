@@ -14,6 +14,7 @@ interface EventCardProps {
     startTime: Date;
     externalLink: string | null;
     interestedCount: number;
+    tags?: string;
   };
 }
 
@@ -75,7 +76,17 @@ export function EventCard({ event }: EventCardProps) {
           <Calendar className="h-4 w-4 text-muted-foreground" />
           {new Date(event.startTime).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
         </div>
-        <p className="text-sm text-muted-foreground">{event.description}</p>
+        <p className="text-sm text-muted-foreground mb-3">{event.description}</p>
+        
+        {event.tags && (
+          <div className="flex flex-wrap gap-1 mt-2">
+            {event.tags.split(",").filter(Boolean).map((t: string) => (
+              <span key={t} className="text-[10px] items-center px-2 py-0.5 rounded-full font-semibold bg-primary/10 text-primary border border-primary/20">
+                #{t.trim()}
+              </span>
+            ))}
+          </div>
+        )}
       </CardContent>
       <CardFooter className="pl-6 pt-0 mt-4 flex justify-between items-center border-t border-dashed bg-muted/10 py-3">
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">

@@ -12,7 +12,7 @@ const FILTERS = [
   { label: "Article", value: "ARTICLE", icon: FileText },
   { label: "Video", value: "VIDEO", icon: Video },
   { label: "Playlist", value: "PLAYLIST", icon: List },
-  { label: "PDF", value: "PDF", icon: FileType2 },
+
   { label: "Notes", value: "NOTES", icon: BookOpen },
 ];
 

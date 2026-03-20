@@ -134,7 +134,16 @@ export default function AdminEventsList({ events, currentUserId }: { events: any
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="p-5 flex-1 flex flex-col justify-between">
-                  <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{event.description}</p>
+                  <p className="text-sm text-muted-foreground mb-2 line-clamp-2">{event.description}</p>
+                  {event.tags && (
+                    <div className="flex flex-wrap gap-1 mb-4">
+                      {event.tags.split(",").filter(Boolean).map((t: string) => (
+                        <span key={t} className="text-[10px] items-center px-1.5 py-0.5 rounded-full font-semibold bg-primary/10 text-primary border border-primary/20">
+                          #{t.trim()}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                   <div className="flex justify-between items-center text-sm mt-auto border-t pt-4">
                     <span className="flex items-center gap-1 font-medium text-foreground/80">
                       <Users className="h-4 w-4" /> {event.interestedCount || 0} Interested

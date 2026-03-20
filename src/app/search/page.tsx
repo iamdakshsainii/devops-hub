@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
-import { FileText, Database, Calendar, SearchX } from "lucide-react";
+import { FileText, Database, Calendar, SearchX, ExternalLink, MapPin } from "lucide-react";
 import Link from "next/link";
+import { EventActions } from "@/components/event-actions";
 import { Button } from "@/components/ui/button";
 import { ResourceCard } from "@/components/resource-card";
 
@@ -26,7 +27,6 @@ export default async function SearchPage({
       status: "PUBLISHED",
       OR: [
         { title: { contains: query, mode: "insensitive" } },
-        { content: { contains: query, mode: "insensitive" } },
         { tags: { contains: query, mode: "insensitive" } }
       ]
     },
@@ -38,7 +38,6 @@ export default async function SearchPage({
       status: "PUBLISHED",
       OR: [
         { title: { contains: query, mode: "insensitive" } },
-        { description: { contains: query, mode: "insensitive" } },
         { tags: { contains: query, mode: "insensitive" } }
       ]
     },
@@ -52,8 +51,7 @@ export default async function SearchPage({
     where: {
       step: { roadmap: { status: "PUBLISHED" } },
       OR: [
-        { title: { contains: query, mode: "insensitive" } },
-        { description: { contains: query, mode: "insensitive" } }
+        { title: { contains: query, mode: "insensitive" } }
       ]
     }
   });
@@ -63,30 +61,31 @@ export default async function SearchPage({
       status: "PUBLISHED",
       OR: [
         { title: { contains: query, mode: "insensitive" } },
-        { description: { contains: query, mode: "insensitive" } }
+        { tags: { contains: query, mode: "insensitive" } }
       ]
-    }
+    } as any
   });
 
   const modulesPromise = prisma.roadmapStep.findMany({
     where: {
-      roadmap: { status: "PUBLISHED" },
+      status: { not: "DELETED" },
       OR: [
-        { title: { contains: query, mode: "insensitive" } },
-        { description: { contains: query, mode: "insensitive" } },
+        { roadmap: { status: "PUBLISHED" } },
+        { roadmapId: null }
+      ],
+      AND: [
         {
-          topics: {
-            some: {
-              OR: [
-                { title: { contains: query, mode: "insensitive" } },
-                { content: { contains: query, mode: "insensitive" } }
-              ]
-            }
-          }
+          OR: [
+            { title: { contains: query, mode: "insensitive" } },
+            { tags: { contains: query, mode: "insensitive" } }
+          ]
         }
       ]
-    },
-    include: { roadmap: true }
+    } as any,
+    include: { 
+      roadmap: true,
+      _count: { select: { topics: true, resources: true } }
+    }
   });
 
   const [notes, globalResources, roadmapResources, events, modules] = await Promise.all([
@@ -134,6 +133,31 @@ export default async function SearchPage({
         <p className="text-muted-foreground text-lg">
           Showing results for <span className="text-foreground font-semibold px-1">"{query}"</span>
         </p>
+
+        {hasResults && (
+          <div className="flex gap-2 flex-wrap pt-2">
+            {finalModules.length > 0 && (
+              <a href="#modules" className="flex items-center gap-1.5 bg-muted/60 hover:bg-primary/10 hover:text-primary px-3 py-1.5 rounded-full text-xs font-bold transition-all hover:scale-105">
+                📁 Modules ({finalModules.length})
+              </a>
+            )}
+            {events.length > 0 && (
+              <a href="#events" className="flex items-center gap-1.5 bg-muted/60 hover:bg-primary/10 hover:text-primary px-3 py-1.5 rounded-full text-xs font-bold transition-all hover:scale-105">
+                📅 Events ({events.length})
+              </a>
+            )}
+            {resources.length > 0 && (
+              <a href="#resources" className="flex items-center gap-1.5 bg-muted/60 hover:bg-primary/10 hover:text-primary px-3 py-1.5 rounded-full text-xs font-bold transition-all hover:scale-105">
+                📚 Resources ({resources.length})
+              </a>
+            )}
+            {notes.length > 0 && (
+              <a href="#notes" className="flex items-center gap-1.5 bg-muted/60 hover:bg-primary/10 hover:text-primary px-3 py-1.5 rounded-full text-xs font-bold transition-all hover:scale-105">
+                📝 Notes ({notes.length})
+              </a>
+            )}
+          </div>
+        )}
       </div>
 
       {!hasResults ? (
@@ -153,7 +177,7 @@ export default async function SearchPage({
           
           {notes.length > 0 && (
             <section className="space-y-6">
-              <h2 className="text-2xl font-bold flex items-center border-b pb-4">
+              <h2 id="notes" className="text-2xl font-bold flex items-center border-b pb-4">
                  <FileText className="mr-2 h-6 w-6 text-primary" /> Architecture Notes <span className="ml-3 text-sm font-normal text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{notes.length}</span>
               </h2>
               <div className="grid sm:grid-cols-2 gap-4">
@@ -182,35 +206,65 @@ export default async function SearchPage({
 
           {finalModules && finalModules.length > 0 && (
             <section className="space-y-6 pt-4">
-              <h2 className="text-2xl font-bold flex items-center border-b pb-4">
+              <h2 id="modules" className="text-2xl font-bold flex items-center border-b pb-4">
                  <FileText className="mr-2 h-6 w-6 text-primary" /> Modules & Guides <span className="ml-3 text-sm font-normal text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{finalModules.length}</span>
               </h2>
               <div className="grid sm:grid-cols-2 gap-4">
-                {finalModules.map((module: any) => (
-                  <Card key={module.id} className="group hover:border-primary/50 transition-colors">
-                    <CardHeader className="p-4 pb-2">
-                       <div className="flex justify-between items-start mb-2">
-                         <span className="text-[10px] uppercase font-bold tracking-wider text-primary bg-primary/10 px-2 py-0.5 rounded">
-                           {module.roadmap ? module.roadmap.title : "Standalone"}
-                         </span>
-                       </div>
-                       <CardTitle className="text-lg leading-tight group-hover:text-primary transition-colors">{module.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-0">
-                       <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{module.description}</p>
-                       <Link href={module.roadmapId ? `/roadmap/${module.roadmapId}/${module.id}` : `/roadmap/standalone/${module.id}`}>
-                         <Button variant="secondary" className="w-full h-8 cursor-pointer">View Module</Button>
-                       </Link>
-                    </CardContent>
-                  </Card>
-                ))}
+                {finalModules.map((module: any) => {
+                  const href = module.roadmapId ? `/modules/${module.id}?roadmapId=${module.roadmapId}` : `/modules/${module.id}`;
+                  const hasTags = module.tags ? module.tags.split(",").filter(Boolean) : [];
+                  
+                  return (
+                    <Link key={module.id} href={href} className="group block h-full">
+                      <Card className="h-full hover:border-primary/40 transition-all relative overflow-hidden flex flex-col items-start bg-card">
+                        <div 
+                          className="absolute top-0 left-0 w-1 h-full opacity-60 group-hover:opacity-100 transition-opacity" 
+                          style={{ backgroundColor: module.roadmap?.color || "#3B82F6" }} 
+                        />
+                        <CardHeader className="pl-6 w-full pb-3 border-b border-border/10">
+                          <div className="flex justify-between items-start mb-3">
+                            <div className="text-2xl bg-muted/50 p-2.5 rounded-xl shadow-sm border border-border/50 group-hover:bg-primary/5 transition-colors">
+                              {module.icon || "📦"}
+                            </div>
+                            <span className="text-[10px] uppercase font-bold tracking-wider rounded-md border text-muted-foreground/80 bg-background/50 px-2 py-0.5">
+                              {module.roadmap ? module.roadmap.title : "Standalone"}
+                            </span>
+                          </div>
+                          <CardTitle className="text-lg leading-tight group-hover:text-primary transition-colors line-clamp-1">
+                            {module.title}
+                          </CardTitle>
+                          {hasTags.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              {hasTags.map((t: string) => (
+                                <span key={t} className="text-[10px] items-center px-2 py-0.5 rounded-full font-bold bg-primary/10 text-primary border border-primary/20">
+                                  #{t.trim()}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </CardHeader>
+                        <CardContent className="pl-6 pt-3 flex-1 flex flex-col w-full">
+                          <p className="text-sm text-muted-foreground line-clamp-2 mb-4 flex-1">{module.description}</p>
+                          <div className="flex items-center gap-3 mt-auto pt-3 border-t border-dashed text-xs font-semibold text-muted-foreground">
+                            <span className="flex items-center gap-1 bg-muted/50 px-1.5 py-0.5 rounded">
+                               {module._count?.topics || 0} Topics
+                            </span>
+                            <span className="flex items-center gap-1 bg-muted/50 px-1.5 py-0.5 rounded">
+                               {module._count?.resources || 0} Resources
+                            </span>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  )
+                })}
               </div>
             </section>
           )}
 
           {resources.length > 0 && (
             <section className="space-y-6 pt-4">
-              <h2 className="text-2xl font-bold flex items-center border-b pb-4">
+              <h2 id="resources" className="text-2xl font-bold flex items-center border-b pb-4">
                  <Database className="mr-2 h-6 w-6 text-primary" /> Resources <span className="ml-3 text-sm font-normal text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{resources.length}</span>
               </h2>
               <div className="grid sm:grid-cols-2 gap-6">
@@ -223,28 +277,68 @@ export default async function SearchPage({
 
           {events.length > 0 && (
             <section className="space-y-6 pt-4">
-              <h2 className="text-2xl font-bold flex items-center border-b pb-4">
+              <h2 id="events" className="text-2xl font-bold flex items-center border-b pb-4">
                  <Calendar className="mr-2 h-6 w-6 text-primary" /> Events <span className="ml-3 text-sm font-normal text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{events.length}</span>
               </h2>
               <div className="grid sm:grid-cols-2 gap-6">
-                {events.map(event => (
-                  <Card key={event.id} className="group hover:border-primary/50 transition-colors">
-                    <CardHeader className="p-5 pb-3 bg-muted/20 border-b">
-                      <div className="flex justify-between items-start mb-2">
-                         <span className="text-[10px] uppercase font-bold tracking-wider text-primary bg-primary/10 px-2 py-0.5 rounded">
-                          {event.type}
-                        </span>
-                      </div>
-                      <CardTitle className="text-lg leading-tight group-hover:text-primary transition-colors">{event.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-5">
-                      <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{event.description}</p>
-                      <div className="text-xs text-muted-foreground pt-4 border-t">
-                         Scheduled: {new Date(event.startTime).toLocaleDateString()}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                {events.map((event: any) => {
+                  const images = event.imageUrls ? event.imageUrls.split(",").filter(Boolean) : [];
+                  return (
+                    <Card key={event.id} className="group flex flex-col hover:border-primary/50 transition-all overflow-hidden bg-card">
+                      {images.length > 0 && (
+                        <div className="h-44 w-full overflow-hidden border-b bg-muted/20">
+                          <img 
+                            src={images[0]} 
+                            alt={event.title} 
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                          />
+                        </div>
+                      )}
+                      
+                      <CardHeader className="p-5 pb-3 bg-muted/20 border-b">
+                        <div className="flex justify-between items-start mb-2">
+                          <span className="text-[10px] uppercase font-bold tracking-wider text-primary bg-primary/10 px-2 py-0.5 rounded">
+                            {event.type}
+                          </span>
+                        </div>
+                        <CardTitle className="text-lg leading-tight group-hover:text-primary transition-colors">{event.title}</CardTitle>
+                      </CardHeader>
+                      
+                      <CardContent className="p-5 flex-1 flex flex-col justify-between">
+                        <div>
+                          <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{event.description}</p>
+                          {event.tags && (
+                            <div className="flex flex-wrap gap-1 mb-4">
+                              {event.tags.split(",").filter(Boolean).map((t: string) => (
+                                <span key={t} className="text-[10px] items-center px-1.5 py-0.5 rounded-full font-semibold bg-primary/10 text-primary border border-primary/20">
+                                  #{t.trim()}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center justify-between mt-auto pt-4 border-t">
+                          <div className="flex items-center text-xs font-medium text-muted-foreground">
+                            <MapPin className="h-3 w-3 mr-1" />
+                            {event.type === "MEETUP" ? "In-person" : "Online"}
+                          </div>
+                          <div className="flex items-center gap-2">
+                             <EventActions eventId={event.id} isPast={new Date(event.startTime) < new Date()} />
+                             {event.externalLink ? (
+                              <a href={event.externalLink} target="_blank" rel="noopener noreferrer">
+                                <Button size="sm" className="h-8">
+                                  Register / View <ExternalLink className="ml-1 h-3 w-3" />
+                                </Button>
+                              </a>
+                             ) : (
+                               <Button variant="outline" size="sm" className="h-8" disabled>Link TBA</Button>
+                             )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+                })}
               </div>
             </section>
           )}

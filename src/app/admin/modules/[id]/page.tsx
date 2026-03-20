@@ -20,6 +20,7 @@ interface ModuleForm {
   description: string;
   icon: string;
   status?: string;
+  tags?: string;
   topics: TopicForm[];
   resources: ResourceForm[];
 }
@@ -41,7 +42,7 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
   const [replaceExisting, setReplaceExisting] = useState(true);
 
   const [form, setForm] = useState<ModuleForm>({
-    title: "", description: "", icon: "📦", topics: [], resources: []
+    title: "", description: "", icon: "📦", tags: "", topics: [], resources: []
   });
 
   useEffect(() => {
@@ -55,6 +56,7 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
             description: data.description || "",
             icon: data.icon || "📦",
             status: data.status || "PENDING",
+            tags: data.tags || "",
             topics: (data.topics || []).map((t: any) => ({
               title: t.title,
               content: t.content || "",
@@ -343,6 +345,56 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
                   placeholder="What will learners gain from this module?"
                 />
               </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Tags</label>
+                <div className="flex flex-wrap gap-1.5 mb-2">
+                  {(form.tags || "").split(",").filter(Boolean).map((t, i) => (
+                    <span key={i} className="flex items-center gap-1 bg-primary/10 text-primary px-2 py-1 rounded-md text-xs font-bold border border-primary/20">
+                      #{t.trim()}
+                      <button type="button" onClick={() => {
+                        const tagsList = form.tags?.split(",").filter(Boolean).map(x => x.trim()) || [];
+                        tagsList.splice(i, 1);
+                        setForm({ ...form, tags: tagsList.join(", ") });
+                      }}>
+                        <X className="h-3 w-3 hover:text-destructive cursor-pointer" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <Input 
+                    id="new-tag"
+                    placeholder="Type tag and press enter" 
+                    className="h-9 text-sm"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        const val = e.currentTarget.value.trim();
+                        if (val) {
+                          const tagsList = form.tags?.split(",").filter(Boolean).map(x => x.trim()) || [];
+                          if (!tagsList.includes(val)) {
+                            tagsList.push(val);
+                            setForm({ ...form, tags: tagsList.join(", ") });
+                          }
+                          e.currentTarget.value = "";
+                        }
+                      }
+                    }}
+                  />
+                  <Button type="button" size="sm" className="h-9" onClick={() => {
+                    const input = document.getElementById("new-tag") as HTMLInputElement;
+                    const val = input?.value.trim();
+                    if (val) {
+                      const tagsList = form.tags?.split(",").filter(Boolean).map(x => x.trim()) || [];
+                      if (!tagsList.includes(val)) {
+                        tagsList.push(val);
+                        setForm({ ...form, tags: tagsList.join(", ") });
+                      }
+                      if (input) input.value = "";
+                    }
+                  }}>Add</Button>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
@@ -513,7 +565,7 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
                             <option value="ARTICLE">Article</option>
                             <option value="VIDEO">Video</option>
                             <option value="PLAYLIST">Playlist</option>
-                            <option value="PDF">PDF</option>
+
                             <option value="TOOL">Tool</option>
                             <option value="NOTES">Notes</option>
                           </select>

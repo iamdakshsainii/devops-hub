@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { X } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 
 export default function SubmitEventPage() {
@@ -12,6 +13,8 @@ export default function SubmitEventPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [files, setFiles] = useState<FileList | null>(null);
+  const [tags, setTags] = useState<string>("");
+  const [currentTag, setCurrentTag] = useState("");
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -51,6 +54,7 @@ export default function SubmitEventPage() {
       endTime: new Date(formData.get("endTime") as string).toISOString(),
       externalLink: formData.get("externalLink") || undefined,
       imageUrls: imageUrlsStr || undefined,
+      tags: tags,
     };
 
     try {
@@ -116,6 +120,40 @@ export default function SubmitEventPage() {
               <div className="space-y-1.5">
                 <label htmlFor="endTime" className="text-sm font-semibold">End Date & Time</label>
                 <Input id="endTime" name="endTime" type="datetime-local" required />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-semibold">Tags</label>
+              <div className="flex flex-wrap gap-1.5 p-2 border rounded-md bg-background focus-within:ring-2 focus-within:ring-ring">
+                {tags && tags.split(",").filter(Boolean).map((t, i) => (
+                  <span key={i} className="flex items-center gap-1 text-[11px] py-1 px-2 rounded-full bg-primary/10 text-primary border border-primary/20">
+                    #{t.trim()}
+                    <button type="button" onClick={(e) => {
+                      e.preventDefault();
+                      const arr = tags.split(",").filter(Boolean);
+                      arr.splice(i, 1);
+                      setTags(arr.join(","));
+                    }} className="hover:text-destructive"><X className="h-3 w-3" /></button>
+                  </span>
+                ))}
+                <input
+                  value={currentTag}
+                  onChange={e => setCurrentTag(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      if (currentTag.trim()) {
+                        const arr = tags ? tags.split(",").filter(Boolean) : [];
+                        if (!arr.includes(currentTag.trim())) arr.push(currentTag.trim());
+                        setTags(arr.join(","));
+                        setCurrentTag("");
+                      }
+                    }
+                  }}
+                  placeholder="Add tag + Enter..."
+                  className="flex-1 bg-transparent border-none text-sm outline-none px-1 h-6"
+                />
               </div>
             </div>
 

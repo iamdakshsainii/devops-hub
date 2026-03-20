@@ -182,9 +182,19 @@ function EventCard({ event, badge }: { event: any; badge: "ongoing" | "upcoming"
       </CardHeader>
 
       <CardContent className="flex flex-col flex-grow">
-        <CardDescription className="line-clamp-3 mb-6 flex-grow">
+        <CardDescription className="line-clamp-3 mb-4 flex-grow">
           {event.description}
         </CardDescription>
+        
+        {event.tags && (
+          <div className="flex flex-wrap gap-1 mb-4">
+            {event.tags.split(",").filter(Boolean).map((t: string) => (
+              <span key={t} className="text-[10px] items-center px-2 py-0.5 rounded-full font-semibold bg-primary/10 text-primary border border-primary/20">
+                #{t.trim()}
+              </span>
+            ))}
+          </div>
+        )}
         <div className="flex items-center justify-between mt-auto pt-4 border-t">
           <div className="flex items-center text-xs font-medium text-muted-foreground">
             <MapPin className="h-3 w-3 mr-1" />

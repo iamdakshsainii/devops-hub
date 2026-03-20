@@ -13,6 +13,7 @@ export default function EditResourceAdminPage({ params }: { params: Promise<{ id
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [resourceId, setResourceId] = useState("");
+  const [currentTag, setCurrentTag] = useState("");
   const [form, setForm] = useState({ title: "", description: "", type: "ARTICLE", url: "", tags: "", imageUrl: "", status: "PUBLISHED" });
 
   useEffect(() => {
@@ -95,7 +96,7 @@ export default function EditResourceAdminPage({ params }: { params: Promise<{ id
             <div className="grid grid-cols-2 gap-4">
                <div className="space-y-1.5">
                   <label className="text-sm font-medium">Type</label>
-                  <select value={form.type} onChange={e => setForm({...form, type: e.target.value})} className="border h-10 px-2 rounded-md w-full bg-background"><option value="ARTICLE">Article</option><option value="VIDEO">Video</option><option value="PDF">PDF</option><option value="TOOL">Tool</option></select>
+                  <select value={form.type} onChange={e => setForm({...form, type: e.target.value})} className="border h-10 px-2 rounded-md w-full bg-background"><option value="ARTICLE">Article</option><option value="VIDEO">Video</option><option value="TOOL">Tool</option></select>
                </div>
                <div className="space-y-1.5">
                   <label className="text-sm font-medium">Tags (comma separated)</label>

@@ -1,4 +1,8 @@
-"use client";
+import fs from "fs";
+
+const filePath = "c:/my-stuff/devops-hub/src/app/events/dashboard/edit/[id]/client-edit-form.tsx";
+
+const content = `"use client";
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -119,7 +123,7 @@ export default function ClientEditForm({ event }: { event: any }) {
       <div className="space-y-1.5">
         <label className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Tags</label>
         <div className="flex flex-wrap gap-1.5 p-2 border rounded-md bg-background focus-within:ring-2 focus-within:ring-ring">
-          {tags && tags.split(",").filter(Boolean).map((t: string, i: number) => (
+          {tags && tags.split(",").filter(Boolean).map((t, i) => (
             <span key={i} className="flex items-center gap-1 text-[11px] py-1 px-2 rounded-full bg-primary/10 text-primary border border-primary/20">
               #{t.trim()}
               <button type="button" onClick={(e) => {
@@ -159,3 +163,7 @@ export default function ClientEditForm({ event }: { event: any }) {
     </form>
   );
 }
+`;
+
+fs.writeFileSync(filePath, content, "utf-8");
+console.log("SUCCESS: Restored and added Tags fully inside event client triggers!");

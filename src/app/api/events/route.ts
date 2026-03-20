@@ -10,7 +10,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const { title, description, type, startTime, endTime, externalLink, imageUrls } = await req.json();
+    const { title, description, type, startTime, endTime, externalLink, imageUrls, tags } = await req.json();
 
     if (!title || !description || !type || !startTime) {
       return NextResponse.json({ message: "Missing required fields" }, { status: 400 });
@@ -27,9 +27,10 @@ export async function POST(req: Request) {
         endTime: endTime ? new Date(endTime) : null,
         externalLink: externalLink || null,
         imageUrls: imageUrls || null,
+        tags: tags || "",
         authorId: session.user.id,
         status,
-      },
+      } as any,
     });
 
     if (status === "PENDING") {

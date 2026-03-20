@@ -106,7 +106,7 @@ export default function NewResourcePage() {
                 <option value="LINK">External Link</option>
                 <option value="NOTES">Attached Note</option>
                 <option value="YOUTUBE">YouTube Video / Channel</option>
-                <option value="PDF">PDF Document (URL)</option>
+
                 <option value="IMAGE">Image / Infographic (URL)</option>
               </select>
             </div>

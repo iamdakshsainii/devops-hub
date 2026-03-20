@@ -17,7 +17,7 @@ const TYPE_FILTERS = [
   { label: "Article", value: "ARTICLE", icon: FileText },
   { label: "Video", value: "VIDEO", icon: Video },
   { label: "Playlist", value: "PLAYLIST", icon: List },
-  { label: "PDF", value: "PDF", icon: FileType2 },
+
   { label: "Notes", value: "NOTES", icon: BookOpen },
   { label: "Tool", value: "TOOL", icon: Wrench },
 ];
@@ -26,7 +26,7 @@ const TYPE_ICON_MAP: Record<string, React.ElementType> = {
   ARTICLE: FileText,
   VIDEO: Video,
   PLAYLIST: List,
-  PDF: FileType2,
+
   NOTES: BookOpen,
   TOOL: Wrench,
 };
@@ -66,7 +66,8 @@ export default function AdminResourcesList({ resources }: { resources: any[] }) 
   const filteredResources = localResources.filter((res) => {
     const matchesSearch =
       res.title.toLowerCase().includes(search.toLowerCase()) ||
-      (res.description && res.description.toLowerCase().includes(search.toLowerCase()));
+      (res.description && res.description.toLowerCase().includes(search.toLowerCase())) ||
+      (res.tags && res.tags.toLowerCase().includes(search.toLowerCase()));
     const matchesStatus =
       statusFilter === "ALL" ? res.status !== "DELETED" : res.status === statusFilter;
     const matchesType = typeFilter === "ALL" || res.type === typeFilter;
@@ -171,6 +172,15 @@ export default function AdminResourcesList({ resources }: { resources: any[] }) 
                   </div>
                   <CardTitle className="text-lg mt-2 line-clamp-1">{res.title}</CardTitle>
                   <CardDescription className="line-clamp-2 text-xs h-8">{res.description}</CardDescription>
+                  {res.tags && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {res.tags.split(",").filter(Boolean).map((t: string) => (
+                        <span key={t} className="text-[10px] items-center px-1.5 py-0.5 rounded-full font-semibold bg-primary/10 text-primary border border-primary/20">
+                          #{t.trim()}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </CardHeader>
                 <CardContent className="p-5 pt-0 mt-auto space-y-3">
                   <div className="flex items-center justify-between text-xs text-muted-foreground">

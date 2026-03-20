@@ -9,7 +9,7 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
     if (!session) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
 
     const { id } = await context.params;
-    const { status, note, title, description, type, startTime, externalLink, imageUrls } = await req.json();
+    const { status, note, title, description, type, startTime, externalLink, imageUrls, tags } = await req.json();
 
     const existingEvent = await prisma.event.findUnique({ where: { id } });
     if (!existingEvent) return NextResponse.json({ message: "Not found" }, { status: 404 });
@@ -23,7 +23,15 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
 
     let updateData: any = {};
     if (isAdmin) {
-      updateData = { status: status || "PUBLISHED" };
+      updateData.status = status || "PUBLISHED";
+      if (title) updateData.title = title;
+      if (description) updateData.description = description;
+      if (type) updateData.type = type;
+      if (startTime) updateData.startTime = new Date(startTime);
+      if (externalLink !== undefined) updateData.externalLink = externalLink;
+      if (imageUrls !== undefined) updateData.imageUrls = imageUrls;
+      if (tags !== undefined) updateData.tags = tags;
+
       if (note) {
         let history: any[] = [];
         const evt: any = existingEvent;
@@ -40,6 +48,7 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
       if (startTime) updateData.startTime = new Date(startTime);
       if (externalLink !== undefined) updateData.externalLink = externalLink;
       if (imageUrls !== undefined) updateData.imageUrls = imageUrls;
+      if (tags !== undefined) updateData.tags = tags;
       updateData.status = "PENDING";
       updateData.feedback = null; // Clear feedback on resubmission
     }

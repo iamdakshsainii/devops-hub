@@ -48,7 +48,7 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
     }
 
     const { id } = await context.params;
-    const { title, description, icon, status, topics, resources } = await req.json();
+    const { title, description, icon, status, tags, topics, resources } = await req.json();
     const resourceList: any[] = resources || [];
 
     // ── Pre-fetch outside transaction ──────────────────────────────────────
@@ -172,6 +172,7 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
                   description:
                     r.description || `Resource from module: ${title || "Module"}`,
                   imageUrl,          // ← explicit null when cleared
+                  tags: tags || "Module",
                   status: "PUBLISHED",
                 },
               });
@@ -186,7 +187,7 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
                   description:
                     r.description || `Resource from module: ${title || "Module"}`,
                   imageUrl,          // ← explicit null when cleared
-                  tags: "Module",
+                  tags: tags || "Module",
                   status: "PUBLISHED",
                   authorId: session.user.id,
                 },
@@ -218,7 +219,8 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
             description: description || "",
             icon: icon || "📦",
             status: status || "PENDING",
-          },
+            tags: tags || "",
+          } as any,
         });
       },
       { timeout: 30000, maxWait: 5000 }

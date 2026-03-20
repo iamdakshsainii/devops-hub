@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { BookOpen, Layers, Library, Search } from "lucide-react";
+import { BookOpen, Layers, Library, Search, SlidersHorizontal } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,18 +11,27 @@ import { Input } from "@/components/ui/input";
 export default function ModulesPageClient({ data }: { data: any[] }) {
   const [search, setSearch] = useState("");
   const [selectedRoadmap, setSelectedRoadmap] = useState<string | null>(null);
+  const [typeFilter, setTypeFilter] = useState<"ALL" | "ROADMAP" | "STANDALONE">("ALL");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [sortBy, setSortBy] = useState<"NEWEST" | "OLDEST" | "TOPICS_DESC" | "TOPICS_ASC">("NEWEST");
   const cyclingColors = ["#3b82f6", "#f97316", "#8b5cf6", "#10b981", "#ec4899", "#14b8a6"];
 
   // Get unique roadmaps for filtering
-  const roadmapTitles = Array.from(new Set(data.map(m => m.roadmapTitle)));
+  const roadmapTitles = Array.from(new Set(data.map(m => m.roadmapTitle).filter(Boolean)));
 
   const filteredModules = data
     .filter(mod => {
       const matchesSearch = mod.title.toLowerCase().includes(search.toLowerCase()) || 
-                           (mod.description && mod.description.toLowerCase().includes(search.toLowerCase()));
-      const matchesRoadmap = !selectedRoadmap || mod.roadmapTitle === selectedRoadmap;
-      return matchesSearch && matchesRoadmap;
+                           (mod.description && mod.description.toLowerCase().includes(search.toLowerCase())) ||
+                           (mod.tags && mod.tags.toLowerCase().includes(search.toLowerCase()));
+      const modRoadmap = mod.roadmapTitle || "Standalone";
+      const matchesRoadmap = !selectedRoadmap || modRoadmap === selectedRoadmap;
+      const matchesType = typeFilter === "ALL" 
+         ? true 
+         : typeFilter === "ROADMAP" 
+            ? !!mod.roadmapId 
+            : !mod.roadmapId;
+      return matchesSearch && matchesRoadmap && matchesType;
     })
     .sort((a, b) => {
       if (sortBy === "NEWEST") return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
@@ -33,7 +42,7 @@ export default function ModulesPageClient({ data }: { data: any[] }) {
     });
 
   return (
-    <div className="container mx-auto px-4 py-12 max-w-7xl space-y-12">
+    <div className={`w-full mx-auto px-4 py-12 ${sidebarCollapsed ? "max-w-none px-8" : "max-w-7xl"} space-y-12 transition-all duration-300`}>
       <div className="flex flex-col items-center text-center space-y-4 max-w-2xl mx-auto">
         <div className="inline-flex items-center rounded-full border bg-muted/30 px-3 py-1 text-xs text-foreground/80 shadow-sm backdrop-blur-md mb-2">
            <Library className="h-3.5 w-3.5 mr-2 text-primary" />
@@ -43,11 +52,38 @@ export default function ModulesPageClient({ data }: { data: any[] }) {
         <p className="text-lg text-muted-foreground">
           Dive directly into any specific technology, tool, or concept without following a full roadmap. Pick a module below and start learning instantly.
         </p>
+        <div className="flex bg-muted/40 backdrop-blur-sm p-1 rounded-xl w-full max-w-md mx-auto border justify-center items-center gap-1 shadow-sm mt-4">
+          <button 
+            onClick={() => setTypeFilter("ALL")} 
+            className={`flex-1 text-center py-2 rounded-lg text-xs font-bold transition-all ${typeFilter === "ALL" ? "bg-background shadow-sm text-primary" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            All
+          </button>
+          <button 
+            onClick={() => setTypeFilter("ROADMAP")} 
+            className={`flex-1 text-center py-2 rounded-lg text-xs font-bold transition-all ${typeFilter === "ROADMAP" ? "bg-background shadow-sm text-primary" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            Roadmap Tracks
+          </button>
+          <button 
+            onClick={() => setTypeFilter("STANDALONE")} 
+            className={`flex-1 text-center py-2 rounded-lg text-xs font-bold transition-all ${typeFilter === "STANDALONE" ? "bg-background shadow-sm text-primary" : "text-muted-foreground hover:text-foreground"}`}
+          >
+             Standalone / Tools
+          </button>
+        </div>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-8 items-start">
-         {/* Left Sidebar Filter Section */}
-         <aside className="w-full md:w-64 lg:w-72 flex-shrink-0 space-y-6 md:sticky md:top-24">
+         <div className="flex items-center gap-2 md:hidden mb-4">
+            <Button variant="outline" size="sm" onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="w-full gap-2 rounded-xl">
+               <SlidersHorizontal className="h-4 w-4" />
+               {sidebarCollapsed ? "Show Filters" : "Hide Filters"}
+            </Button>
+         </div>
+
+         <div className="flex flex-col md:flex-row gap-8 items-start relative transition-all duration-300">
+            {!sidebarCollapsed && (
+               <aside className="w-full md:w-64 lg:w-72 flex-shrink-0 space-y-6 md:sticky md:top-24">
             <div className="bg-muted/30 p-5 rounded-2xl border backdrop-blur-sm space-y-5">
                <div className="space-y-2">
                   <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Search</label>
@@ -102,10 +138,25 @@ export default function ModulesPageClient({ data }: { data: any[] }) {
                </div>
             </div>
          </aside>
+       )}
 
          {/* Right Main Grid Section */}
          <div className="flex-1">
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="flex justify-between items-center mb-5">
+               <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setSidebarCollapsed(!sidebarCollapsed)} 
+                  className="gap-2 hidden md:inline-flex bg-muted/40 backdrop-blur-sm border-muted-foreground/20 hover:bg-muted/80 rounded-xl"
+               >
+                  <SlidersHorizontal className="h-4 w-4" />
+                  {sidebarCollapsed ? "Expand Filters" : "Collapse Filters"}
+               </Button>
+               <div className="hidden md:block text-xs text-muted-foreground font-semibold">
+                  Found {filteredModules.length} Modules
+               </div>
+            </div>
+            <div className={`grid grid-cols-1 sm:grid-cols-2 ${sidebarCollapsed ? "lg:grid-cols-4" : "lg:grid-cols-3"} gap-6 transition-all duration-300`}>
               {filteredModules.length > 0 ? (
                  filteredModules.map((mod, index) => (
                     <Link key={mod.id} href={`/roadmap/${mod.roadmapId}/${mod.id}`} className="group block h-full">
@@ -122,7 +173,7 @@ export default function ModulesPageClient({ data }: { data: any[] }) {
                                   {mod.roadmapTitle}
                                </Badge>
                              </div>
-                             <CardTitle className="text-xl group-hover:text-primary transition-colors line-clamp-1">{mod.title}</CardTitle>
+                             <CardTitle className="text-xl group-hover:text-primary transition-colors line-clamp-2 h-14 font-bold flex items-center leading-tight mb-1">{mod.title}</CardTitle>
                           </CardHeader>
                           
                           <CardContent className="pl-6 pt-4 flex-1 flex flex-col min-h-0 w-full mb-auto pb-6">

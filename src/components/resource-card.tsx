@@ -91,6 +91,16 @@ export function ResourceCard({ resource }: ResourceCardProps) {
         <CardDescription className="line-clamp-2 h-10 mt-2 text-sm">
           {resource.description}
         </CardDescription>
+
+        {resource.tags && (
+          <div className="flex flex-wrap gap-1 mt-3">
+            {resource.tags.split(",").filter(Boolean).map((t: string) => (
+              <span key={t} className="text-[10px] items-center px-1.5 py-0.5 rounded-full font-semibold bg-primary/10 text-primary border border-primary/20">
+                #{t.trim()}
+              </span>
+            ))}
+          </div>
+        )}
       </CardHeader>
       <CardContent className="p-5 pt-2 mt-auto">
         <div className="flex items-center justify-between text-xs text-muted-foreground mb-4">
