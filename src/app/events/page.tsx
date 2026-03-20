@@ -137,10 +137,10 @@ function EventCard({ event, badge }: { event: any; badge: "ongoing" | "upcoming"
       {images.length > 0 && (
         <div
           className={`grid gap-0.5 w-full bg-muted border-b ${images.length === 1
-              ? "grid-cols-1 h-48"
-              : images.length === 2
-                ? "grid-cols-2 h-40"
-                : "grid-cols-3 h-32"
+            ? "grid-cols-1 h-48"
+            : images.length === 2
+              ? "grid-cols-2 h-40"
+              : "grid-cols-3 h-32"
             }`}
         >
           {images.slice(0, 3).map((url: string, idx: number) => (
