@@ -20,7 +20,7 @@ export async function POST(req: Request) {
       data: {
         title,
         description,
-        type, 
+        type,
         url,
         tags: tags || "General",
         imageUrl: imageUrl || null,

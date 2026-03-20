@@ -1,539 +1,290 @@
-"use client";
+import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Save, Plus, Code2, Type, FileText,
-  Loader2, X, Trash2, ChevronDown, ChevronRight, Image as ImageIcon
-} from "lucide-react";
-import { Editor } from "@/components/editor";
-
-interface SubtopicForm { title: string; content: string; }
-interface TopicForm { title: string; content: string; subtopics: SubtopicForm[]; expanded: boolean; }
-interface ResourceForm { title: string; url: string; type: string; description: string; imageUrl?: string; }
-
-interface ModuleForm {
-  title: string;
-  description: string;
-  icon: string;
-  status?: string;
-  topics: TopicForm[];
-  resources: ResourceForm[];
+// Strips YouTube ?si= and other tracking query params so URLs match reliably
+// regardless of how they were originally saved.
+function normalizeUrl(url: string | null | undefined): string {
+  if (!url) return "";
+  try {
+    const u = new URL(url.trim());
+    // Remove known tracking params that don't affect the resource identity
+    ["si", "utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "feature", "ref"].forEach(
+      (p) => u.searchParams.delete(p)
+    );
+    return u.toString().toLowerCase();
+  } catch {
+    // Not a valid URL — fall back to plain lowercase trim
+    return url.trim().toLowerCase();
+  }
 }
 
-const emptySubtopic = (): SubtopicForm => ({ title: "", content: "" });
-const emptyTopic = (): TopicForm => ({ title: "", content: "", subtopics: [], expanded: true });
-const emptyResource = (): ResourceForm => ({ title: "", url: "", type: "ARTICLE", description: "", imageUrl: "" });
-
-export default function EditModulePage({ params }: { params: Promise<{ id: string }> }) {
-  const router = useRouter();
-  const [moduleId, setModuleId] = useState("");
-  const [mode, setMode] = useState<"FORM" | "JSON" | "MARKDOWN">("FORM");
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-  const [jsonInput, setJsonInput] = useState("");
-  const [markdownInput, setMarkdownInput] = useState("");
-
-  const [replaceExisting, setReplaceExisting] = useState(true);
-
-  const [form, setForm] = useState<ModuleForm>({
-    title: "", description: "", icon: "📦", topics: [], resources: []
-  });
-
-  useEffect(() => {
-    params.then(p => {
-      setModuleId(p.id);
-      fetch(`/api/modules/${p.id}`)
-        .then(res => res.json())
-        .then(data => {
-          setForm({
-            title: data.title,
-            description: data.description || "",
-            icon: data.icon || "📦",
-            status: data.status || "PENDING",
-            topics: (data.topics || []).map((t: any) => ({
-              title: t.title,
-              content: t.content || "",
-              subtopics: (t.subtopics || []).map((s: any) => ({
-                title: s.title,
-                content: s.content || ""
-              })),
-              expanded: false,
-            })),
-            resources: (data.resources || []).map((r: any) => ({
-              title: r.title, url: r.url, type: r.type || "ARTICLE", description: r.description || "", imageUrl: r.imageUrl || ""
-            })),
-          });
-          setLoading(false);
-        })
-        .catch(() => { setError("Failed to load module"); setLoading(false); });
+export async function GET(req: Request, context: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await context.params;
+    const step = await prisma.roadmapStep.findUnique({
+      where: { id },
+      include: {
+        topics: {
+          orderBy: { order: "asc" },
+          include: { subtopics: { orderBy: { order: "asc" } } },
+        },
+        resources: { orderBy: { order: "asc" } },
+      },
     });
-  }, [params]);
+    if (!step) return NextResponse.json({ message: "Not found" }, { status: 404 });
 
-  const handleImageUpload = async (ri: number, file: File | undefined) => {
-    if (!file) return;
-    const formData = new FormData();
-    formData.append("file", file);
-    try {
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-      const data = await res.json();
-      if (data.url) {
-        const nr = [...form.resources];
-        nr[ri].imageUrl = data.url;
-        setForm({ ...form, resources: nr });
+    // Filter out RoadmapResource rows whose global mirror has been soft-deleted.
+    // This ensures deleted resources vanish from the module editor immediately.
+    if (step.resources.length > 0) {
+      const globalIds = step.resources
+        .map((r: any) => r.globalResourceId)
+        .filter(Boolean) as string[];
+
+      const deletedGlobalIds = new Set<string>();
+      if (globalIds.length > 0) {
+        const deleted = await prisma.resource.findMany({
+          where: { id: { in: globalIds }, status: "DELETED" },
+          select: { id: true },
+        });
+        deleted.forEach((r) => deletedGlobalIds.add(r.id));
       }
-    } catch (err) {
-      setError("Image upload failed");
+
+      (step as any).resources = step.resources.filter(
+        (r: any) => !r.globalResourceId || !deletedGlobalIds.has(r.globalResourceId)
+      );
     }
-  };
 
-  // ── JSON parse ──────────────────────────────────────────────────────────
-  const handleJsonParse = () => {
-    try {
-      const p = JSON.parse(jsonInput);
-      setForm({
-        title: p.title || form.title,
-        description: p.description || form.description,
-        icon: p.icon || form.icon,
-        topics: (p.topics || []).map((t: any) => ({
-          title: t.title || "",
-          content: t.content || "",
-          subtopics: (t.subtopics || []).map((s: any) => ({ title: s.title || "", content: s.content || "" })),
-          expanded: false,
-        })),
-        resources: (p.resources || []).map((r: any) => ({
-          title: r.title || "", url: r.url || "", type: r.type || "ARTICLE", description: r.description || ""
-        }))
-      });
-      setMode("FORM"); setError("");
-    } catch { setError("Invalid JSON format"); }
-  };
+    return NextResponse.json(step);
+  } catch (err) {
+    return NextResponse.json({ message: "Server error" }, { status: 500 });
+  }
+}
 
-  // ── Markdown / AI Paste parse ────────────────────────────────────────────
-  const handleMarkdownParse = () => {
-    try {
-      const lines = markdownInput.split("\n");
-      let currentTopic: TopicForm | null = null;
-      let currentSubtopic: SubtopicForm | null = null;
-      const topics: TopicForm[] = [];
+export async function PUT(req: Request, context: { params: Promise<{ id: string }> }) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session || !["ADMIN", "SUPER_ADMIN"].includes(session.user.role)) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    }
 
-      for (const line of lines) {
-        const trimmed = line.trim();
+    const { id } = await context.params;
+    const { title, description, icon, status, topics, resources } = await req.json();
+    const resourceList: any[] = resources || [];
 
-        if (trimmed.startsWith("## ")) {
-          // New Topic
-          currentSubtopic = null;
-          currentTopic = {
-            title: trimmed.replace(/^## /, "").trim(),
-            content: "",
-            subtopics: [],
-            expanded: false,
-          };
-          topics.push(currentTopic);
-        } else if (trimmed.startsWith("### ") && currentTopic) {
-          // New Subtopic under current topic
-          currentSubtopic = {
-            title: trimmed.replace(/^### /, "").trim(),
-            content: "",
-          };
-          currentTopic.subtopics.push(currentSubtopic);
-        } else if (currentSubtopic) {
-          currentSubtopic.content += line + "\n";
-        } else if (currentTopic) {
-          currentTopic.content += line + "\n";
+    // ── Pre-fetch outside transaction ──────────────────────────────────────
+
+    // Existing RoadmapResources for this step
+    const existingRoadmapResources = await prisma.roadmapResource.findMany({
+      where: { stepId: id },
+      select: { id: true, url: true, globalResourceId: true },
+    });
+
+    // Normalized incoming URLs
+    const incomingNormalizedUrls = resourceList
+      .map((r: any) => normalizeUrl(r.url))
+      .filter(Boolean);
+
+    // Fetch ALL global resources whose normalized URL matches any incoming URL.
+    // We fetch by partial match since DB stores original URLs (with or without ?si=).
+    // Strategy: fetch all global Resources that have any of the raw URLs, then
+    // also normalise their stored URLs client-side for matching.
+    const rawIncomingUrls = resourceList.map((r: any) => r.url?.trim()).filter(Boolean);
+
+    const existingGlobals =
+      rawIncomingUrls.length > 0
+        ? await prisma.resource.findMany({
+          where: { url: { in: rawIncomingUrls } },
+          select: { id: true, url: true },
+        })
+        : [];
+
+    // Also search by globalResourceId stored on existing RoadmapResources
+    const existingGlobalIds = existingRoadmapResources
+      .map((r) => r.globalResourceId)
+      .filter((gid): gid is string => Boolean(gid));
+
+    const existingGlobalsByBacklink =
+      existingGlobalIds.length > 0
+        ? await prisma.resource.findMany({
+          where: { id: { in: existingGlobalIds } },
+          select: { id: true, url: true },
+        })
+        : [];
+
+    // Merge both sources; normalised URL → global Resource id
+    const urlToGlobalId = new Map<string, string>();
+    for (const g of [...existingGlobals, ...existingGlobalsByBacklink]) {
+      if (g.url) urlToGlobalId.set(normalizeUrl(g.url), g.id);
+    }
+
+    // Also map by globalResourceId directly (for cases where URL changed)
+    // roadmapResource.url (normalised) → globalResourceId
+    const roadmapUrlToGlobalId = new Map<string, string | null>();
+    for (const r of existingRoadmapResources) {
+      roadmapUrlToGlobalId.set(normalizeUrl(r.url), r.globalResourceId ?? null);
+    }
+
+    const incomingNormalizedSet = new Set(incomingNormalizedUrls);
+
+    // ── Transaction ────────────────────────────────────────────────────────
+    const result = await prisma.$transaction(
+      async (tx) => {
+        // 1. Delete existing topics (subtopics cascade)
+        await tx.roadmapTopic.deleteMany({ where: { stepId: id } });
+
+        // 2. Re-create topics + subtopics
+        for (let idx = 0; idx < (topics || []).length; idx++) {
+          const t = topics[idx];
+          const topic = await tx.roadmapTopic.create({
+            data: {
+              stepId: id,
+              title: t.title || "Untitled Topic",
+              content: t.content || null,
+              order: idx,
+            },
+          });
+          for (let si = 0; si < (t.subtopics || []).length; si++) {
+            const s = t.subtopics[si];
+            if (s.title) {
+              await tx.roadmapSubTopic.create({
+                data: {
+                  topicId: topic.id,
+                  title: s.title,
+                  content: s.content || "",
+                  order: si,
+                },
+              });
+            }
+          }
         }
-      }
 
-      setForm({ ...form, topics: replaceExisting ? topics : [...form.topics, ...topics] });
-      setMode("FORM");
-      setMarkdownInput("");
-      setError("");
-    } catch {
-      setError("Failed to parse markdown content");
+        // 3. Clean up global mirror rows for removed resources
+        for (const [normalizedUrl, globalId] of roadmapUrlToGlobalId.entries()) {
+          if (!incomingNormalizedSet.has(normalizedUrl) && globalId) {
+            await tx.resource.deleteMany({
+              where: { id: globalId, tags: "Module" },
+            });
+          }
+        }
+
+        // 4. Delete old RoadmapResource rows for this step
+        await tx.roadmapResource.deleteMany({ where: { stepId: id } });
+
+        // 5. Re-create RoadmapResources + upsert mirror into global Resource table
+        for (let idx = 0; idx < resourceList.length; idx++) {
+          const r = resourceList[idx];
+          if (!r.title && !r.url) continue;
+
+          const urlKey = normalizeUrl(r.url);
+          // Explicitly null when empty string — never keep stale cover
+          const imageUrl: string | null = r.imageUrl?.trim() || null;
+          let globalResourceId: string | null = null;
+
+          if (urlKey) {
+            if (urlToGlobalId.has(urlKey)) {
+              // Global row exists — update it fully (including imageUrl cleared to null)
+              const existingId = urlToGlobalId.get(urlKey)!;
+              await tx.resource.update({
+                where: { id: existingId },
+                data: {
+                  title: r.title || "Module Resource",
+                  type: r.type || "ARTICLE",
+                  description:
+                    r.description || `Resource from module: ${title || "Module"}`,
+                  imageUrl,          // ← explicit null when cleared
+                  status: "PUBLISHED",
+                },
+              });
+              globalResourceId = existingId;
+            } else {
+              // No global row yet — create one
+              const created = await tx.resource.create({
+                data: {
+                  title: r.title || "Module Resource",
+                  url: r.url,
+                  type: r.type || "ARTICLE",
+                  description:
+                    r.description || `Resource from module: ${title || "Module"}`,
+                  imageUrl,          // ← explicit null when cleared
+                  tags: "Module",
+                  status: "PUBLISHED",
+                  authorId: session.user.id,
+                },
+              });
+              globalResourceId = created.id;
+              urlToGlobalId.set(urlKey, created.id);
+            }
+          }
+
+          await tx.roadmapResource.create({
+            data: {
+              stepId: id,
+              title: r.title || "",
+              url: r.url || "",
+              type: r.type || "ARTICLE",
+              description: r.description || "",
+              imageUrl,              // ← explicit null when cleared
+              order: idx,
+              ...(globalResourceId ? { globalResourceId } : {}),
+            },
+          });
+        }
+
+        // 6. Update the step itself
+        return tx.roadmapStep.update({
+          where: { id },
+          data: {
+            title: title || "Untitled",
+            description: description || "",
+            icon: icon || "📦",
+            status: status || "PENDING",
+          },
+        });
+      },
+      { timeout: 30000, maxWait: 5000 }
+    );
+
+    return NextResponse.json({ message: "Updated", step: result });
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json({ message: "Server error" }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: Request, context: { params: Promise<{ id: string }> }) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session || !["ADMIN", "SUPER_ADMIN"].includes(session.user.role)) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
-  };
+    const { id } = await context.params;
 
-  const exportJson = () => {
-    setJsonInput(JSON.stringify(form, null, 2));
-    setMode("JSON");
-  };
+    // Find all RoadmapResources for this step that have a global mirror
+    const linkedResources = await prisma.roadmapResource.findMany({
+      where: { stepId: id, globalResourceId: { not: null } },
+      select: { globalResourceId: true },
+    });
 
-  // ── Save ────────────────────────────────────────────────────────────────
-  const handleSave = async (forceStatus?: "PENDING" | "PUBLISHED") => {
-    setSaving(true); setError("");
-    try {
-      const payload = { ...form };
-      if (forceStatus) payload.status = forceStatus;
+    const globalIds = linkedResources
+      .map((r) => r.globalResourceId)
+      .filter(Boolean) as string[];
 
-      const res = await fetch(`/api/modules/${moduleId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error("Save failed");
-      router.push("/admin/modules"); router.refresh();
-    } catch (err: any) { setError(err.message); setSaving(false); }
-  };
+    // Soft-delete the module + its mirrored Resource rows in one go
+    await prisma.$transaction([
+      prisma.roadmapStep.update({ where: { id }, data: { status: "DELETED" } }),
+      // Only soft-delete Module-tagged mirrors — never touch manually created resources
+      ...(globalIds.length > 0
+        ? [prisma.resource.updateMany({
+          where: { id: { in: globalIds }, tags: "Module" },
+          data: { status: "DELETED" },
+        })]
+        : []),
+    ]);
 
-  const handleDelete = async () => {
-    if (!confirm("Are you sure you want to delete this module?")) return;
-    try {
-      await fetch(`/api/modules/${moduleId}`, { method: "DELETE" });
-      router.push("/admin/modules"); router.refresh();
-    } catch {}
-  };
-
-  // ── Topic helpers ───────────────────────────────────────────────────────
-  const updateTopic = (i: number, data: Partial<TopicForm>) => {
-    const topics = [...form.topics];
-    topics[i] = { ...topics[i], ...data };
-    setForm({ ...form, topics });
-  };
-
-  const updateSubtopic = (ti: number, si: number, data: Partial<SubtopicForm>) => {
-    const topics = [...form.topics];
-    const subtopics = [...topics[ti].subtopics];
-    subtopics[si] = { ...subtopics[si], ...data };
-    topics[ti] = { ...topics[ti], subtopics };
-    setForm({ ...form, topics });
-  };
-
-  if (loading) return (
-    <div className="p-12 text-center text-muted-foreground flex flex-col items-center gap-3">
-      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      <p className="text-sm">Loading module...</p>
-    </div>
-  );
-
-  return (
-    <div className="space-y-8 max-w-4xl">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Edit Module</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            <span className="text-xl mr-2">{form.icon}</span>
-            {form.title || "Untitled Module"}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="ghost" size="sm" onClick={() => router.push("/admin/modules")} className="text-muted-foreground hover:bg-muted/50">
-            Discard
-          </Button>
-          <Button variant="outline" size="sm" className="border-destructive/40 text-destructive hover:bg-destructive/10" onClick={handleDelete}>
-            <Trash2 className="h-4 w-4 mr-2" /> Delete
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => handleSave("PENDING")} disabled={saving || !form.title}>
-            Save as Draft
-          </Button>
-          <Button size="sm" onClick={() => handleSave("PUBLISHED")} disabled={saving || !form.title} className="bg-primary">
-            {saving ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...</> : "Publish Live"}
-          </Button>
-        </div>
-      </div>
-
-      {error && <div className="p-3 bg-destructive/15 text-destructive border border-destructive/20 rounded-md text-sm">{error}</div>}
-
-      {/* Mode toggle */}
-      <div className="flex bg-muted p-1 rounded-lg w-fit gap-0.5">
-        <Button variant={mode === "FORM" ? "secondary" : "ghost"} size="sm" onClick={() => setMode("FORM")}>
-          <Type className="h-4 w-4 mr-2" /> Form Builder
-        </Button>
-        <Button variant={mode === "JSON" ? "secondary" : "ghost"} size="sm" onClick={exportJson}>
-          <Code2 className="h-4 w-4 mr-2" /> JSON Mode
-        </Button>
-        <Button variant={mode === "MARKDOWN" ? "secondary" : "ghost"} size="sm" onClick={() => setMode("MARKDOWN")}>
-          <FileText className="h-4 w-4 mr-2" /> AI/Markdown Paste
-        </Button>
-      </div>
-
-      {/* JSON Mode */}
-      {mode === "JSON" && (
-        <Card>
-          <CardContent className="pt-6 space-y-4">
-            <p className="text-xs text-muted-foreground">Paste or edit the complete module JSON. Click "Apply" to load into the form.</p>
-            <textarea
-              value={jsonInput}
-              onChange={(e) => setJsonInput(e.target.value)}
-              className="w-full h-96 rounded-md border border-input bg-background px-3 py-2 text-xs font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            />
-            <Button onClick={handleJsonParse}>Apply JSON to Form</Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Markdown / AI Paste Mode */}
-      {mode === "MARKDOWN" && (
-        <Card className="border-primary/20 bg-primary/5">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <FileText className="h-5 w-5 text-primary" />
-              AI / Markdown Paste Importer
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="text-sm text-muted-foreground space-y-1 bg-muted/50 rounded-lg p-3 border">
-              <p className="font-medium text-foreground mb-2">📋 Paste format:</p>
-              <p><span className="font-mono text-xs bg-muted px-1 rounded">## Topic Title</span> → creates a Topic</p>
-              <p><span className="font-mono text-xs bg-muted px-1 rounded">### Subtopic Title</span> → creates a Subtopic inside the topic above</p>
-              <p>Everything below a heading becomes its content (markdown, tables, code blocks, images all work)</p>
-              <p className="text-xs mt-2 text-muted-foreground/70">💡 Images: use <span className="font-mono">![alt](https://url.to/image.jpg)</span> inline in content</p>
-            </div>
-            <textarea
-              value={markdownInput}
-              onChange={(e) => setMarkdownInput(e.target.value)}
-              className="w-full h-[400px] rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring font-mono"
-              placeholder={`## What is Docker?\nDocker is a containerization platform...\n\n### The Shipping Analogy\n![Container](https://images.unsplash.com/photo-xxx)\nBefore containers, shipping software was chaos...\n\n### Containers vs VMs\n| Feature | Containers | VMs |\n| :--- | :--- | :--- |\n| Size | 5-500MB | 3-20GB |\n\n## Core Docker Commands\nAll essential commands you need...\n\n### docker run\nRuns a container from an image...`}
-            />
-            <div className="flex items-center gap-4 flex-wrap">
-              <label className="flex items-center gap-2 cursor-pointer border px-3 py-1.5 rounded-lg bg-background hover:bg-muted/50 transition-colors">
-                <input
-                  type="checkbox"
-                  checked={replaceExisting}
-                  onChange={(e) => setReplaceExisting(e.target.checked)}
-                  className="rounded border-input text-primary focus:ring-1 focus:ring-ring h-4 w-4"
-                />
-                <span className="text-sm font-medium">Replace existing topics</span>
-              </label>
-              
-              <Button onClick={handleMarkdownParse} className="gap-2">
-                <FileText className="h-4 w-4" />
-                {replaceExisting ? "Parse & Replace All" : "Parse & Append"}
-              </Button>
-              <p className="text-xs text-muted-foreground">
-                {replaceExisting 
-                  ? "Existing topics will be wiped and replaced with these." 
-                  : "Topics will be added to the bottom."}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Form Mode */}
-      {mode === "FORM" && (
-        <div className="space-y-6">
-          {/* Basic Details */}
-          <Card>
-            <CardHeader className="pb-4"><CardTitle className="text-base">Module Details</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid sm:grid-cols-[1fr_80px] gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Title</label>
-                  <Input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="e.g. Docker & Containers" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Icon</label>
-                  <Input value={form.icon} onChange={e => setForm({ ...form, icon: e.target.value })} placeholder="📦" className="text-center text-lg" />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Description</label>
-                <textarea
-                  value={form.description}
-                  onChange={e => setForm({ ...form, description: e.target.value })}
-                  className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm min-h-[80px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  placeholder="What will learners gain from this module?"
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Topics */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-bold">📄 Topics ({form.topics.length})</h2>
-              <Button size="sm" variant="outline" onClick={() => setForm({ ...form, topics: [...form.topics, emptyTopic()] })}>
-                <Plus className="h-3 w-3 mr-1" /> Add Topic
-              </Button>
-            </div>
-
-            {form.topics.length === 0 && (
-              <div className="border border-dashed rounded-xl p-10 text-center bg-muted/10 text-muted-foreground">
-                <FileText className="h-8 w-8 mx-auto mb-3 opacity-40" />
-                <p className="text-sm">No topics yet. Add manually or use the <strong>AI/Markdown Paste</strong> tab to import from ChatGPT.</p>
-              </div>
-            )}
-
-            {form.topics.map((topic, ti) => (
-              <Card key={ti} className="overflow-hidden">
-                {/* Topic header */}
-                <div
-                  className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-muted/40 transition-colors border-b"
-                  onClick={() => updateTopic(ti, { expanded: !topic.expanded })}
-                >
-                  <span className="text-xs font-mono font-bold text-muted-foreground/60 shrink-0">{String(ti + 1).padStart(2, "0")}</span>
-                  <span className="text-sm font-semibold flex-1 truncate">{topic.title || `Topic ${ti + 1}`}</span>
-                  <span className="text-xs text-muted-foreground hidden sm:inline">{topic.subtopics.length} subtopics</span>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setForm({ ...form, topics: form.topics.filter((_, j) => j !== ti) }); }}
-                    className="p-1 hover:bg-destructive/10 rounded ml-1"
-                  >
-                    <X className="h-3.5 w-3.5 text-destructive" />
-                  </button>
-                  {topic.expanded ? <ChevronDown className="h-4 w-4 shrink-0" /> : <ChevronRight className="h-4 w-4 shrink-0" />}
-                </div>
-
-                {topic.expanded && (
-                  <CardContent className="pt-4 space-y-5">
-                    {/* Topic title */}
-                    <div className="space-y-2">
-                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Topic Title</label>
-                      <Input
-                        value={topic.title}
-                        onChange={e => updateTopic(ti, { title: e.target.value })}
-                        placeholder="Topic title"
-                      />
-                    </div>
-
-                    {/* Topic content (intro text before subtopics) */}
-                    <div className="space-y-2">
-                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Intro Content (optional — shown before subtopics)</label>
-                      <Editor
-                        content={topic.content}
-                        onChange={(html) => updateTopic(ti, { content: html })}
-                      />
-                    </div>
-
-                    {/* Subtopics */}
-                    <div className="space-y-3 pt-2 border-t">
-                      <div className="flex items-center justify-between">
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Subtopics ({topic.subtopics.length})</h4>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="text-xs h-7"
-                          onClick={() => updateTopic(ti, { subtopics: [...topic.subtopics, emptySubtopic()] })}
-                        >
-                          <Plus className="h-3 w-3 mr-1" /> Add Subtopic
-                        </Button>
-                      </div>
-
-                      {topic.subtopics.map((sub, si) => (
-                        <div key={si} className="border rounded-lg p-4 space-y-3 bg-muted/5 border-l-2 border-l-primary/20">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-mono text-primary/60">{String(si + 1).padStart(2, "0")}</span>
-                            <Input
-                              value={sub.title}
-                              onChange={e => updateSubtopic(ti, si, { title: e.target.value })}
-                              placeholder="Subtopic title"
-                              className="flex-1 h-8 text-sm"
-                            />
-                            <button
-                              onClick={() => updateTopic(ti, { subtopics: topic.subtopics.filter((_, j) => j !== si) })}
-                              className="p-1.5 hover:bg-destructive/10 rounded"
-                            >
-                              <X className="h-3.5 w-3.5 text-destructive" />
-                            </button>
-                          </div>
-                          <Editor
-                            content={sub.content}
-                            onChange={(html) => updateSubtopic(ti, si, { content: html })}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                )}
-              </Card>
-            ))}
-          </div>
-
-          {/* Resources */}
-          <Card>
-            <CardHeader className="pb-4 flex flex-row items-center justify-between">
-              <CardTitle className="text-base">📚 Resources ({form.resources.length})</CardTitle>
-              <Button size="sm" variant="outline" onClick={() => setForm({ ...form, resources: [...form.resources, emptyResource()] })}>
-                <Plus className="h-3 w-3 mr-1" /> Add Resource
-              </Button>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {form.resources.length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-4 bg-muted/20 border border-dashed rounded-lg">No resources items yet.</p>
-              )}
-              <div className="grid gap-4 sm:grid-cols-2">
-                {form.resources.map((r, ri) => {
-                  const youtubeId = r.url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/)?.[1];
-                  const finalImageUrl = r.imageUrl || (youtubeId ? `https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg` : null);
-
-                  return (
-                    <Card key={ri} className="overflow-hidden group relative border-muted/60 hover:border-primary/30 transition-all duration-200 shadow-sm">
-                      <CardContent className="p-0">
-                        <div className="aspect-video relative bg-muted flex items-center justify-center overflow-hidden border-b">
-                          {finalImageUrl ? (
-                            <img src={finalImageUrl} alt={r.title} className="object-cover w-full h-full group-hover:scale-105 transition-all duration-300" />
-                          ) : (
-                          <div className="text-muted-foreground/40 flex flex-col items-center gap-1.5">
-                            <ImageIcon className="h-10 w-10 stroke-[1.2]" />
-                            <span className="text-xs">No preview image</span>
-                          </div>
-                        )}
-                        {/* Overlay to upload file */}
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-all duration-200 flex-col px-4 text-center">
-                          <label className="text-xs bg-white text-black font-semibold rounded-md px-2.5 py-1.5 cursor-pointer shadow-sm hover:bg-white/90 transition-colors">
-                            Upload Cover
-                            <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(ri, e.target.files?.[0])} />
-                          </label>
-                        </div>
-                        
-                        <button
-                          onClick={() => setForm({ ...form, resources: form.resources.filter((_, j) => j !== ri) })}
-                          className="absolute top-2 right-2 p-1.5 rounded-full bg-white text-destructive hover:bg-destructive hover:text-white transition-all duration-150 shadow-sm border border-border"
-                        >
-                          <X className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                      
-                      <div className="p-3 space-y-2.5">
-                        <Input
-                          value={r.title}
-                          onChange={e => { const nr = [...form.resources]; nr[ri].title = e.target.value; setForm({ ...form, resources: nr }); }}
-                          placeholder="Resource title"
-                          className="h-8 font-medium text-sm"
-                        />
-                        <Input
-                          value={r.url}
-                          onChange={e => { const nr = [...form.resources]; nr[ri].url = e.target.value; setForm({ ...form, resources: nr }); }}
-                          placeholder="URL (https://...)"
-                          className="h-7 text-xs font-mono"
-                        />
-                        <div className="grid grid-cols-[100px_1fr] gap-2">
-                          <select
-                            value={r.type}
-                            onChange={e => { const nr = [...form.resources]; nr[ri].type = e.target.value; setForm({ ...form, resources: nr }); }}
-                            className="h-7 rounded-md border border-input bg-background px-1 text-xs focus:ring-1 focus:ring-ring"
-                          >
-                            <option value="ARTICLE">Article</option>
-                            <option value="VIDEO">Video</option>
-                            <option value="PLAYLIST">Playlist</option>
-                            <option value="PDF">PDF</option>
-                            <option value="TOOL">Tool</option>
-                            <option value="NOTES">Notes</option>
-                          </select>
-                          <Input
-                            value={r.description || ""}
-                            onChange={e => { const nr = [...form.resources]; nr[ri].description = e.target.value; setForm({ ...form, resources: nr }); }}
-                            placeholder="Short description"
-                            className="h-7 text-xs"
-                          />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                    );
-                  })}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-    </div>
-  );
+    return NextResponse.json({ message: "Soft Deleted" });
+  } catch (err) {
+    return NextResponse.json({ message: "Failed to delete" }, { status: 500 });
+  }
 }
