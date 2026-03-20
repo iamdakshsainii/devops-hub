@@ -51,22 +51,23 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt",
   },
   callbacks: {
-    async jwt({ token, user, trigger, session }) {
-      // Intial sign in
+    async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        const dbUser = await prisma.user.findUnique({
-          where: { id: user.id }
-        });
-        token.role = dbUser?.role || "MEMBER";
       }
-      
       return token;
     },
     async session({ session, token }) {
       if (token && session.user) {
         session.user.id = token.id as string;
-        session.user.role = token.role as string;
+        
+        // Fetch fresh user from DB on every session request for real-time permissions!
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.id as string },
+          select: { role: true }
+        });
+        
+        session.user.role = dbUser?.role || "MEMBER";
       }
       return session;
     }

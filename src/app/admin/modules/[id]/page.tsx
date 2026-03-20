@@ -224,6 +224,9 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
           </p>
         </div>
         <div className="flex gap-2">
+          <Button variant="ghost" size="sm" onClick={() => router.push("/admin/modules")} className="text-muted-foreground hover:bg-muted/50">
+            Discard
+          </Button>
           <Button variant="outline" size="sm" className="border-destructive/40 text-destructive hover:bg-destructive/10" onClick={handleDelete}>
             <Trash2 className="h-4 w-4 mr-2" /> Delete
           </Button>
@@ -456,13 +459,17 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
                 <p className="text-sm text-muted-foreground text-center py-4 bg-muted/20 border border-dashed rounded-lg">No resources items yet.</p>
               )}
               <div className="grid gap-4 sm:grid-cols-2">
-                {form.resources.map((r, ri) => (
-                  <Card key={ri} className="overflow-hidden group relative border-muted/60 hover:border-primary/30 transition-all duration-200 shadow-sm">
-                    <CardContent className="p-0">
-                      <div className="aspect-video relative bg-muted flex items-center justify-center overflow-hidden border-b">
-                        {r.imageUrl ? (
-                          <img src={r.imageUrl} alt={r.title} className="object-cover w-full h-full group-hover:scale-105 transition-all duration-300" />
-                        ) : (
+                {form.resources.map((r, ri) => {
+                  const youtubeId = r.url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/)?.[1];
+                  const finalImageUrl = r.imageUrl || (youtubeId ? `https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg` : null);
+
+                  return (
+                    <Card key={ri} className="overflow-hidden group relative border-muted/60 hover:border-primary/30 transition-all duration-200 shadow-sm">
+                      <CardContent className="p-0">
+                        <div className="aspect-video relative bg-muted flex items-center justify-center overflow-hidden border-b">
+                          {finalImageUrl ? (
+                            <img src={finalImageUrl} alt={r.title} className="object-cover w-full h-full group-hover:scale-105 transition-all duration-300" />
+                          ) : (
                           <div className="text-muted-foreground/40 flex flex-col items-center gap-1.5">
                             <ImageIcon className="h-10 w-10 stroke-[1.2]" />
                             <span className="text-xs">No preview image</span>
@@ -505,9 +512,10 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
                           >
                             <option value="ARTICLE">Article</option>
                             <option value="VIDEO">Video</option>
-                            <option value="DOCS">Docs</option>
+                            <option value="PLAYLIST">Playlist</option>
                             <option value="PDF">PDF</option>
                             <option value="TOOL">Tool</option>
+                            <option value="NOTES">Notes</option>
                           </select>
                           <Input
                             value={r.description || ""}
@@ -519,7 +527,8 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
                       </div>
                     </CardContent>
                   </Card>
-                ))}
+                    );
+                  })}
               </div>
             </CardContent>
           </Card>

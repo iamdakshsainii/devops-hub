@@ -21,6 +21,23 @@ export default function NewResourcePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const [notes, setNotes] = useState<any[]>([]);
+  const [selectedNoteId, setSelectedNoteId] = useState("");
+
+  const fetchNotes = async () => {
+     try {
+        const r = await fetch("/api/notes");
+        const data = await r.json();
+        // Adjust based on typical payload structure
+        setNotes(data.notes || data || []);
+     } catch {}
+  };
+
+  const handleTypeChange = (newType: string) => {
+     setType(newType);
+     if (newType === "NOTES") {  fetchNotes(); }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (tags.length === 0) {
@@ -83,15 +100,41 @@ export default function NewResourcePage() {
               <label className="text-sm font-medium leading-none">Resource Type</label>
               <select 
                 value={type} 
-                onChange={e => setType(e.target.value)}
+                onChange={e => handleTypeChange(e.target.value)}
                 className="flex h-10 w-full rounded-md border border-input bg-background/50 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <option value="LINK">External Link</option>
+                <option value="NOTES">Attached Note</option>
                 <option value="YOUTUBE">YouTube Video / Channel</option>
                 <option value="PDF">PDF Document (URL)</option>
                 <option value="IMAGE">Image / Infographic (URL)</option>
               </select>
             </div>
+
+            {type === "NOTES" && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium leading-none">Select Note</label>
+                <select 
+                  value={selectedNoteId}
+                  onChange={e => {
+                     const id = e.target.value;
+                     setSelectedNoteId(id);
+                     const note = Array.isArray(notes) ? notes.find(n => n.id === id) : null;
+                     if (note) {
+                        setTitle(note.title);
+                        setDescription(note.content ? note.content.replace(/<[^>]*>?/gm, '').substring(0, 100) + "..." : "");
+                        setUrl(`/notes/${note.id}`);
+                     }
+                  }}
+                  className="flex h-10 w-full rounded-md border border-input bg-background/50 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="">-- Choose Note --</option>
+                  {Array.isArray(notes) && notes.map(n => (
+                    <option key={n.id} value={n.id}>{n.title}</option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div className="space-y-2">
               <label className="text-sm font-medium leading-none">Title</label>

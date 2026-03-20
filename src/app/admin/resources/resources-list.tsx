@@ -43,7 +43,7 @@ export default function AdminResourcesList({ resources }: { resources: any[] }) 
   const filteredResources = localResources.filter((res) => {
     const matchesSearch = res.title.toLowerCase().includes(search.toLowerCase()) || 
                          (res.description && res.description.toLowerCase().includes(search.toLowerCase()));
-    const matchesStatus = statusFilter === "ALL" || res.status === statusFilter;
+    const matchesStatus = statusFilter === "ALL" ? res.status !== "DELETED" : res.status === statusFilter;
     const matchesType = typeFilter === "ALL" || res.type === typeFilter;
     return matchesSearch && matchesStatus && matchesType;
   });
@@ -80,6 +80,7 @@ export default function AdminResourcesList({ resources }: { resources: any[] }) 
             <option value="ALL">All Status</option>
             <option value="PUBLISHED">Published</option>
             <option value="PENDING">Pending Approval</option>
+            <option value="DELETED">Recycle Bin</option>
           </select>
           <Link href="/admin/resources/new" className="flex-1 sm:flex-none">
             <Button size="sm" className="gap-2 h-9 w-full">
@@ -91,23 +92,28 @@ export default function AdminResourcesList({ resources }: { resources: any[] }) 
 
       {filteredResources.length > 0 ? (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredResources.map((res) => (
-            <Card key={res.id} className="flex flex-col hover:border-primary/50 transition-colors overflow-hidden">
-               {res.imageUrl && (
-                  <div className="aspect-video relative bg-muted flex items-center justify-center overflow-hidden border-b">
-                     <img src={res.imageUrl} alt={res.title} className="object-cover w-full h-full" />
+          {filteredResources.map((res) => {
+            const youtubeId = res.url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/)?.[1];
+            const finalImageUrl = res.imageUrl || (youtubeId ? `https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg` : null);
+
+            return (
+              <Card key={res.id} className="flex flex-col hover:border-primary/50 transition-colors overflow-hidden h-full">
+                {finalImageUrl && (
+                  <div className="w-full h-40 relative bg-muted flex items-center justify-center overflow-hidden border-b">
+                     <img src={finalImageUrl} alt={res.title} className="object-cover w-full h-full" />
                   </div>
-               )}
+                )}
                <CardHeader className="p-5 pb-3">
                   <div className="flex items-start justify-between">
                      <span className="text-[10px] uppercase font-bold tracking-wider text-primary bg-primary/10 px-2 py-0.5 rounded">
                         {res.type}
                      </span>
-                     <span className={`text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded ${
-                       res.status === "PUBLISHED" ? "bg-emerald-500/10 text-emerald-600" : "bg-amber-500/10 text-amber-600"
-                     }`}>
-                        {res.status === "PUBLISHED" ? "LIVE" : "PENDING"}
-                     </span>
+                      <span className={`text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded ${
+                        res.status === "PUBLISHED" ? "bg-emerald-500/10 text-emerald-600" : 
+                        res.status === "DELETED" ? "bg-destructive/10 text-destructive" : "bg-amber-500/10 text-amber-600"
+                      }`}>
+                         {res.status === "PUBLISHED" ? "LIVE" : res.status === "DELETED" ? "DELETED" : "PENDING"}
+                      </span>
                   </div>
                   <CardTitle className="text-lg mt-2 line-clamp-1">{res.title}</CardTitle>
                   <CardDescription className="line-clamp-2 text-xs h-8">{res.description}</CardDescription>
@@ -120,31 +126,44 @@ export default function AdminResourcesList({ resources }: { resources: any[] }) 
                      <a href={res.url} target="_blank" rel="noopener noreferrer">
                         <Button variant="outline" size="sm" className="h-8 w-8 px-1"><ExternalLink className="h-4 w-4" /></Button>
                      </a>
-                     <Link href={`/admin/resources/${res.id}`} className="flex-1">
-                        <Button variant="secondary" size="sm" className="w-full h-8 text-xs font-medium"><Edit className="h-3 w-3 mr-1" /> Edit</Button>
-                     </Link>
-                     <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => handleToggleStatus(res.id, res.status)} 
-                        disabled={loadingId === res.id}
-                        className="h-8 text-xs px-2"
-                     >
-                        {loadingId === res.id ? <Loader2 className="h-3.5 w-3.5 animate-spin"/> : res.status === "PUBLISHED" ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                     </Button>
-                     <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => handleDelete(res.id)} 
-                        disabled={loadingId === res.id}
-                        className="h-8 text-xs px-2 text-destructive hover:bg-destructive/10 border-destructive/20"
-                     >
-                        <Trash2 className="h-3.5 w-3.5" />
-                     </Button>
-                  </div>
-               </CardContent>
+                      {res.isRoadmapResource ? (
+                         <Link href={`/admin/modules/${res.stepId}`} className="flex-1">
+                            <Button variant="secondary" size="sm" className="w-full h-8 text-xs font-medium"><Edit className="h-3 w-3 mr-1" /> Edit in Module</Button>
+                         </Link>
+                      ) : res.isNote ? (
+                         <Link href={`/notes/${res.id}`} className="flex-1">
+                            <Button variant="secondary" size="sm" className="w-full h-8 text-xs font-medium"><Edit className="h-3 w-3 mr-1" /> View Note</Button>
+                         </Link>
+                      ) : (
+                         <>
+                            <Link href={`/admin/resources/${res.id}`} className="flex-1">
+                               <Button variant="secondary" size="sm" className="w-full h-8 text-xs font-medium"><Edit className="h-3 w-3 mr-1" /> Edit</Button>
+                            </Link>
+                            <Button 
+                               variant="outline" 
+                               size="sm" 
+                               onClick={() => handleToggleStatus(res.id, res.status)} 
+                               disabled={loadingId === res.id}
+                               className="h-8 text-xs px-2"
+                            >
+                               {loadingId === res.id ? <Loader2 className="h-3.5 w-3.5 animate-spin"/> : res.status === "PUBLISHED" ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                            </Button>
+                            <Button 
+                               variant="outline" 
+                               size="sm" 
+                               onClick={() => handleDelete(res.id)} 
+                               disabled={loadingId === res.id}
+                               className="h-8 text-xs px-2 text-destructive hover:bg-destructive/10 border-destructive/20"
+                            >
+                               <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                         </>
+                      )}
+                   </div>
+                </CardContent>
             </Card>
-          ))}
+          );
+        })}
         </div>
       ) : (
         <div className="border border-dashed rounded-xl p-16 text-center bg-muted/10">

@@ -61,7 +61,7 @@ model Resource {
   description String
   type        String
   url         String
-  imageUrl    String? 
+  imageUrl    String?
   tags        String
   status      String   @default("PENDING")
   createdAt   DateTime @default(now())
@@ -85,11 +85,13 @@ model Event {
   updatedAt    DateTime @updatedAt
   status       String   @default("PENDING")
   imageUrls    String?  // comma-separated list of image URLs for the gallery
-  
+  feedback     String?  // Note/Feedback from Admin
+
   authorId     String?
   author       User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
 
   interestedCount Int   @default(0)
+  bookmarks       Bookmark[]
 }
 
 model Announcement {
@@ -149,39 +151,41 @@ model CertGuide {
 }
 
 model Bookmark {
-  id        String   @id @default(cuid())
-  userId    String
-  createdAt DateTime @default(now())
-  itemType  String
+  id         String   @id @default(cuid())
+  userId     String
+  createdAt  DateTime @default(now())
+  itemType   String
 
-  noteId    String?
+  noteId     String?
   resourceId String?
-  toolId    String?
-  certId    String?
-  stepId    String?
+  toolId     String?
+  certId     String?
+  stepId     String?
+  eventId    String?
 
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  note      Note?     @relation(fields: [noteId], references: [id], onDelete: Cascade)
-  resource  Resource? @relation(fields: [resourceId], references: [id], onDelete: Cascade)
-  tool      ToolComparison? @relation(fields: [toolId], references: [id], onDelete: Cascade)
-  cert      CertGuide? @relation(fields: [certId], references: [id], onDelete: Cascade)
-  step      RoadmapStep? @relation(fields: [stepId], references: [id], onDelete: Cascade)
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  note       Note?           @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  resource   Resource?       @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  tool       ToolComparison? @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  cert       CertGuide?      @relation(fields: [certId], references: [id], onDelete: Cascade)
+  step       RoadmapStep?    @relation(fields: [stepId], references: [id], onDelete: Cascade)
+  event      Event?          @relation(fields: [eventId], references: [id], onDelete: Cascade)
 }
 
 model Upvote {
-  id        String   @id @default(cuid())
-  userId    String
-  createdAt DateTime @default(now())
-  itemType  String
+  id         String   @id @default(cuid())
+  userId     String
+  createdAt  DateTime @default(now())
+  itemType   String
 
-  noteId    String?
+  noteId     String?
   resourceId String?
-  stepId    String?
+  stepId     String?
 
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  note      Note?     @relation(fields: [noteId], references: [id], onDelete: Cascade)
-  resource  Resource? @relation(fields: [resourceId], references: [id], onDelete: Cascade)
-  step      RoadmapStep? @relation(fields: [stepId], references: [id], onDelete: Cascade)
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  note       Note?        @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  resource   Resource?    @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  step       RoadmapStep? @relation(fields: [stepId], references: [id], onDelete: Cascade)
 }
 
 model AdminRequest {
@@ -251,42 +255,49 @@ model RoadmapStep {
 }
 
 model RoadmapTopic {
-  id          String   @id @default(cuid())
-  title       String
-  content     String?  // Optional if using subtopics
-  order       Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  title     String
+  content   String?  // Optional if using subtopics
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  stepId      String
-  step        RoadmapStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
-  
-  subtopics   RoadmapSubTopic[]
+  stepId    String
+  step      RoadmapStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
+
+  subtopics RoadmapSubTopic[]
 }
 
 model RoadmapSubTopic {
-  id          String   @id @default(cuid())
-  title       String
-  content     String
-  order       Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  topicId     String
-  topic       RoadmapTopic @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  topicId   String
+  topic     RoadmapTopic @relation(fields: [topicId], references: [id], onDelete: Cascade)
 }
 
 model RoadmapResource {
-  id          String   @id @default(cuid())
-  title       String
-  url         String
-  type        String
-  description String?
-  imageUrl    String?
-  order       Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id               String   @id @default(cuid())
+  title            String
+  url              String
+  type             String
+  description      String?
+  imageUrl         String?
+  order            Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
-  stepId      String
-  step        RoadmapStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
+  // Back-link to the mirrored row in the global Resource table.
+  // Set when the module editor creates or updates a resource.
+  // Used to keep both tables in sync on edit and delete.
+  globalResourceId String?
+
+  stepId           String
+  step             RoadmapStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
+
+  @@index([stepId])
 }

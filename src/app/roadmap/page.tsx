@@ -11,6 +11,7 @@ export default async function RoadmapPage() {
     orderBy: { order: "asc" },
     include: {
       steps: {
+        where: { status: "PUBLISHED" },
         orderBy: { order: "asc" },
         select: {
           id: true,

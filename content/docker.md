@@ -25,25 +25,7 @@ CLI and image format.
 Both VMs and containers solve the same problem — environment isolation — but through
 fundamentally different mechanisms.
 
-#### Architecture Comparison
-
-```
-VIRTUAL MACHINE STACK                   CONTAINER STACK
-
-+---------------------------+           +-------+-------+-------+
-|   App A   |   App B       |           | App A | App B | App C |
-+-----------+---------------+           +-------+-------+-------+
-| Guest OS  | Guest OS      |           | Libs  | Libs  | Libs  |
-| (Ubuntu)  | (CentOS)      |           +-------+-------+-------+
-+-----------+---------------+           |   Container Runtime   |
-|       Hypervisor          |           |  (Docker / containerd)|
-| (VMware / KVM / Hyper-V)  |           +-----------------------+
-+---------------------------+           |   Host OS Kernel       |
-|       Host OS             |           +-----------------------+
-+---------------------------+           |      Hardware          |
-|       Hardware            |           +------------------------+
-+---------------------------+
-```
+![Virtual Machines vs Containers Architecture](https://upload.wikimedia.org/wikipedia/commons/0/09/Docker-linux-interfaces.svg)
 
 Each VM bundles a full Guest OS. Containers share the Host OS kernel directly using
 **Linux namespaces** for isolation and **cgroups** for resource limits.
@@ -94,27 +76,7 @@ ls -la /proc/$(docker inspect --format '{{.State.Pid}}' my_container)/ns
 
 Docker is one piece of a larger ecosystem of standards and tools.
 
-#### Key Components
-
-```
-+------------------------------------------------------------------+
-|                    Container Ecosystem                           |
-|                                                                  |
-|  Developer Tools      Runtime Layer        Orchestration         |
-|  +--------------+    +--------------+    +------------------+   |
-|  | Docker CLI   |    | containerd   |    | Kubernetes (K8s) |   |
-|  | Docker Compose|   | runc (OCI)   |    | Docker Swarm     |   |
-|  | Buildkit     |    | crun         |    | Nomad            |   |
-|  +--------------+    +--------------+    +------------------+   |
-|                                                                  |
-|  Image Registries     Security Layer      Service Mesh          |
-|  +--------------+    +--------------+    +------------------+   |
-|  | Docker Hub   |    | Notary/DCT   |    | Istio / Linkerd  |   |
-|  | AWS ECR      |    | Trivy / Snyk |    | Envoy            |   |
-|  | GHCR         |    | AppArmor     |    | Consul           |   |
-|  +--------------+    +--------------+    +------------------+   |
-+------------------------------------------------------------------+
-```
+![Container Ecosystem Overview](https://upload.wikimedia.org/wikipedia/commons/thumb/e/e9/Kubernetes_architecture_diagram.svg/1200px-Kubernetes_architecture_diagram.svg.png)
 
 #### OCI — The Open Container Initiative
 
@@ -127,23 +89,16 @@ vendor-locked to Docker. It specifies:
 Docker images are OCI-compliant. This means a Docker image can run on Kubernetes, Podman,
 containerd, or any OCI-compatible runtime without modification.
 
-#### Image Registry Flow
+#### Key Tooling by Layer
 
-```
-Developer                Registry               Server
-   │                        │                      │
-   │  docker build          │                      │
-   │─────────────────►      │                      │
-   │                        │                      │
-   │  docker push           │                      │
-   │───────────────────────►│                      │
-   │                        │                      │
-   │                        │   docker pull        │
-   │                        │◄─────────────────────│
-   │                        │                      │
-   │                        │   docker run         │
-   │                        │                      │─────────►[Container]
-```
+| Layer | Tools |
+| :--- | :--- |
+| **Developer Tools** | Docker CLI, Docker Compose, BuildKit |
+| **Container Runtime** | containerd, runc (OCI), crun |
+| **Orchestration** | Kubernetes (K8s), Docker Swarm, Nomad |
+| **Image Registries** | Docker Hub, AWS ECR, GHCR |
+| **Security** | Notary/DCT, Trivy, Snyk, AppArmor |
+| **Service Mesh** | Istio, Linkerd, Envoy, Consul |
 
 ---
 
@@ -154,6 +109,8 @@ Developer                Registry               Server
 Docker Desktop is the recommended installation for **macOS and Windows** development.
 It bundles the Docker CLI, Docker Daemon, Docker Compose, and a lightweight Linux VM
 (used because containers require a Linux kernel).
+
+![Docker Desktop](https://images.unsplash.com/photo-1571171637578-41bc2dd41cd2?auto=format&fit=crop&w=1200&q=80)
 
 #### Installation
 
@@ -221,21 +178,7 @@ The **Docker Daemon** (`dockerd`) is the background service that manages all Doc
 images, containers, networks, and volumes. It listens on a Unix socket (`/var/run/docker.sock`)
 by default and responds to Docker CLI commands.
 
-#### Architecture: Client ↔ Daemon
-
-```
-+------------------+        Unix Socket / TCP        +-------------------+
-|   Docker CLI     |  ──────────────────────────────► |   Docker Daemon   |
-|  (docker build,  |        REST API calls            |   (dockerd)       |
-|   docker run...) |  ◄──────────────────────────────  |                   |
-+------------------+                                  +--------+----------+
-                                                               │
-                                          ┌────────────────────┼──────────────────┐
-                                          ▼                    ▼                  ▼
-                                    +----------+        +----------+        +----------+
-                                    | Images   |        |Containers|        | Networks |
-                                    +----------+        +----------+        +----------+
-```
+![Docker Architecture - Client Daemon](https://docs.docker.com/assets/images/architecture.svg)
 
 #### Daemon Configuration
 
@@ -284,42 +227,14 @@ journalctl -u docker.service -f
 
 ---
 
-### Images vs Containers Layout Setup
+### Images vs Containers
 
 Understanding the difference between images and containers is fundamental to Docker.
 
-#### The Relationship
-
-```
-Dockerfile
-    │
-    │  docker build
-    ▼
-+------------------+
-|   Docker Image   |  ← Read-only, layered, stored in registry
-|  (nginx:latest)  |
-+------------------+
-    │
-    │  docker run
-    ▼
-+------------------+   +------------------+   +------------------+
-|   Container 1    |   |   Container 2    |   |   Container 3    |
-| (running)        |   | (stopped)        |   | (running)        |
-+------------------+   +------------------+   +------------------+
-```
+![Docker Image and Container Relationship](https://raw.githubusercontent.com/docker/docs/main/content/get-started/images/docker-architecture.webp)
 
 One image can spawn many independent containers. Each container gets a thin writable
 layer on top of the shared read-only image layers.
-
-#### Image Layers
-
-```
-+---------------------------+  ← Writable container layer (per container)
-+---------------------------+  ← Layer 4: COPY app files (12 MB)
-+---------------------------+  ← Layer 3: RUN npm install (45 MB)
-+---------------------------+  ← Layer 2: RUN apt-get update (23 MB)
-+---------------------------+  ← Layer 1: FROM node:20-alpine (180 MB)
-```
 
 ```bash
 # Inspect the layers of an image
@@ -334,43 +249,24 @@ docker images nginx
 
 #### Image Naming Convention
 
-```
-[REGISTRY]/[NAMESPACE]/[IMAGE]:[TAG]
+```bash
+# Format: [REGISTRY]/[NAMESPACE]/[IMAGE]:[TAG]
 
-Examples:
-  nginx                          → docker.io/library/nginx:latest
-  node:20-alpine                 → docker.io/library/node:20-alpine
-  myuser/my-app:v1.2.3           → docker.io/myuser/my-app:v1.2.3
-  ghcr.io/org/service:sha-abc123 → GitHub Container Registry
-  123456789.dkr.ecr.us-east-1.amazonaws.com/my-app:latest → AWS ECR
+# Examples:
+nginx                          # → docker.io/library/nginx:latest
+node:20-alpine                 # → docker.io/library/node:20-alpine
+myuser/my-app:v1.2.3           # → docker.io/myuser/my-app:v1.2.3
+ghcr.io/org/service:sha-abc123 # → GitHub Container Registry
+123456789.dkr.ecr.us-east-1.amazonaws.com/my-app:latest  # → AWS ECR
 ```
 
 ---
 
 ## 3. Standard Operations & CLI Syntax
 
-### Container Lifecycle (`run`, `stop`, `exec`)
+### Container Lifecycle
 
-#### Full Lifecycle Overview
-
-```
-Image
-  │
-  │ docker run
-  ▼
-Created ──► Running ──► Paused
-                │          │
-                │          │ docker unpause
-                │◄─────────┘
-                │
-                │ docker stop (SIGTERM → SIGKILL after grace period)
-                ▼
-             Stopped ──► docker start ──► Running
-                │
-                │ docker rm
-                ▼
-             Deleted
-```
+![Docker Container Lifecycle](https://raw.githubusercontent.com/wsargent/docker-cheat-sheet/master/images/docker_cheatsheet_r3v2.png)
 
 #### `docker run` — Full Syntax
 
@@ -625,9 +521,7 @@ build an image, layer by layer.
 
 ![Dockerfile Build Process](https://images.unsplash.com/photo-1571171637578-41bc2dd41cd2?auto=format&fit=crop&w=1200&q=80)
 
----
-
-### Instruction Nodes (`FROM`, `RUN`, `COPY`, `ENTRYPOINT`)
+### Instruction Reference
 
 #### Complete Dockerfile Instruction Reference
 
@@ -677,13 +571,6 @@ COPY --chown=node:node . .
 
 
 # ─────────────────────────────────────────────────
-# ADD — Like COPY but also handles URLs and tar extraction
-# Prefer COPY for local files; ADD for .tar.gz archives
-# ─────────────────────────────────────────────────
-ADD app.tar.gz /app/           # Auto-extracts .tar.gz
-
-
-# ─────────────────────────────────────────────────
 # RUN — Execute commands during image build
 # Each RUN creates a new layer — chain commands to reduce layers
 # ─────────────────────────────────────────────────
@@ -696,30 +583,15 @@ RUN npm ci --only=production
 
 # ─────────────────────────────────────────────────
 # EXPOSE — Document which port the app listens on
-# Does NOT publish the port — it's informational only
-# Actual publishing is done with -p flag in docker run
+# Does NOT publish the port — informational only
 # ─────────────────────────────────────────────────
 EXPOSE 3000
-
-
-# ─────────────────────────────────────────────────
-# VOLUME — Declare a mount point for persistent data
-# ─────────────────────────────────────────────────
-VOLUME ["/app/data", "/app/logs"]
 
 
 # ─────────────────────────────────────────────────
 # USER — Switch to a non-root user for security
 # ─────────────────────────────────────────────────
 USER node
-
-
-# ─────────────────────────────────────────────────
-# LABEL — Metadata key-value pairs (OCI annotations)
-# ─────────────────────────────────────────────────
-LABEL maintainer="devops@company.com"
-LABEL version="1.0.0"
-LABEL description="Node.js API service"
 
 
 # ─────────────────────────────────────────────────
@@ -731,53 +603,32 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 
 # ─────────────────────────────────────────────────
 # ENTRYPOINT — The executable that runs when container starts
-# Cannot be overridden by docker run arguments (use --entrypoint to override)
 # ─────────────────────────────────────────────────
 ENTRYPOINT ["node"]
 
 
 # ─────────────────────────────────────────────────
 # CMD — Default arguments passed to ENTRYPOINT
-# Can be overridden by docker run [command] argument
-# If no ENTRYPOINT, CMD is the full command
 # ─────────────────────────────────────────────────
 CMD ["server.js"]
-
 # Combined: runs → node server.js
-# Override: docker run my-app debug.js → runs → node debug.js
 ```
 
-#### ENTRYPOINT vs CMD — The Definitive Explanation
+#### ENTRYPOINT vs CMD
 
-```
-+---------------------------+---------------------+-----------------------------+
-| ENTRYPOINT                | CMD                 | Result                      |
-+---------------------------+---------------------+-----------------------------+
-| Not set                   | ["node","server.js"]| node server.js              |
-| ["node"]                  | ["server.js"]       | node server.js              |
-| ["node"]                  | ["--version"]       | node --version              |
-| ["docker-entrypoint.sh"]  | ["postgres"]        | docker-entrypoint.sh postgres|
-+---------------------------+---------------------+-----------------------------+
-```
+| ENTRYPOINT | CMD | Result |
+| :--- | :--- | :--- |
+| Not set | `["node","server.js"]` | `node server.js` |
+| `["node"]` | `["server.js"]` | `node server.js` |
+| `["node"]` | `["--version"]` | `node --version` |
+| `["docker-entrypoint.sh"]` | `["postgres"]` | `docker-entrypoint.sh postgres` |
 
-Shell form vs Exec form:
+Always use **exec form** (`["node", "server.js"]`) for `CMD` and `ENTRYPOINT` so your
+process receives OS signals (SIGTERM on `docker stop`) instead of the shell.
 
-```dockerfile
-# Shell form — runs via /bin/sh -c (PID 1 is /bin/sh, not your app)
-RUN npm install
-CMD node server.js
+#### `.dockerignore`
 
-# Exec form — runs directly (PID 1 is your app — PREFERRED for CMD/ENTRYPOINT)
-RUN ["npm", "install"]
-CMD ["node", "server.js"]
-```
-
-Always use **exec form** for `CMD` and `ENTRYPOINT` so your process receives OS signals
-(SIGTERM on `docker stop`) instead of the shell.
-
-#### `.dockerignore` — Keep Your Build Context Clean
-
-```
+```bash
 # .dockerignore
 node_modules/
 .git/
@@ -795,60 +646,28 @@ docker-compose*.yml
 
 ---
 
-### Layer Optimization Presets
+### Layer Optimization
 
-Build performance and image size depend heavily on how you order and structure your layers.
+![Docker Layer Caching](https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&w=1200&q=80)
 
-#### The Layer Caching Rule
-
-Docker caches each layer. If a layer's instruction or input files haven't changed,
-Docker reuses the cache and skips rebuilding it. **Layers are invalidated top-down** —
-if one layer changes, all layers below it are rebuilt.
-
-```
-Layer 1: FROM node:20-alpine          ← Rarely changes — cache always hits
-Layer 2: COPY package*.json ./        ← Changes only when deps change
-Layer 3: RUN npm ci                   ← Expensive — only reruns when Layer 2 changes
-Layer 4: COPY . .                     ← Changes on every code change
-Layer 5: CMD ["node","server.js"]     ← Always cached unless Layer 4 changes
-```
+Docker caches each layer. **Layers are invalidated top-down** — if one layer changes,
+all layers below it are rebuilt. Always copy dependency files before source code.
 
 ```dockerfile
 # WRONG — invalidates npm install on every code change
 FROM node:20-alpine
 WORKDIR /app
-COPY . .                    # ← Any file change busts the cache here
-RUN npm ci                  # ← Reinstalls everything every time!
-CMD ["node", "server.js"]
+COPY . .                    # Any file change busts the cache here
+RUN npm ci                  # Reinstalls everything every time
 
 # CORRECT — npm install only reruns when package.json changes
 FROM node:20-alpine
 WORKDIR /app
-COPY package*.json ./       # ← Only changes when deps change
-RUN npm ci                  # ← Cached unless package.json changed
-COPY . .                    # ← Code changes don't affect the npm layer
+COPY package*.json ./       # Only changes when deps change
+RUN npm ci                  # Cached unless package.json changed
+COPY . .                    # Code changes don't affect the npm layer
 CMD ["node", "server.js"]
 ```
-
-#### Reducing Layer Count
-
-```dockerfile
-# WRONG — 3 separate RUN layers = 3x the metadata and intermediate storage
-RUN apt-get update
-RUN apt-get install -y curl
-RUN rm -rf /var/lib/apt/lists/*
-
-# CORRECT — single RUN layer with cleanup included
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-      curl \
-      jq \
-      ca-certificates && \
-    rm -rf /var/lib/apt/lists/*
-```
-
-The `rm -rf /var/lib/apt/lists/*` must be in the **same** `RUN` instruction as the install.
-If it's a separate layer, the package lists are already baked into the earlier layer.
 
 #### Choosing the Right Base Image
 
@@ -856,84 +675,22 @@ If it's a separate layer, the package lists are already baked into the earlier l
 | :--- | :--- | :--- |
 | `ubuntu:22.04` | ~80 MB | Full OS, debugging tools |
 | `debian:slim` | ~30 MB | Smaller Debian without extras |
-| `alpine:3.19` | ~5 MB | Minimal — musl libc (check compatibility) |
+| `alpine:3.19` | ~5 MB | Minimal — musl libc |
 | `node:20` | ~360 MB | Full Debian-based Node.js |
 | `node:20-slim` | ~70 MB | Debian without build tools |
 | `node:20-alpine` | ~50 MB | Alpine-based Node.js (recommended) |
-| `gcr.io/distroless/nodejs20` | ~30 MB | No shell, no package manager — maximum security |
+| `gcr.io/distroless/nodejs20` | ~30 MB | No shell — maximum security |
 | `scratch` | 0 MB | Empty — for Go/Rust static binaries only |
-
-#### Complete Optimized Node.js Dockerfile
-
-```dockerfile
-FROM node:20-alpine AS base
-
-# Install security updates
-RUN apk update && apk upgrade && rm -rf /var/cache/apk/*
-
-WORKDIR /app
-
-# ── Dependency stage ───────────────────────────────
-FROM base AS deps
-COPY package*.json ./
-RUN npm ci --only=production && \
-    npm cache clean --force
-
-# ── Build stage ────────────────────────────────────
-FROM base AS builder
-COPY package*.json ./
-RUN npm ci
-COPY . .
-RUN npm run build
-
-# ── Production stage ───────────────────────────────
-FROM base AS production
-
-# Create non-root user
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-
-WORKDIR /app
-
-# Copy only production dependencies and built output
-COPY --from=deps --chown=appuser:appgroup /app/node_modules ./node_modules
-COPY --from=builder --chown=appuser:appgroup /app/dist ./dist
-
-LABEL maintainer="devops@company.com"
-LABEL version="1.0.0"
-
-USER appuser
-
-EXPOSE 3000
-
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD wget -qO- http://localhost:3000/health || exit 1
-
-CMD ["node", "dist/server.js"]
-```
-
-```bash
-# Build with target stage
-docker build --target production -t my-app:v1 .
-
-# Build with build args
-docker build \
-  --build-arg APP_VERSION=1.2.3 \
-  --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
-  -t my-app:v1 .
-
-# Build with BuildKit (enabled by default in Docker 23+)
-DOCKER_BUILDKIT=1 docker build -t my-app:v1 .
-```
 
 ---
 
 ## 5. Docker Networking & Volume Persistence
 
-### Bridging Networks Offsets Setup
+### Networking
 
 Docker networking controls how containers communicate with each other and the outside world.
 
-![Docker Networking](https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&w=1200&q=80)
+![Docker Networking Overview](https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&w=1200&q=80)
 
 #### Network Drivers
 
@@ -944,18 +701,6 @@ Docker networking controls how containers communicate with each other and the ou
 | `none` | Single host | No networking — fully isolated container |
 | `overlay` | Multi-host | Docker Swarm / distributed networking |
 | `macvlan` | Single host | Container gets its own MAC/IP on physical network |
-
-#### The Default Bridge Network
-
-When you run a container without specifying a network, it joins `bridge` (the default bridge network).
-
-```bash
-# Inspect the default bridge network
-docker network inspect bridge
-
-# Containers on the default bridge CAN reach each other by IP
-# but NOT by container name (DNS not available on default bridge)
-```
 
 #### User-Defined Bridge Networks (Recommended)
 
@@ -968,7 +713,6 @@ docker network create \
   --driver bridge \
   --subnet 192.168.100.0/24 \
   --gateway 192.168.100.1 \
-  --opt com.docker.network.bridge.name=br_myapp \
   my_network
 
 # Run containers on the custom network
@@ -976,7 +720,7 @@ docker run -d --name web --network my_network nginx
 docker run -d --name api --network my_network my-api:v1
 docker run -d --name db  --network my_network postgres:16
 
-# Containers on user-defined networks can resolve each other by name
+# Containers on user-defined networks resolve each other by name
 # 'web' can reach 'db' simply as 'db:5432' — Docker provides internal DNS
 ```
 
@@ -998,82 +742,27 @@ docker network disconnect my_network my_container
 # Remove a network
 docker network rm my_network
 
-# Remove all unused networks
-docker network prune
-
 # Port mapping — host port 8080 maps to container port 3000
 docker run -d -p 8080:3000 my-app:v1
 
 # Bind to specific host interface (security best practice)
-docker run -d -p 127.0.0.1:8080:3000 my-app:v1   # Only accessible from localhost
-
-# Map multiple ports
-docker run -d -p 80:80 -p 443:443 nginx
-
-# Publish all EXPOSE'd ports to random host ports
-docker run -d -P nginx
-docker port nginx   # See which ports were assigned
+docker run -d -p 127.0.0.1:8080:3000 my-app:v1
 ```
-
-#### DNS Resolution on User-Defined Networks
-
-```
-my_network (172.18.0.0/16)
-┌──────────────────────────────────────────────┐
-│                                              │
-│  [web]          [api]          [db]          │
-│  172.18.0.2     172.18.0.3     172.18.0.4   │
-│                                              │
-│  Internal DNS: Docker's embedded DNS server  │
-│  'api' → resolves to 172.18.0.3             │
-│  'db'  → resolves to 172.18.0.4             │
-│                                              │
-└──────────────────────────────────────────────┘
-```
-
-Containers address each other by **service name**, not IP.
-IPs can change; names are stable. This is why custom networks are always preferred.
 
 ---
 
-### Volume Mounting Setups
+### Volume Mounting
 
 Containers are **ephemeral** by default — their writable layer is destroyed when the
 container is removed. Volumes provide persistent storage that outlives the container.
 
-#### Three Types of Storage Mounts
-
-```
-+-----------------------------------+
-|           Host Machine            |
-|                                   |
-|  /host/path ──── bind mount ───►  |
-|                                   |
-|  /var/lib/docker/volumes/ ──────► |  ← named volume (Docker managed)
-|                                   |
-|  RAM ─────── tmpfs mount ───────► |  ← in-memory only
-+-----------------------------------+
-             │
-             ▼
-     +----------------+
-     |   Container    |
-     | /container/path|
-     +----------------+
-```
+![Docker Volume Types](https://docs.docker.com/storage/images/types-of-mounts.png)
 
 #### Named Volumes (Recommended for Production)
-
-Docker manages the storage location. Data persists after container removal.
 
 ```bash
 # Create a named volume
 docker volume create my_data
-
-# List volumes
-docker volume ls
-
-# Inspect a volume (shows where it's stored on host)
-docker volume inspect my_data
 
 # Use a named volume in a container
 docker run -d \
@@ -1093,17 +782,11 @@ docker run --rm \
   -v $(pwd):/backup \
   alpine tar xzf /backup/my_data_backup.tar.gz -C /target
 
-# Remove a volume
-docker volume rm my_data
-
 # Remove all unused volumes
 docker volume prune
 ```
 
 #### Bind Mounts (Recommended for Development)
-
-Mounts a specific host path directly into the container. Changes on the host are
-immediately reflected in the container — perfect for live development.
 
 ```bash
 # Bind mount current directory into container
@@ -1113,25 +796,9 @@ docker run -d \
   node:20-alpine \
   node server.js
 
-# Read-only bind mount (container cannot modify the files)
+# Read-only bind mount
 docker run -d \
   -v $(pwd)/config:/app/config:ro \
-  my-app:v1
-
-# Using --mount syntax (more explicit, preferred in scripts)
-docker run -d \
-  --mount type=bind,source=$(pwd),target=/app,readonly \
-  my-app:v1
-```
-
-#### tmpfs Mounts (In-Memory, Non-Persistent)
-
-Data stored in memory only — never written to disk. Useful for sensitive data
-(tokens, certificates) that should not be persisted.
-
-```bash
-docker run -d \
-  --mount type=tmpfs,target=/app/tmp,tmpfs-size=100m \
   my-app:v1
 ```
 
@@ -1154,11 +821,7 @@ All services, networks, and volumes are declared in a single `docker-compose.yml
 
 ![Docker Compose](https://images.unsplash.com/photo-1618401471353-b98afee0b2eb?auto=format&fit=crop&w=1200&q=80)
 
----
-
-### Formatting `docker-compose.yml`
-
-#### Complete Reference `docker-compose.yml`
+### Complete `docker-compose.yml` Reference
 
 ```yaml
 # docker-compose.yml
@@ -1183,22 +846,20 @@ services:
       - .env.frontend
     depends_on:
       api:
-        condition: service_healthy       # Wait for api to be healthy
+        condition: service_healthy
     networks:
       - frontend_net
     restart: unless-stopped
-    labels:
-      - "com.example.role=frontend"
 
   # ── API Service ─────────────────────────────────────────────
   api:
     build:
       context: ./api
-      target: production                 # Multi-stage build target
+      target: production
     image: my-api:latest
     container_name: api
     ports:
-      - "127.0.0.1:4000:4000"           # Bind to localhost only
+      - "127.0.0.1:4000:4000"
     environment:
       NODE_ENV: production
       PORT: 4000
@@ -1223,20 +884,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 15s
-    deploy:
-      resources:
-        limits:
-          cpus: '0.50'
-          memory: 512M
-        reservations:
-          memory: 256M
-    volumes:
-      - ./logs:/app/logs
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
 
   # ── PostgreSQL Database ──────────────────────────────────────
   postgres:
@@ -1257,7 +904,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 20s
 
   # ── Redis Cache ──────────────────────────────────────────────
   redis:
@@ -1269,11 +915,6 @@ services:
     networks:
       - backend_net
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 3s
-      retries: 3
 
   # ── Nginx Reverse Proxy ──────────────────────────────────────
   nginx:
@@ -1292,30 +933,18 @@ services:
       - frontend_net
     restart: unless-stopped
 
-# ── Named Volumes ────────────────────────────────────────────
 volumes:
   postgres_data:
     driver: local
   redis_data:
     driver: local
 
-# ── Networks ─────────────────────────────────────────────────
 networks:
   frontend_net:
     driver: bridge
   backend_net:
     driver: bridge
-    internal: true                       # No external internet access
-```
-
-#### Environment Variable File (`.env`)
-
-```bash
-# .env  — never commit this file
-POSTGRES_DB=myapp
-POSTGRES_USER=appuser
-POSTGRES_PASSWORD=super_secret_password
-REDIS_PASSWORD=redis_secret
+    internal: true   # No external internet access
 ```
 
 #### Core Compose Commands
@@ -1327,16 +956,7 @@ docker compose up -d
 # Build images before starting
 docker compose up -d --build
 
-# Start specific services only
-docker compose up -d postgres redis
-
-# View running services
-docker compose ps
-
-# View logs for all services
-docker compose logs
-
-# Follow logs for a specific service
+# View logs for a specific service
 docker compose logs -f api
 
 # Execute command in a running service
@@ -1349,138 +969,26 @@ docker compose down
 # Stop and remove volumes
 docker compose down -v
 
-# Stop and remove images too
-docker compose down --rmi all
-
-# Restart a specific service
-docker compose restart api
-
-# Pull latest images
-docker compose pull
-
-# View resource usage
-docker compose top
-```
-
----
-
-### Scaling Instances
-
-Docker Compose supports scaling multiple identical instances of a service.
-
-#### Horizontal Scaling
-
-```yaml
-# docker-compose.yml — use no fixed container_name for scalable services
-services:
-  worker:
-    build: ./worker
-    image: my-worker:latest
-    environment:
-      - QUEUE_URL=redis://redis:6379
-    depends_on:
-      - redis
-    networks:
-      - backend_net
-    # DO NOT set container_name — it would conflict when scaling
-    deploy:
-      replicas: 3                        # Start 3 instances
-
-  redis:
-    image: redis:7-alpine
-    networks:
-      - backend_net
-
-networks:
-  backend_net:
-```
-
-```bash
-# Scale a service to 5 instances at runtime
+# Scale a service to 5 instances
 docker compose up -d --scale worker=5
-
-# Scale down
-docker compose up -d --scale worker=2
-
-# View all instances
-docker compose ps
-```
-
-#### Load Balancing with Nginx
-
-When scaling an API service, use nginx as an upstream load balancer:
-
-```nginx
-# nginx/nginx.conf
-upstream api_servers {
-    server api:4000;                   # Docker DNS resolves 'api' to all instances
-}
-
-server {
-    listen 80;
-
-    location /api/ {
-        proxy_pass http://api_servers;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-    }
-}
-```
-
-```yaml
-# Scalable API with nginx load balancer
-services:
-  nginx:
-    image: nginx:alpine
-    ports:
-      - "80:80"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-    depends_on:
-      - api
-
-  api:
-    build: ./api
-    expose:
-      - "4000"                         # Expose to internal network, not host
-    environment:
-      - NODE_ENV=production
-    networks:
-      - app_net
-
-networks:
-  app_net:
-```
-
-```bash
-# Start with 4 API replicas behind nginx
-docker compose up -d --scale api=4
 ```
 
 ---
 
 ## 7. Enterprise Security & Image Reduction
 
-Security is non-negotiable in production container workloads. This section covers
-hardening practices from image build through container runtime.
+Security is non-negotiable in production container workloads.
 
 ![Container Security](https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=1200&q=80)
 
----
+### Non-Root Users
 
-### Non-Root Users & Defaults Setup
-
-By default, Docker containers run as `root` (UID 0). If a container is compromised,
-an attacker has root-level access inside the container — and potentially on the host
-if volumes are misconfigured. Always run as a non-root user.
-
-#### Creating and Switching Users in Dockerfile
+By default, Docker containers run as `root` (UID 0). Always run as a non-root user.
 
 ```dockerfile
-# ── For Alpine-based images ─────────────────────────────────
+# Alpine-based images
 FROM node:20-alpine
 
-# Create a group and user (Alpine uses addgroup/adduser)
 RUN addgroup -S appgroup && \
     adduser -S appuser -G appgroup -u 1001
 
@@ -1488,60 +996,23 @@ WORKDIR /app
 
 COPY --chown=appuser:appgroup package*.json ./
 RUN npm ci --only=production
-
-COPY --chown=appuser:appgroup . .
-
-# Switch to non-root user before CMD/ENTRYPOINT
-USER appuser
-
-EXPOSE 3000
-CMD ["node", "server.js"]
-
-
-# ── For Debian/Ubuntu-based images ──────────────────────────
-FROM node:20-slim
-
-# Create a system group and user
-RUN groupadd --system --gid 1001 appgroup && \
-    useradd --system --uid 1001 --gid appgroup --no-create-home appuser
-
-WORKDIR /app
-
-COPY --chown=appuser:appgroup package*.json ./
-RUN npm ci --only=production
-
 COPY --chown=appuser:appgroup . .
 
 USER appuser
-
 EXPOSE 3000
 CMD ["node", "server.js"]
-```
-
-#### Verifying Non-Root at Runtime
-
-```bash
-# Check which user the container runs as
-docker run --rm my-app:v1 whoami
-docker run --rm my-app:v1 id
-
-# Inspect image configuration
-docker inspect my-app:v1 --format '{{.Config.User}}'
 ```
 
 #### Runtime Security Flags
 
 ```bash
-# Run as a specific UID even if image defaults to root
-docker run -d --user 1001:1001 nginx
-
 # Drop all Linux capabilities, add only what's needed
 docker run -d \
   --cap-drop ALL \
   --cap-add NET_BIND_SERVICE \
   my-app:v1
 
-# Read-only root filesystem (prevents file tampering)
+# Read-only root filesystem
 docker run -d \
   --read-only \
   --tmpfs /tmp \
@@ -1550,11 +1021,6 @@ docker run -d \
 # Prevent privilege escalation
 docker run -d \
   --security-opt no-new-privileges:true \
-  my-app:v1
-
-# Enable seccomp profile
-docker run -d \
-  --security-opt seccomp=/etc/docker/seccomp/default.json \
   my-app:v1
 
 # Full hardened run command
@@ -1575,104 +1041,56 @@ docker run -d \
 #### Security Scanning
 
 ```bash
-# Scan image for CVEs with Docker Scout (built-in from Docker Desktop)
+# Scan with Docker Scout
 docker scout cves my-app:v1
-
-# Quick vulnerability overview
 docker scout quickview my-app:v1
 
-# Scan with Trivy (open-source, industry standard)
+# Scan with Trivy (industry standard)
 trivy image my-app:v1
 trivy image --severity HIGH,CRITICAL my-app:v1
 trivy image --exit-code 1 --severity CRITICAL my-app:v1  # Fail CI on critical CVEs
-
-# Scan with Snyk
-snyk container test my-app:v1
-```
-
-#### Image Signing with Docker Content Trust
-
-```bash
-# Enable Docker Content Trust (enforces signed images)
-export DOCKER_CONTENT_TRUST=1
-
-# Pull only verified, signed images
-docker pull nginx                      # Will fail if image is not signed
-
-# Sign and push an image
-docker trust sign myrepo/my-app:v1
-
-# Inspect trust data
-docker trust inspect myrepo/my-app:v1
 ```
 
 ---
 
-### Multi-Stage Builders
+### Multi-Stage Builds
 
 Multi-stage builds produce lean, secure production images by separating the build
-environment from the runtime environment. The final image contains only what is
-needed to run the application.
+environment from the runtime environment.
 
-#### How Multi-Stage Builds Work
-
-```
-Stage 1: builder                Stage 2: production
-+------------------+            +------------------+
-| node:20 (full)   |            | node:20-alpine   |
-| + build tools    |            | (minimal)        |
-| + dev deps       |   COPY     |                  |
-| + source code    | ─────────► | /app/dist        |
-| + test files     |  from:     | /app/node_modules|
-| (600 MB total)   |  builder   | (70 MB total)    |
-+------------------+            +------------------+
-                                       │
-                                  docker run
-```
-
-#### Multi-Stage Node.js Production Build
+![Multi-Stage Docker Build](https://www.docker.com/wp-content/uploads/2021/11/docker-containerized-and-vm-transparent-bg.png)
 
 ```dockerfile
-# ── Stage 1: Install ALL dependencies and build ─────────────
+# Stage 1: Install ALL dependencies and build
 FROM node:20-alpine AS builder
 
 WORKDIR /app
-
 COPY package*.json ./
-RUN npm ci                             # Install ALL deps (including devDeps)
-
+RUN npm ci
 COPY . .
-RUN npm run build                      # Compile TypeScript, bundle, etc.
-RUN npm run test                       # Run tests during build
+RUN npm run build
+RUN npm run test
 
 
-# ── Stage 2: Production dependencies only ───────────────────
+# Stage 2: Production dependencies only
 FROM node:20-alpine AS deps
 
 WORKDIR /app
-
 COPY package*.json ./
-RUN npm ci --only=production && \
-    npm cache clean --force
+RUN npm ci --only=production && npm cache clean --force
 
 
-# ── Stage 3: Lean production image ──────────────────────────
+# Stage 3: Lean production image
 FROM node:20-alpine AS production
 
-# Security: create non-root user
 RUN addgroup -S app && adduser -S app -G app
 
 WORKDIR /app
 
-# Copy only what runtime needs
 COPY --from=deps --chown=app:app /app/node_modules ./node_modules
 COPY --from=builder --chown=app:app /app/dist ./dist
 
-LABEL org.opencontainers.image.source="https://github.com/myorg/myapp"
-LABEL org.opencontainers.image.version="1.0.0"
-
 USER app
-
 EXPOSE 3000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
@@ -1681,106 +1099,43 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
 CMD ["node", "dist/server.js"]
 ```
 
-#### Multi-Stage Go Binary (Minimal Image)
+#### Multi-Stage Go Binary (Zero Base Image)
 
 ```dockerfile
-# ── Build stage ──────────────────────────────────────────────
+# Build stage
 FROM golang:1.22-alpine AS builder
 
 WORKDIR /app
-
-# Download modules first (cache layer)
 COPY go.mod go.sum ./
 RUN go mod download
-
 COPY . .
 
-# Build a statically linked binary
+# Build a statically linked binary — no dependencies needed at runtime
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
     go build -ldflags="-w -s" -o server ./cmd/server
 
 
-# ── Final stage: scratch (zero base) ────────────────────────
+# Final stage: scratch (zero base — just the binary)
 FROM scratch AS production
 
-# Copy CA certificates for HTTPS calls
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-
-# Copy the binary only
 COPY --from=builder /app/server /server
 
 EXPOSE 8080
-
 ENTRYPOINT ["/server"]
-```
-
-Final image size: **~8 MB** (vs ~350 MB for `golang:1.22`).
-
-#### Multi-Stage for Python
-
-```dockerfile
-# ── Stage 1: Build dependencies ─────────────────────────────
-FROM python:3.12-slim AS builder
-
-WORKDIR /app
-
-# Install build tools
-RUN pip install --upgrade pip
-
-COPY requirements.txt .
-RUN pip install --user --no-cache-dir -r requirements.txt
-
-
-# ── Stage 2: Runtime ─────────────────────────────────────────
-FROM python:3.12-slim AS production
-
-RUN groupadd -r appgroup && useradd -r -g appgroup appuser
-
-WORKDIR /app
-
-# Copy installed packages from builder
-COPY --from=builder /root/.local /home/appuser/.local
-
-COPY --chown=appuser:appgroup . .
-
-USER appuser
-
-ENV PATH=/home/appuser/.local/bin:$PATH
-
-EXPOSE 8000
-
-CMD ["gunicorn", "wsgi:app", "--bind", "0.0.0.0:8000", "--workers", "4"]
-```
-
-#### Build Targets in CI/CD
-
-```bash
-# Build and push only the production stage
-docker build \
-  --target production \
-  --cache-from my-app:cache \
-  --build-arg BUILDKIT_INLINE_CACHE=1 \
-  -t my-app:latest \
-  -t my-app:$(git rev-parse --short HEAD) \
-  .
-
-# Use BuildKit's inline cache for faster CI builds
-DOCKER_BUILDKIT=1 docker build \
-  --build-arg BUILDKIT_INLINE_CACHE=1 \
-  -t my-app:latest .
+# Final image: ~8 MB vs ~350 MB for golang:1.22
 ```
 
 #### Image Size Reduction Summary
 
 | Technique | Typical Saving |
 | :--- | :--- |
-| Use Alpine base instead of full OS | 200–400 MB |
-| Multi-stage build (remove build tools) | 100–300 MB |
+| Alpine base instead of full OS | 200–400 MB |
+| Multi-stage build | 100–300 MB |
 | `--only=production` npm install | 50–200 MB |
-| Chain RUN commands to reduce layers | 10–50 MB |
-| `.dockerignore` to exclude dev files | 10–100 MB |
-| `--no-cache` on package installs | 20–100 MB |
-| Use distroless / scratch base | 50–200 MB |
+| Chain RUN commands | 10–50 MB |
+| `.dockerignore` exclusions | 10–100 MB |
+| distroless / scratch base | 50–200 MB |
 
 ---
 

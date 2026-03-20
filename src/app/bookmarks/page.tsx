@@ -25,12 +25,14 @@ export default async function BookmarksPage({ searchParams }: { searchParams: Pr
   // Separate by itemType
   const moduleBookmarkRows = rawBookmarks.filter(b => b.itemType === "MODULE" && b.stepId);
   const resourceBookmarkRows = rawBookmarks.filter(b => b.itemType === "RESOURCE" && b.resourceId);
+  const eventBookmarkRows = rawBookmarks.filter(b => b.itemType === "EVENT" && b.eventId);
 
   // Fetch related data separately
   const stepIds = moduleBookmarkRows.map(b => b.stepId!);
   const resourceIds = resourceBookmarkRows.map(b => b.resourceId!);
+  const eventIds = eventBookmarkRows.map(b => b.eventId!);
 
-  const [steps, resources] = await Promise.all([
+  const [steps, resources, events] = await Promise.all([
     stepIds.length > 0
       ? prisma.roadmapStep.findMany({
           where: { id: { in: stepIds } },
@@ -42,28 +44,38 @@ export default async function BookmarksPage({ searchParams }: { searchParams: Pr
           where: { id: { in: resourceIds } },
           include: { author: { select: { fullName: true } } }
         })
+      : Promise.resolve([]),
+    eventIds.length > 0
+      ? prisma.event.findMany({
+          where: { id: { in: eventIds } }
+        })
       : Promise.resolve([])
   ]);
 
   const stepMap = Object.fromEntries(steps.map(s => [s.id, s]));
   const resourceMap = Object.fromEntries(resources.map(r => [r.id, r]));
+  const eventMap = Object.fromEntries(events.map(e => [e.id, e]));
 
   const moduleBookmarks = moduleBookmarkRows.map(b => ({ ...b, step: stepMap[b.stepId!] })).filter(b => b.step);
   const resourceBookmarks = resourceBookmarkRows.map(b => ({ ...b, resource: resourceMap[b.resourceId!] })).filter(b => b.resource);
+  const eventBookmarks = eventBookmarkRows.map(b => ({ ...b, event: eventMap[b.eventId!] })).filter(b => b.event);
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-5xl space-y-8">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Bookmarks</h1>
-        <p className="text-muted-foreground mt-1 text-lg">Your saved knowledge items and resources.</p>
+        <p className="text-muted-foreground mt-1 text-sm font-medium">Your saved knowledge items, resources, and events.</p>
       </div>
 
-      <div className="flex border-b">
-        <Link href="/bookmarks?tab=modules" className={`pb-3 px-4 font-medium transition-colors border-b-2 ${activeTab === 'modules' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}>
+      <div className="flex border-b overflow-x-auto">
+        <Link href="/bookmarks?tab=modules" className={`pb-3 px-4 font-medium transition-colors border-b-2 whitespace-nowrap ${activeTab === 'modules' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}>
           Modules ({moduleBookmarks.length})
         </Link>
-        <Link href="/bookmarks?tab=resources" className={`pb-3 px-4 font-medium transition-colors border-b-2 ${activeTab === 'resources' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}>
+        <Link href="/bookmarks?tab=resources" className={`pb-3 px-4 font-medium transition-colors border-b-2 whitespace-nowrap ${activeTab === 'resources' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}>
           Resources ({resourceBookmarks.length})
+        </Link>
+        <Link href="/bookmarks?tab=events" className={`pb-3 px-4 font-medium transition-colors border-b-2 whitespace-nowrap ${activeTab === 'events' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}>
+          Events ({eventBookmarks.length})
         </Link>
       </div>
 
@@ -135,6 +147,47 @@ export default async function BookmarksPage({ searchParams }: { searchParams: Pr
                  When you find a useful PDF, link, or video, click the bookmark icon to save it here.
                </p>
                <Link href="/resources"><Button variant="outline">Browse Resources</Button></Link>
+             </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === "events" && (
+        <div className="space-y-6">
+          {eventBookmarks.length > 0 ? (
+             <div className="grid sm:grid-cols-2 gap-4">
+              {eventBookmarks.map(({ event }) => event && (
+                <Card key={event.id} className="hover:border-primary/50 transition-colors flex flex-col overflow-hidden">
+                  {event.imageUrls && (
+                    <div className="h-40 overflow-hidden relative border-b bg-muted/20">
+                      <img src={event.imageUrls.split(',')[0]} alt={event.title} className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <CardHeader className="p-4 pb-2">
+                    <div className="flex justify-between items-start">
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-primary bg-primary/10 px-2 py-0.5 rounded">
+                        {event.type}
+                      </span>
+                    </div>
+                    <CardTitle className="text-lg mt-2 line-clamp-2 leading-tight">{event.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4 pt-2 mt-auto">
+                    <p className="text-xs text-muted-foreground line-clamp-1 mb-4">{event.description || "Live online event."}</p>
+                    <Link href={`/events`} className="mt-auto">
+                      <Button variant="secondary" className="w-full h-8">View Event</Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+             <div className="text-center py-16 border border-dashed rounded-lg bg-muted/10">
+               <Bookmark className="h-12 w-12 text-muted-foreground mb-4 opacity-50 mx-auto" />
+               <h3 className="text-lg font-medium mb-2">No events saved</h3>
+               <p className="text-muted-foreground max-w-sm mx-auto mb-6">
+                 When you find an interesting webinar or meetup, click the bookmark icon to save it here.
+               </p>
+               <Link href="/events"><Button variant="outline">Browse Events</Button></Link>
              </div>
           )}
         </div>

@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, ExternalLink, MapPin } from "lucide-react";
+import { Calendar, Clock, ExternalLink, MapPin, Bookmark } from "lucide-react";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -22,6 +22,9 @@ export default async function EventsPage() {
         <p className="text-lg text-muted-foreground">
           Join live sessions, workshops, and hackathons hosted by expert engineers.
         </p>
+        <Link href="/events/new">
+          <Button className="mt-2 font-semibold bg-primary gap-2"><Calendar className="h-4 w-4" /> Host / Submit an Event</Button>
+        </Link>
       </div>
 
       <div className="space-y-8">
@@ -93,17 +96,22 @@ function EventCard({ event, isPast = false }: { event: any; isPast?: boolean }) 
             <MapPin className="h-3 w-3 mr-1" />
             Online
           </div>
-          {event.externalLink ? (
-             <a href={event.externalLink} target="_blank" rel="noopener noreferrer">
-                <Button variant={isPast ? "outline" : "default"} size="sm" className="h-8 group-hover:bg-primary group-hover:text-primary-foreground">
-                  {isPast ? "View Recording" : "Register / View"} <ExternalLink className="ml-1 h-3 w-3" />
-                </Button>
-             </a>
-          ) : (
-             <Button variant="outline" size="sm" className="h-8" disabled>
-               Link coming soon
-             </Button>
-          )}
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs">
+              <Bookmark className="h-3.5 w-3.5" /> Remind Me
+            </Button>
+            {event.externalLink ? (
+               <a href={event.externalLink} target="_blank" rel="noopener noreferrer">
+                  <Button variant={isPast ? "outline" : "default"} size="sm" className="h-8 group-hover:bg-primary group-hover:text-primary-foreground">
+                    {isPast ? "View Recording" : "Register / View"} <ExternalLink className="ml-1 h-3 w-3" />
+                  </Button>
+               </a>
+            ) : (
+               <Button variant="outline" size="sm" className="h-8" disabled>
+                 Link coming soon
+               </Button>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>

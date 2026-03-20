@@ -38,9 +38,19 @@ export default async function DashboardPage() {
 
   // Fetch upcoming events
   const upcomingEvents = await prisma.event.findMany({
-    where: { startTime: { gte: new Date() } },
+    where: { 
+      startTime: { gte: new Date() },
+      status: "PUBLISHED"
+    },
     orderBy: { startTime: "asc" },
     take: 3,
+  });
+
+  // Fetch author's own submitted events to track progress
+  const mySubmissions = await prisma.event.findMany({
+    where: { authorId: session.user.id },
+    orderBy: { createdAt: "desc" },
+    take: 4
   });
 
   const me = await prisma.user.findUnique({
@@ -156,27 +166,30 @@ export default async function DashboardPage() {
               <Link href="/resources"><Button variant="ghost" size="sm" className="group">View all <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" /></Button></Link>
             </div>
             {latestResources.length > 0 ? (
-               <div className="grid gap-4">
+               <div className="grid sm:grid-cols-2 gap-6">
                 {latestResources.map(resource => (
-                  <Card key={resource.id} className="group hover:border-foreground/30 transition-all flex flex-col sm:flex-row overflow-hidden">
+                  <Card key={resource.id} className="group overflow-hidden flex flex-col hover:border-foreground/30 transition-all hover:shadow-md cursor-pointer relative">
+                    <Link href={`/resources/${resource.id}`} className="absolute inset-0 z-10">
+                      <span className="sr-only">View Resource</span>
+                    </Link>
+                    <div className="h-1 bg-indigo-500" />
                     {resource.imageUrl && (
-                      <div className="sm:w-48 h-32 sm:h-auto bg-muted shrink-0 border-b sm:border-b-0 sm:border-r overflow-hidden relative">
+                      <div className="h-36 overflow-hidden relative border-b bg-muted/20">
                          <img src={resource.imageUrl} alt={resource.title || "Resource"} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                       </div>
                     )}
-                    <div className="flex flex-col flex-1 p-5">
-                      <div className="flex justify-between items-start mb-1">
-                        <span className="text-[10px] font-bold uppercase text-primary tracking-wider bg-primary/10 px-2 py-0.5 rounded">{resource.type}</span>
+                    <CardHeader className="p-5 pb-2">
+                      <div className="flex justify-between items-start mb-2">
+                        <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                          {resource.type}
+                        </span>
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">Check it out <ArrowUpRight className="h-3 w-3" /></span>
                       </div>
-                      <CardTitle className="text-lg mt-1 group-hover:text-primary transition-colors">{resource.title}</CardTitle>
-                      <CardDescription className="line-clamp-2 text-sm mt-2">{resource.description}</CardDescription>
-                      <div className="mt-4 pt-4 border-t flex items-center justify-between">
-                         <span className="text-xs text-muted-foreground">Check it out</span>
-                         <Link href={`/resources/${resource.id}`}>
-                           <Button variant="secondary" size="sm" className="h-8 group-hover:bg-primary group-hover:text-primary-foreground">View Resource</Button>
-                         </Link>
-                      </div>
-                    </div>
+                      <CardTitle className="text-lg leading-tight group-hover:text-primary transition-colors">{resource.title}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="px-5 pb-5 pt-1 mt-auto">
+                      <p className="text-xs text-muted-foreground line-clamp-2">{resource.description || "Standalone curated item"}</p>
+                    </CardContent>
                   </Card>
                 ))}
                </div>
@@ -193,6 +206,51 @@ export default async function DashboardPage() {
         {/* Sidebar */}
         <div className="space-y-8">
           
+          {/* My Event Submissions */}
+          <Card className="bg-card/50 border overflow-hidden rounded-2xl">
+            <CardHeader className="bg-muted/30 border-b pb-4">
+               <div className="flex items-center justify-between w-full">
+                 <div className="flex items-center gap-2">
+                   <FileText className="h-5 w-5 text-primary" />
+                   <CardTitle className="text-base font-bold">My Event Submissions</CardTitle>
+                 </div>
+                 <Link href="/events/dashboard">
+                   <Button variant="ghost" size="sm" className="h-7 text-[11px] px-2 py-0">
+                     View All <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                   </Button>
+                 </Link>
+               </div>
+            </CardHeader>
+            <CardContent className="p-0">
+               {mySubmissions.length > 0 ? (
+                 <div className="divide-y text-xs">
+                   {mySubmissions.map(sub => (
+                     <Link key={sub.id} href="/events/dashboard" className="p-4 flex flex-col space-y-2 hover:bg-muted/50 transition-colors cursor-pointer group">
+                        <div className="flex justify-between items-start gap-2 w-full">
+                          <p className="font-semibold text-[13px] line-clamp-1 leading-tight group-hover:text-primary transition-colors">{sub.title}</p>
+                          <span className={`text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded shrink-0 ${
+                            sub.status === 'PUBLISHED' ? 'text-emerald-600 bg-emerald-500/10' : 
+                            sub.status === 'REJECTED' ? 'text-destructive bg-destructive/10' : 
+                            'text-amber-600 bg-amber-500/10'
+                          }`}>
+                            {sub.status}
+                          </span>
+                        </div>
+                        {sub.status === "REJECTED" && (
+                          <div className="text-[11px] text-destructive/80 border border-destructive/20 bg-destructive/5 px-2 py-1 rounded">
+                             Admin requested changes. View & Edit here.
+                          </div>
+                        )}
+                        <p className="text-[10px] text-muted-foreground">{new Date(sub.createdAt).toLocaleDateString()}</p>
+                     </Link>
+                   ))}
+                 </div>
+               ) : (
+                 <p className="p-6 text-center text-sm text-muted-foreground border-b border-dashed">No submissions yet.</p>
+               )}
+            </CardContent>
+          </Card>
+
           {/* Upcoming Events */}
           <Card className="bg-card/50 border overflow-hidden rounded-2xl">
             <CardHeader className="bg-muted/30 border-b pb-4">
@@ -205,16 +263,16 @@ export default async function DashboardPage() {
               {upcomingEvents.length > 0 ? (
                 <div className="divide-y">
                   {upcomingEvents.map(event => (
-                    <div key={event.id} className="p-4 hover:bg-muted/50 transition-colors">
-                      <p className="font-semibold text-sm leading-tight mb-2">{event.title}</p>
+                    <Link key={event.id} href="/events" className="p-4 hover:bg-muted/50 transition-colors flex flex-col cursor-pointer group">
+                      <p className="font-semibold text-sm leading-tight mb-2 group-hover:text-primary">{event.title}</p>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center text-xs font-medium text-muted-foreground gap-1.5">
                           <Calendar className="h-3.5 w-3.5" />
                           {new Date(event.startTime).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                         </div>
-                        <Link href="/events"><Button variant="ghost" size="sm" className="h-6 text-[10px] px-2">RSVP</Button></Link>
+                        <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2 group-hover:bg-primary group-hover:text-primary-foreground">RSVP</Button>
                       </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               ) : (

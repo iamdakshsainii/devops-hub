@@ -108,9 +108,13 @@ export async function DELETE(req: Request, context: { params: Promise<{ id: stri
     }
 
     const { id } = await context.params;
-    await prisma.roadmap.delete({ where: { id } });
 
-    return NextResponse.json({ message: "Roadmap deleted" });
+    await prisma.roadmap.update({
+      where: { id },
+      data: { status: "DELETED" }
+    });
+
+    return NextResponse.json({ message: "Roadmap moved to recycle bin" });
   } catch (error) {
     return NextResponse.json({ message: "Failed to delete" }, { status: 500 });
   }

@@ -25,16 +25,37 @@ export default async function ResourcesPage({
       where.type = { in: ["YOUTUBE", "VIDEO"] };
     } else if (type === "LINK") {
       where.type = { in: ["LINK", "ARTICLE", "TOOL"] };
-    } else {
+    } else if (type !== "NOTES") {
       where.type = type;
     }
   }
+  
   if (q) {
-    where.title = { contains: q, mode: "insensitive" };
+    where.OR = [
+      { title: { contains: q, mode: "insensitive" } },
+      { description: { contains: q, mode: "insensitive" } }
+    ];
   }
 
   const resourcesPromise = prisma.resource.findMany({
-    where,
+    where: type === "NOTES" ? { id: "none" } : where, // skip if only notes selected
+    orderBy: { createdAt: "desc" },
+    include: {
+      author: { select: { fullName: true } },
+      _count: { select: { upvotes: true } }
+    }
+  });
+
+  const notesWhere: any = { status: "PUBLISHED" };
+  if (q) {
+    notesWhere.OR = [
+      { title: { contains: q, mode: "insensitive" } },
+      { content: { contains: q, mode: "insensitive" } }
+    ];
+  }
+
+  const notesPromise = prisma.note.findMany({
+    where: type && type !== "ALL" && type !== "NOTES" ? { id: "none" } : notesWhere,
     orderBy: { createdAt: "desc" },
     include: {
       author: { select: { fullName: true } },
@@ -51,13 +72,22 @@ export default async function ResourcesPage({
     orderBy: { createdAt: "desc" }
   });
 
-  const [globalResources, roadmapResources] = await Promise.all([
+  const [globalResources, roadmapResources, notes] = await Promise.all([
     resourcesPromise,
-    roadmapResourcesPromise
+    roadmapResourcesPromise,
+    notesPromise
   ]);
 
   const mergedResources = [
     ...globalResources,
+    ...notes.map((n: any) => ({
+      ...n,
+      type: "NOTES",
+      url: `/notes/${n.id}`, 
+      description: n.content ? n.content.replace(/<[^>]*>?/gm, '').substring(0, 120) + "..." : "Document Note",
+      imageUrl: n.coverImage,
+      tags: n.tags || ""
+    })),
     ...roadmapResources.map((r: any) => ({
       ...r,
       tags: r.tags || "",
@@ -66,14 +96,13 @@ export default async function ResourcesPage({
     }))
   ];
 
-  const seenUrls = new Set();
-  const resources = [];
+  const resourcesMap = new Map<string, any>();
   for (const res of mergedResources) {
-    if (!seenUrls.has(res.url)) {
-      seenUrls.add(res.url);
-      resources.push(res);
+    if (!resourcesMap.has(res.url) || (!resourcesMap.get(res.url).imageUrl && res.imageUrl)) {
+      resourcesMap.set(res.url, res);
     }
   }
+  const resources = Array.from(resourcesMap.values());
 
   resources.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
@@ -99,7 +128,7 @@ export default async function ResourcesPage({
     <div className="container mx-auto px-4 py-8 max-w-6xl space-y-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight">Community Resources</h1>
+          <h1 className="text-3xl font-extrabold tracking-tight">Community Resources ({mergedResources.length})</h1>
           <p className="text-muted-foreground mt-1">Curated links, PDFs, tools, and videos published by modern Admins.</p>
         </div>
       </div>
@@ -118,8 +147,8 @@ export default async function ResourcesPage({
           <Link href={`/resources?type=PDF${q ? `&q=${q}` : ''}`}>
              <Button variant={type === "PDF" ? "secondary" : "ghost"} size="sm">PDFs</Button>
           </Link>
-          <Link href={`/resources?type=LINK${q ? `&q=${q}` : ''}`}>
-             <Button variant={type === "LINK" ? "secondary" : "ghost"} size="sm">Links</Button>
+          <Link href={`/resources?type=NOTES${q ? `&q=${q}` : ''}`}>
+             <Button variant={type === "NOTES" ? "secondary" : "ghost"} size="sm">Notes</Button>
           </Link>
           <Link href={`/resources?type=YOUTUBE${q ? `&q=${q}` : ''}`}>
              <Button variant={type === "YOUTUBE" ? "secondary" : "ghost"} size="sm">YouTube</Button>

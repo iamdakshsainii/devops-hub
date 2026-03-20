@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 import { useSession, signOut } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Search, Terminal, User as UserIcon, Settings, LogOut, UserCircle, Shield } from "lucide-react"
+import { Search, Terminal, User as UserIcon, Settings, LogOut, UserCircle, Shield, Bookmark, Calendar } from "lucide-react"
 import { ThemeToggle } from "./theme-toggle"
 import { NotificationsDropdown } from "./notifications-dropdown"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -103,6 +103,16 @@ export function Navbar() {
                       <Link href="/admin/roles" className="flex items-center w-full"><Shield className="mr-2 h-4 w-4" /> Role Manager</Link>
                     </DropdownMenuItem>
                   )}
+                   <DropdownMenuItem asChild>
+                     <Link href="/bookmarks" className="cursor-pointer flex items-center w-full">
+                       <Bookmark className="mr-2 h-4 w-4 text-primary" /> My Bookmarks
+                     </Link>
+                   </DropdownMenuItem>
+                   <DropdownMenuItem asChild>
+                     <Link href="/events/dashboard" className="cursor-pointer flex items-center w-full">
+                       <Calendar className="mr-2 h-4 w-4 text-amber-500" /> Manage My Events
+                     </Link>
+                   </DropdownMenuItem>
                    <DropdownMenuItem asChild>
                      <Link href="/profile" className="cursor-pointer flex items-center w-full">
                        <UserCircle className="mr-2 h-4 w-4" /> Profile Stats

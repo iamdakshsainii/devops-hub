@@ -12,6 +12,11 @@ export default async function AdminModulesPage() {
     }
   });
 
+  const roadmaps = await prisma.roadmap.findMany({
+    where: { status: { not: "DELETED" } },
+    select: { id: true, title: true }
+  });
+
   return (
     <div className="space-y-8">
       <div>
@@ -19,7 +24,7 @@ export default async function AdminModulesPage() {
         <p className="text-muted-foreground mt-1">Manage individual teaching nodes, standalone topics & knowledge items.</p>
       </div>
 
-      <AdminModulesList modules={modules} />
+      <AdminModulesList modules={modules} roadmaps={roadmaps} />
     </div>
   );
 }

@@ -39,7 +39,7 @@ export default function UserRow({ user, isSuperAdmin }: { user: any, isSuperAdmi
         <div className="font-semibold text-sm">{user.fullName || "—"}</div>
         <div className="text-xs text-muted-foreground mt-0.5">{user.email}</div>
       </td>
-      <td className="px-6 py-4 text-muted-foreground text-xs whitespace-nowrap">
+      <td className="px-6 py-4 text-muted-foreground text-xs whitespace-nowrap" suppressHydrationWarning>
          {new Date(user.createdAt).toLocaleDateString()}
       </td>
       <td className="px-6 py-4">

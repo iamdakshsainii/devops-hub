@@ -266,6 +266,7 @@ export default function NewRoadmapPage() {
                             <option value="VIDEO">Video</option>
                             <option value="PDF">PDF</option>
                             <option value="TOOL">Tool</option>
+                            <option value="NOTES">Notes</option>
                           </select>
                           <button onClick={()=>removeResource(si,ri)} className="p-2 hover:bg-destructive/10 rounded"><X className="h-4 w-4 text-destructive"/></button>
                         </div>

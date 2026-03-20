@@ -32,28 +32,48 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
 
     const { id } = await context.params;
     const { title, description, icon, status, topics, resources } = await req.json();
-
-    // ── Step 1: Do the global resource mirror check OUTSIDE the transaction.
-    // findFirst calls inside a long transaction burn time — do them upfront.
     const resourceList = resources || [];
-    const resourceUrls = resourceList.map((r: any) => r.url).filter(Boolean);
 
-    const existingGlobalUrls = new Set<string>();
-    if (resourceUrls.length > 0) {
-      const existing = await prisma.resource.findMany({
-        where: { url: { in: resourceUrls } },
-        select: { url: true },
-      });
-      existing.forEach((r) => existingGlobalUrls.add(r.url));
+    // ── Pre-fetch outside transaction to avoid timeout ─────────────────────
+
+    // Existing RoadmapResources for this step (need globalResourceId for cleanup)
+    const existingRoadmapResources = await prisma.roadmapResource.findMany({
+      where: { stepId: id },
+      select: { id: true, url: true, globalResourceId: true }
+    });
+
+    // Which URLs already exist in the global Resource table
+    const incomingUrls = resourceList
+      .map((r: any) => r.url?.trim().toLowerCase())
+      .filter(Boolean);
+
+    const existingGlobals = incomingUrls.length > 0
+      ? await prisma.resource.findMany({
+        where: { url: { in: incomingUrls } },
+        select: { id: true, url: true }
+      })
+      : [];
+
+    // url → existing global Resource id
+    const urlToGlobalId = new Map<string, string>();
+    for (const g of existingGlobals) {
+      if (g.url) urlToGlobalId.set(g.url.trim().toLowerCase(), g.id);
     }
 
-    // ── Step 2: Run the transaction with a generous timeout (30s).
-    // timeout is in milliseconds.
+    // url → globalResourceId from the OLD roadmap resources (for cleanup)
+    const oldUrlToGlobalId = new Map<string, string | null>();
+    for (const r of existingRoadmapResources) {
+      if (r.url) oldUrlToGlobalId.set(r.url.trim().toLowerCase(), r.globalResourceId ?? null);
+    }
+
+    const incomingUrlsSet = new Set(incomingUrls);
+
+    // ── Transaction ────────────────────────────────────────────────────────
     const result = await prisma.$transaction(
       async (tx) => {
-        // 1. Delete existing topics (cascade deletes subtopics) and resources
+
+        // 1. Delete topics (subtopics cascade)
         await tx.roadmapTopic.deleteMany({ where: { stepId: id } });
-        await tx.roadmapResource.deleteMany({ where: { stepId: id } });
 
         // 2. Re-create topics + subtopics
         for (let idx = 0; idx < (topics || []).length; idx++) {
@@ -66,10 +86,8 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
               order: idx,
             },
           });
-
-          const subs = t.subtopics || [];
-          for (let si = 0; si < subs.length; si++) {
-            const s = subs[si];
+          for (let si = 0; si < (t.subtopics || []).length; si++) {
+            const s = t.subtopics[si];
             if (s.title) {
               await tx.roadmapSubTopic.create({
                 data: {
@@ -83,9 +101,65 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
           }
         }
 
-        // 3. Re-create resources
+        // 3. Clean up removed resources:
+        //    Delete global mirror rows that this module created (tagged "Module")
+        //    but are no longer in the incoming list.
+        for (const [urlKey, globalId] of oldUrlToGlobalId.entries()) {
+          if (!incomingUrlsSet.has(urlKey) && globalId) {
+            await tx.resource.deleteMany({
+              where: {
+                id: globalId,
+                tags: "Module", // Only delete rows WE created — never touch manually added ones
+              }
+            });
+          }
+        }
+
+        // 4. Delete old RoadmapResource rows for this step
+        await tx.roadmapResource.deleteMany({ where: { stepId: id } });
+
+        // 5. Re-create RoadmapResources + upsert mirror into global Resource table
         for (let idx = 0; idx < resourceList.length; idx++) {
           const r = resourceList[idx];
+          if (!r.title && !r.url) continue;
+
+          const urlKey = r.url?.trim().toLowerCase() ?? "";
+          let globalResourceId: string | null = null;
+
+          if (urlKey) {
+            if (urlToGlobalId.has(urlKey)) {
+              // Global row already exists — update it to stay in sync
+              const existingId = urlToGlobalId.get(urlKey)!;
+              await tx.resource.update({
+                where: { id: existingId },
+                data: {
+                  title: r.title || "Module Resource",
+                  type: r.type || "ARTICLE",
+                  description: r.description || `Resource from module: ${title || "Module"}`,
+                  imageUrl: r.imageUrl || null,
+                  status: "PUBLISHED",
+                }
+              });
+              globalResourceId = existingId;
+            } else {
+              // No global row yet — create one
+              const created = await tx.resource.create({
+                data: {
+                  title: r.title || "Module Resource",
+                  url: r.url,
+                  type: r.type || "ARTICLE",
+                  description: r.description || `Resource from module: ${title || "Module"}`,
+                  imageUrl: r.imageUrl || null,
+                  tags: "Module",
+                  status: "PUBLISHED",
+                  authorId: session.user.id,
+                }
+              });
+              globalResourceId = created.id;
+              urlToGlobalId.set(urlKey, created.id); // prevent duplicate in same save
+            }
+          }
+
           await tx.roadmapResource.create({
             data: {
               stepId: id,
@@ -95,27 +169,12 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
               description: r.description || "",
               imageUrl: r.imageUrl || null,
               order: idx,
+              ...(globalResourceId ? { globalResourceId } : {}),
             },
           });
-
-          // Smart mirror — only insert if not already in global resources
-          // (checked outside the transaction so no extra queries here)
-          if (r.url && !existingGlobalUrls.has(r.url)) {
-            await tx.resource.create({
-              data: {
-                title: r.title || "Module Resource",
-                url: r.url || "",
-                type: r.type || "ARTICLE",
-                description: r.description || `Resource from module: ${title || "Standalone"}`,
-                tags: "Module",
-                status: "PUBLISHED",
-                authorId: session.user.id,
-              },
-            });
-          }
         }
 
-        // 4. Update the step itself
+        // 6. Update the step
         return tx.roadmapStep.update({
           where: { id },
           data: {
@@ -126,12 +185,7 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
           },
         });
       },
-      {
-        // Increase timeout to 30 seconds — default is 5s which is too short
-        // for large modules with many topics + subtopics
-        timeout: 30000,
-        maxWait: 5000,
-      }
+      { timeout: 30000, maxWait: 5000 }
     );
 
     return NextResponse.json({ message: "Updated", step: result });

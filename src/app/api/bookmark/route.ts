@@ -14,7 +14,9 @@ export async function POST(req: Request) {
       where: { 
          userId: session.user.id, 
          itemType, 
-         ...(itemType === "NOTE" ? { noteId: itemId } : itemType === "MODULE" ? { stepId: itemId } : { resourceId: itemId }) 
+         ...(itemType === "NOTE" ? { noteId: itemId } : 
+            itemType === "MODULE" ? { stepId: itemId } : 
+            itemType === "EVENT" ? { eventId: itemId } : { resourceId: itemId }) 
       }
     });
 
@@ -29,6 +31,7 @@ export async function POST(req: Request) {
           noteId: itemType === "NOTE" ? itemId : null,
           resourceId: itemType === "RESOURCE" ? itemId : null,
           stepId: itemType === "MODULE" ? itemId : null,
+          eventId: itemType === "EVENT" ? itemId : null,
         }
       });
       return NextResponse.json({ message: "Bookmarked", status: "added" });

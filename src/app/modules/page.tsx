@@ -8,6 +8,7 @@ export default async function ModulesPage() {
     where: { status: "PUBLISHED" },
     include: {
       steps: {
+        where: { status: "PUBLISHED" },
         orderBy: { order: "asc" },
         include: {
           _count: { select: { topics: true, resources: true } }

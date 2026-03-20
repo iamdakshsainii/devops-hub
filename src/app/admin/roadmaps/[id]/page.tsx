@@ -398,8 +398,8 @@ export default function RoadmapEditorPage({ params }: { params: Promise<{ id: st
       {mode === "MARKDOWN" && (
         <Card>
           <CardContent className="pt-6 space-y-4">
-            <p className="text-xs text-muted-foreground">
-              Paste a giant page from ChatGPT or standard `.md` contents. We will auto-extract **# Headers** into Step title setups and **## Topics** into Topic contents offsets securely!
+            <p className="text-xs text-muted-foreground border-l-2 border-primary-500/40 pl-3 bg-primary/5 py-2 rounded-r-md">
+              💡 **Why use this Mode?** This global Markdown tool is intended to create the **Structural Frame** (creating DOZENS of Steps) for the entire roadmap list at once. If you need inside detail notes for a **Specific Lesson**, you should import that directly inside the individual **Module Editor panel** instead!
             </p>
             <textarea
               value={markdownInput}
@@ -625,6 +625,7 @@ export default function RoadmapEditorPage({ params }: { params: Promise<{ id: st
                             <option value="VIDEO">Video</option>
                             <option value="PDF">PDF</option>
                             <option value="TOOL">Tool</option>
+                            <option value="NOTES">Notes</option>
                           </select>
                           <button onClick={() => removeResource(si, ri)} className="p-2 hover:bg-destructive/10 rounded">
                             <X className="h-4 w-4 text-destructive" />

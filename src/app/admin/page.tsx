@@ -31,10 +31,10 @@ export default async function AdminOverviewPage() {
     prisma.user.count(),
     prisma.roadmapStep.count(),
     prisma.roadmapStep.count({ where: { status: "PENDING" } }),
-    prisma.resource.count(),
+    prisma.resource.count({ where: { status: { not: "DELETED" } } }),
     prisma.resource.count({ where: { status: "PENDING" } }),
-    prisma.event.count(),
-    prisma.roadmap.count(),
+    prisma.event.count({ where: { status: { not: "DELETED" } } }),
+    prisma.roadmap.count({ where: { status: { not: "DELETED" } } }),
     prisma.adminRequest.count({ where: { status: "PENDING" } }),
     prisma.user.findMany({ take: 5, orderBy: { createdAt: "desc" }, select: { fullName: true, email: true, createdAt: true, role: true } }),
     prisma.roadmapStep.findMany({ take: 5, orderBy: { createdAt: "desc" }, select: { title: true, status: true, createdAt: true, author: { select: { fullName: true } } } }),
@@ -106,7 +106,7 @@ export default async function AdminOverviewPage() {
       )}
 
       {/* Clickable Stat Cards */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         <Link href="/admin/users" className="group">
           <Card className="h-full hover:border-pink-500/40 hover:shadow-md transition-all cursor-pointer">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

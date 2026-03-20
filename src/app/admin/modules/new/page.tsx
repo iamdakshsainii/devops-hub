@@ -58,6 +58,8 @@ export default function NewModulePage() {
     setMode("JSON");
   };
 
+  const [replaceExisting, setReplaceExisting] = useState(false);
+
   // ── Markdown / AI Paste parse ────────────────────────────────────────────
   const handleMarkdownParse = () => {
     try {
@@ -72,8 +74,11 @@ export default function NewModulePage() {
            currentTopic.content += line + "\n";
         }
       }
-      setForm({ ...form, topics: [...form.topics, ...topics] });
-      setMode("FORM"); setMarkdownInput(""); setError("");
+      setForm({ 
+         ...form, 
+         topics: replaceExisting ? topics : [...form.topics, ...topics] 
+      });
+      setMode("FORM"); setError("");
     } catch { setError("Failed to parse markdown"); }
   };
 
@@ -141,10 +146,16 @@ export default function NewModulePage() {
           <CardContent className="space-y-4">
             <p className="text-xs text-muted-foreground">Pasting notes? Use `## Topic Title` for sections. Code blocks work correctly.</p>
             <textarea value={markdownInput} onChange={e => setMarkdownInput(e.target.value)}
-              className="w-full h-96 rounded-md border border-input bg-background px-3 py-2 text-xs font-mono focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              className="w-full h-96 rounded-md border border-input bg-background px-3 py-2 text-xs font-mono focus-visible:outline-none focus:ring-1 focus:ring-ring"
               placeholder={'## Introduction\nWelcome to Docker note details...\n\n## Next Chapter\nContainerization involves...'}
             />
-            <Button onClick={handleMarkdownParse}>Apply Markdown to Form</Button>
+            <div className="flex items-center justify-between pt-2">
+               <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+                  <input type="checkbox" checked={replaceExisting} onChange={e => setReplaceExisting(e.target.checked)} className="rounded border-input text-primary focus:ring-primary" />
+                  Replace existing topics (prevents duplication)
+               </label>
+               <Button onClick={handleMarkdownParse}>Apply Markdown to Form</Button>
+            </div>
           </CardContent>
         </Card>
       )}

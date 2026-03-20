@@ -40,11 +40,16 @@ export function ResourceCard({ resource }: ResourceCardProps) {
 
   const tag = resource.tags ? resource.tags.split(',')[0] : "Resource";
 
+  const youtubeId = resource.type === 'YOUTUBE' 
+    ? resource.url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/)?.[1] 
+    : null;
+  const finalImageUrl = resource.imageUrl || (youtubeId ? `https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg` : null);
+
   return (
     <Card className="flex flex-col hover:border-primary/50 transition-colors overflow-hidden group h-full">
-      {resource.imageUrl && (
+      {finalImageUrl && (
         <div className="w-full h-48 bg-muted overflow-hidden border-b">
-          <img src={resource.imageUrl} alt={resource.title || "Resource cover"} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
+          <img src={finalImageUrl} alt={resource.title || "Resource cover"} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
         </div>
       )}
       <CardHeader className={resource.imageUrl ? "p-4 pb-2" : "p-5 pb-3"}>
