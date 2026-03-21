@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { extractYouTubeId, isYouTubeType } from "@/lib/utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Terminal, Lightbulb, Map, Bookmark, Lock, Bell, Calendar, FileText, Database, ArrowRight, ArrowUpRight, Shield } from "lucide-react";
@@ -167,17 +168,25 @@ export default async function DashboardPage() {
             </div>
             {latestResources.length > 0 ? (
                <div className="grid sm:grid-cols-2 gap-6">
-                {latestResources.map(resource => (
-                  <Card key={resource.id} className="group overflow-hidden flex flex-col hover:border-foreground/30 transition-all hover:shadow-md cursor-pointer relative">
-                    <Link href={`/resources/${resource.id}`} className="absolute inset-0 z-10">
-                      <span className="sr-only">View Resource</span>
-                    </Link>
-                    <div className="h-1 bg-indigo-500" />
-                    {resource.imageUrl && (
-                      <div className="h-36 overflow-hidden relative border-b bg-muted/20">
-                         <img src={resource.imageUrl} alt={resource.title || "Resource"} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                      </div>
-                    )}
+                {latestResources.map(resource => {
+                  const youtubeId = isYouTubeType(resource.type)
+                    ? extractYouTubeId(resource.url || "")
+                    : null;
+                  const finalImageUrl =
+                    resource.imageUrl ||
+                    (youtubeId ? `https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg` : null);
+
+                  return (
+                    <Card key={resource.id} className="group overflow-hidden flex flex-col hover:border-foreground/30 transition-all hover:shadow-md cursor-pointer relative">
+                      <Link href={`/resources/${resource.id}`} className="absolute inset-0 z-10">
+                        <span className="sr-only">View Resource</span>
+                      </Link>
+                      <div className="h-1 bg-indigo-500" />
+                      {finalImageUrl && (
+                        <div className="h-36 overflow-hidden relative border-b bg-muted/20">
+                           <img src={finalImageUrl} alt={resource.title || "Resource"} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                        </div>
+                      )}
                     <CardHeader className="p-5 pb-2">
                       <div className="flex justify-between items-start mb-2">
                         <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground bg-muted px-2 py-0.5 rounded">
@@ -190,8 +199,9 @@ export default async function DashboardPage() {
                     <CardContent className="px-5 pb-5 pt-1 mt-auto">
                       <p className="text-xs text-muted-foreground line-clamp-2">{resource.description || "Standalone curated item"}</p>
                     </CardContent>
-                  </Card>
-                ))}
+                    </Card>
+                  );
+                })}
                </div>
             ) : (
               <div className="text-center p-12 py-16 border rounded-2xl bg-muted/5 border-dashed">

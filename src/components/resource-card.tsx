@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Youtube, FileText, Link as LinkIcon, Image as ImageIcon, Heart } from "lucide-react";
+import { extractYouTubeId, isYouTubeType } from "@/lib/utils";
 
 interface ResourceCardProps {
   resource: {
@@ -20,25 +21,7 @@ interface ResourceCardProps {
   };
 }
 
-// Extracts YouTube video ID from any YouTube URL format:
-// - https://www.youtube.com/watch?v=ID
-// - https://youtu.be/ID
-// - https://youtu.be/ID?si=...
-// - https://www.youtube.com/embed/ID
-// - https://www.youtube.com/shorts/ID
-function extractYouTubeId(url: string): string | null {
-  if (!url) return null;
-  const match = url.match(
-    /(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
-  );
-  return match?.[1] ?? null;
-}
 
-// Checks if a resource is YouTube-type regardless of casing (VIDEO, Video, YOUTUBE, etc.)
-function isYouTubeType(type: string): boolean {
-  const t = type?.toUpperCase();
-  return t === "YOUTUBE" || t === "VIDEO";
-}
 
 export function ResourceCard({ resource }: ResourceCardProps) {
   const [upvotes, setUpvotes] = useState(resource._count?.upvotes || 0);
