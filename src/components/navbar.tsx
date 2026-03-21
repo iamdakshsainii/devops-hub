@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useState, useEffect, useRef } from "react"
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { useSession, signOut } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -17,6 +17,11 @@ import {
 export function Navbar() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const pathname = usePathname()
+  const getLinkClass = (href: string) => {
+    const isActive = href === "/" ? pathname === "/" : pathname.startsWith(href)
+    return `transition-colors hover:text-foreground md:text-xs lg:text-sm tracking-tight ${isActive ? "text-primary font-bold" : "text-foreground/70 font-medium"}`
+  }
   const [searchQuery, setSearchQuery] = useState("")
   const reminderChecked = useRef(false)
 
@@ -44,12 +49,12 @@ export function Navbar() {
 
         <div className="flex-1 hidden md:flex items-center justify-between mr-4 space-x-8">
           <nav className="flex items-center space-x-6 text-sm font-medium">
-            <Link href="/" className="transition-colors hover:text-foreground text-foreground/70">Home</Link>
-            <Link href="/modules" className="transition-colors hover:text-foreground text-foreground/70">Modules</Link>
-            <Link href="/roadmap" className="transition-colors hover:text-foreground text-foreground/70">Roadmap</Link>
-            <Link href="/resources" className="transition-colors hover:text-foreground text-foreground/70">Resources</Link>
-            <Link href="/events" className="transition-colors hover:text-foreground text-foreground/70">Events</Link>
-            <Link href="/about" className="transition-colors hover:text-foreground text-foreground/70">About</Link>
+            <Link href="/" className={getLinkClass("/")}>Home</Link>
+            <Link href="/modules" className={getLinkClass("/modules")}>Modules</Link>
+            <Link href="/roadmap" className={getLinkClass("/roadmap")}>Roadmap</Link>
+            <Link href="/resources" className={getLinkClass("/resources")}>Resources</Link>
+            <Link href="/events" className={getLinkClass("/events")}>Events</Link>
+            <Link href="/about" className={getLinkClass("/about")}>About</Link>
           </nav>
           <div className="w-full max-w-sm relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
