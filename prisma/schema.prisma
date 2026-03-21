@@ -23,6 +23,8 @@ model User {
   role          String    @default("MEMBER")
   permissions   String?
   score         Int       @default(0)
+  streak        Int       @default(0)
+  streakLastUpdate DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -39,6 +41,7 @@ model User {
   blogComments     BlogComment[]
   tools            Tool[]
   toolComparisons  ToolComparison[]
+  progress         UserProgress[]
 }
 
 model Note {
@@ -168,6 +171,8 @@ model Bookmark {
   certId     String?
   stepId     String?
   eventId    String?
+  topicId    String?
+  subtopicId String?
   remindMe   Boolean   @default(false)
 
   user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -177,6 +182,8 @@ model Bookmark {
   cert       CertGuide?      @relation(fields: [certId], references: [id], onDelete: Cascade)
   step       RoadmapStep?    @relation(fields: [stepId], references: [id], onDelete: Cascade)
   event      Event?          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  topic      RoadmapTopic?   @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  subtopic   RoadmapSubTopic? @relation(fields: [subtopicId], references: [id], onDelete: Cascade)
 }
 
 model Upvote {
@@ -274,6 +281,7 @@ model RoadmapTopic {
   step      RoadmapStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
 
   subtopics RoadmapSubTopic[]
+  bookmarks Bookmark[]
 }
 
 model RoadmapSubTopic {
@@ -286,6 +294,8 @@ model RoadmapSubTopic {
 
   topicId   String
   topic     RoadmapTopic @relation(fields: [topicId], references: [id], onDelete: Cascade)
+
+  bookmarks Bookmark[]
 }
 
 model RoadmapResource {
@@ -400,4 +410,18 @@ model Tool {
   comparisonsB ToolComparison[] @relation("ToolB")
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
+}
+
+model UserProgress {
+  id        String   @id @default(cuid())
+  userId    String
+  itemType  String   // "TOPIC" or "SUBTOPIC"
+  itemId    String   // The ID of the Topic or Subtopic
+  completed Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, itemId])
 }

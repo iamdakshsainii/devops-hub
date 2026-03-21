@@ -1,3 +1,5 @@
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
@@ -8,19 +10,24 @@ export const dynamic = "force-dynamic";
 export default async function RoadmapDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  const roadmap = await prisma.roadmap.findUnique({
+  const session = await getServerSession(authOptions);
+  const [roadmap, progress] = await Promise.all([
+    prisma.roadmap.findUnique({
     where: { id },
     include: {
       steps: {
         where: { status: "PUBLISHED" },
         orderBy: { order: "asc" },
         include: {
-          topics: { take: 3, select: { title: true, id: true } },
+          topics: { select: { title: true, id: true, content: true, subtopics: { select: { id: true, content: true } } } },
           _count: { select: { topics: true, resources: true } }
         }
       }
     }
-  });
+  }),
+    session?.user?.id ? prisma.userProgress.findMany({ where: { userId: session.user.id } }) : []
+  ]);
+  const completedItemIds = new Set(progress.map((p: any) => p.itemId));
 
   if (!roadmap || roadmap.status !== "PUBLISHED") notFound();
 
@@ -66,7 +73,15 @@ export default async function RoadmapDetailPage({ params }: { params: Promise<{ 
             style={{ backgroundImage: `linear-gradient(to bottom, ${roadmap.color}, ${roadmap.color}20)` }}
           />
 
-          {roadmap.steps.map((step, i) => (
+          {roadmap.steps.map((step, i) => {
+            let trackingTotal = 0;
+            let trackingCompleted = 0;
+            for (const t of step.topics) {
+              trackingTotal += 1;
+              if (completedItemIds.has(t.id)) trackingCompleted += 1;
+            }
+            const isCompleted = trackingTotal > 0 && trackingCompleted === trackingTotal;
+            return (
             // Each step links to /modules/[stepId]?roadmapId=[roadmapId]
             // This passes roadmap context so the module page shows roadmap nav
             <Link
@@ -78,16 +93,16 @@ export default async function RoadmapDetailPage({ params }: { params: Promise<{ 
                 {/* Station Node */}
                 <div className="flex items-center gap-4 shrink-0 sm:w-16">
                   <div
-                    className="hidden sm:flex w-16 h-16 rounded-2xl bg-card border shadow-sm items-center justify-center relative z-20 group-hover:scale-110 transition-transform duration-300"
-                    style={{ borderColor: `${roadmap.color}50` }}
+                    className={`hidden sm:flex w-16 h-16 rounded-2xl bg-card border shadow-sm items-center justify-center relative z-20 group-hover:scale-110 transition-transform duration-300 ${isCompleted ? "shadow-[0_0_20px_rgba(16,185,129,0.7)] border-emerald-500 scale-105" : ""}`}
+                    style={{ borderColor: isCompleted ? '#10b981' : `${roadmap.color}50` }}
                   >
-                    <span className="text-xl font-black" style={{ color: roadmap.color }}>
+                    <span className="text-xl font-black" style={{ color: isCompleted ? '#10b981' : roadmap.color }}>
                       {String(i + 1).padStart(2, "0")}
                     </span>
                   </div>
                   <div
                     className="sm:hidden w-10 h-10 rounded-xl bg-card border flex items-center justify-center font-bold text-sm shrink-0"
-                    style={{ borderColor: `${roadmap.color}50`, color: roadmap.color }}
+                    style={{ borderColor: isCompleted ? '#10b981' : `${roadmap.color}50`, color: isCompleted ? '#10b981' : roadmap.color }}
                   >
                     {String(i + 1).padStart(2, "0")}
                   </div>
@@ -96,8 +111,8 @@ export default async function RoadmapDetailPage({ params }: { params: Promise<{ 
                 {/* Card */}
                 <div className="flex-1 bg-card border rounded-2xl p-6 hover:shadow-xl hover:border-foreground/30 transition-all duration-300 relative overflow-hidden">
                   <div
-                    className="absolute top-0 left-0 w-1.5 h-full opacity-0 group-hover:opacity-100 transition-opacity"
-                    style={{ backgroundColor: roadmap.color }}
+                    className={`absolute top-0 left-0 w-1.5 h-full transition-opacity ${isCompleted ? "opacity-100 bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)]" : "opacity-0 group-hover:opacity-100"}`}
+                    style={{ backgroundColor: isCompleted ? undefined : roadmap.color }}
                   />
 
                   <div className="sm:flex justify-between items-start gap-4">
@@ -146,7 +161,8 @@ export default async function RoadmapDetailPage({ params }: { params: Promise<{ 
                 </div>
               </div>
             </Link>
-          ))}
+          );
+          })}
         </div>
       </div>
     </div>

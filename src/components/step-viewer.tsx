@@ -8,9 +8,10 @@ import hljs from "highlight.js";
 import {
   FileText, Youtube, BookOpen,
   Download, Link as LinkIcon, ArrowLeft, ArrowRight,
-  Menu, X, Map, ChevronDown, ChevronRight, Library, Heart, Twitter, Linkedin, Copy, Search
+  Menu, X, Map, ChevronDown, ChevronRight, Library, Heart, Twitter, Linkedin, Copy, Search, Bookmark, Check
 } from "lucide-react";
 import { ResourceCard } from "@/components/resource-card";
+import { Checkbox } from "@/components/ui/checkbox";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -44,6 +45,7 @@ interface Step {
   description: string;
   icon: string;
   order: number;
+  tags?: string;
   topics: Topic[];
   resources: Resource[];
   author?: { fullName?: string | null; avatarUrl?: string | null } | null;
@@ -212,6 +214,21 @@ export function StepViewer({
   };
 
   const [activeView, setActiveView] = useState<ActiveView>(getDefaultView);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(`lastView_${step.id}`);
+      if (saved) {
+        try { setActiveView(JSON.parse(saved)); } catch (e) {}
+      }
+    }
+  }, [step.id]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(`lastView_${step.id}`, JSON.stringify(activeView));
+    }
+  }, [activeView, step.id]);
   const [viewMode, setViewMode] = useState<"PAGINATED" | "CONTINUOUS">("PAGINATED");
   const [expandedTopics, setExpandedTopics] = useState<Set<string>>(() => {
     const s = new Set<string>();
@@ -221,6 +238,102 @@ export function StepViewer({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [localSearch, setLocalSearch] = useState("");
   const [localSearchOpen, setLocalSearchOpen] = useState(false);
+  const [completedItems, setCompletedItems] = useState<string[]>([]);
+  const [bookmarkedItems, setBookmarkedItems] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const b = localStorage.getItem("my_bookmarks");
+      if (b) setBookmarkedItems(JSON.parse(b));
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setLocalSearchOpen(prev => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  const toggleBookmark = async (id: string, itemType: string = "TOPIC") => {
+    const isBookmarked = bookmarkedItems.includes(id);
+    const next = isBookmarked ? bookmarkedItems.filter(b => b !== id) : [...bookmarkedItems, id];
+    setBookmarkedItems(next);
+    localStorage.setItem("my_bookmarks", JSON.stringify(next));
+    try {
+      await fetch('/api/bookmark', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ itemId: id, itemType })
+      });
+    } catch (e) {}
+  };
+
+  // ── Sync Progress Sync Hooks ──────────────────────────────────────────
+  useEffect(() => {
+    const saved = localStorage.getItem(`completed_module_${step.id}`);
+    if (saved) setCompletedItems(JSON.parse(saved));
+
+    fetch('/api/progress')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          const ids = data.map((d: any) => d.itemId);
+          setCompletedItems(ids);
+          localStorage.setItem(`completed_module_${step.id}`, JSON.stringify(ids));
+        }
+      })
+      .catch(() => {});
+  }, [step.id]);
+
+  const getTotalItemsCount = useCallback(() => {
+    return step.topics.length;
+  }, [step.topics]);
+
+  const toggleComplete = async (itemId: string, itemType: string) => {
+    const isCompleted = completedItems.includes(itemId);
+    const newItems = isCompleted 
+      ? completedItems.filter(id => id !== itemId) 
+      : [...completedItems, itemId];
+      
+    setCompletedItems(newItems);
+    localStorage.setItem(`completed_module_${step.id}`, JSON.stringify(newItems));
+
+    try {
+      await fetch('/api/progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ itemId, itemType, completed: !isCompleted })
+      });
+    } catch (e) {}
+
+    const completedTopicsCount = step.topics.filter(t => newItems.includes(t.id)).length;
+    if (!isCompleted && completedTopicsCount === getTotalItemsCount()) {
+      import('canvas-confetti').then(confetti => confetti.default());
+    }
+  };
+
+  const completedTopicsCount = step.topics.filter(t => completedItems.includes(t.id)).length;
+  const completionPercentage = getTotalItemsCount() > 0 
+    ? Math.round((completedTopicsCount / getTotalItemsCount()) * 100) 
+    : 0;
+
+  const getReadTime = (content: string | null) => {
+    if (!content) return 1;
+    const words = content.trim().split(/\s+/).length;
+    return Math.max(1, Math.ceil(words / 200));
+  };
+
+  const getTopicReadTime = (topic: any) => {
+    let text = topic.content || "";
+    topic.subtopics?.forEach((sub: any) => { text += " " + sub.content });
+    const words = text.trim().split(/\s+/).length;
+    return Math.max(1, Math.ceil(words / 200));
+  };
 
   const [likes, setLikes] = useState(0);
   const [hasLiked, setHasLiked] = useState(false);
@@ -318,6 +431,13 @@ export function StepViewer({
 
       {/* Breadcrumb */}
       <div className="sticky top-16 z-40 bg-background/95 backdrop-blur border-b shadow-sm">
+        
+        {completionPercentage === 100 && (
+          <div className="bg-emerald-500/10 border-b border-emerald-500/20 text-emerald-500 text-xs font-bold py-1.5 px-4 text-center">
+             🎉 Awesome! You've mastered all topics in this step. Keep the momentum going!
+          </div>
+        )}
+        <div className="absolute bottom-0 left-0 h-[6px] bg-emerald-500 transition-all duration-500 z-50" style={{ width: `${completionPercentage}%` }} />
         <div className="container mx-auto px-4 max-w-7xl flex items-center h-14 gap-2 overflow-x-auto whitespace-nowrap scrollbar-hide text-sm">
           <button className="md:hidden p-1.5 rounded-md hover:bg-muted shrink-0" onClick={() => setSidebarOpen(!sidebarOpen)}>
             {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -358,6 +478,11 @@ export function StepViewer({
               <span className="text-foreground font-medium truncate">{activeSubtopic.title}</span>
             </>
           )}
+          
+          {/* Visual Glow Progress Bar sitting pinned layout framing Node */}
+          <div className="h-[2px] bg-muted w-full overflow-hidden absolute bottom-0 left-0">
+            <div className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-300 shadow-[0_0_8px_rgba(16,185,129,0.5)]" style={{ width: `${completionPercentage}%` }}></div>
+          </div>
         </div>
       </div>
 
@@ -380,6 +505,13 @@ export function StepViewer({
               <div>
                 <h2 className="font-extrabold text-lg leading-tight">{step.title}</h2>
                 <p className="text-xs uppercase tracking-wider font-bold text-muted-foreground mt-0.5">Module {step.order + 1}</p>
+                {step.tags && (
+                  <div className="flex gap-1 mt-1 flex-wrap">
+                    {step.tags.split(",").filter(Boolean).map((t: string) => (
+                      <span key={t} className="text-[9px] font-black uppercase text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded-md border border-amber-500/20">{t.trim()}</span>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
@@ -401,8 +533,11 @@ export function StepViewer({
                     <button onClick={() => { if (hasIntro) navigate({ kind: "topic", topicId: topic.id }); else if (hasSubtopics) { toggleTopicExpand(topic.id); if (!isTopicActive && topic.subtopics![0]) navigate({ kind: "subtopic", topicId: topic.id, subtopicId: topic.subtopics![0].id }); } else navigate({ kind: "topic", topicId: topic.id }); }}
                       className={`flex-1 flex items-start gap-3 px-3 py-2 text-sm text-left transition-all rounded-lg ${isActive ? "text-primary font-bold" : "text-muted-foreground hover:text-foreground"}`}
                     >
-                      <span className={`text-[10px] font-mono shrink-0 mt-0.5 ${isActive ? "text-primary/70" : "text-muted-foreground/40"}`}>{String(i + 1).padStart(2, "0")}</span>
-                      <span className="flex-1 leading-snug break-words">{topic.title}</span>
+                      <span className={`text-[10px] font-mono shrink-0 mt-0.5 ${isActive ? "text-primary/70" : "text-muted-foreground/40"}`}>{completedItems.includes(topic.id) ? <Check className="h-3 w-3 text-emerald-500 font-bold" /> : String(i + 1).padStart(2, "0")}</span>
+                      <div className="flex-1 min-w-0 flex items-start justify-between gap-1">
+                        <span className="leading-snug break-words">{topic.title}</span>
+                        <span className="text-[9px] text-muted-foreground/60 font-medium shrink-0 mt-0.5">{getTopicReadTime(topic)}m</span>
+                      </div>
                     </button>
                     {hasSubtopics && (
                       <button onClick={() => toggleTopicExpand(topic.id)} className="p-1.5 mt-1 hover:bg-muted/60 rounded-md shrink-0 text-muted-foreground hover:text-foreground">
@@ -419,7 +554,10 @@ export function StepViewer({
                           <button key={sub.id} onClick={() => navigate({ kind: "subtopic", topicId: topic.id, subtopicId: sub.id })}
                             className={`text-xs text-left py-1.5 px-2.5 rounded-md transition-all ${isSubActive ? "bg-primary/10 text-primary font-semibold border border-primary/20" : "text-muted-foreground hover:bg-muted/30 hover:text-foreground border border-transparent"}`}
                           >
-                            {sub.title}
+                            <div className="flex items-center justify-between w-full gap-1">
+                              <span className="truncate">{sub.title}</span>
+                              <span className="text-[9px] text-muted-foreground/50 font-medium shrink-0">{getReadTime(sub.content)}m</span>
+                            </div>
                           </button>
                         );
                       })}
@@ -507,9 +645,29 @@ export function StepViewer({
                   </div>
                 </div>
 
-                <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight leading-tight text-foreground/95">
-                  {activeView.kind === "subtopic" && activeSubtopic && viewMode === "PAGINATED" ? activeSubtopic.title : activeTopic?.title}
-                </h1>
+                <div className="flex items-center gap-3">
+                  {activeTopic && (
+                    <div className="flex items-center gap-3">
+                       <button title="Add bookmark and see in saved content from profile dropdown anytime" onClick={() => toggleBookmark(activeTopic.id)} className={`p-1.5 rounded-lg border transition-all ${bookmarkedItems.includes(activeTopic.id) ? "bg-primary/10 text-primary border-primary/20" : "bg-muted/30 text-muted-foreground border-transparent hover:border-border"}`}>
+                         <Bookmark className="h-4 w-4" />
+                       </button>
+                       <Checkbox 
+                         checked={completedItems.includes(activeTopic.id)} 
+                         onCheckedChange={() => toggleComplete(activeTopic.id, "TOPIC")} 
+                         title="Click to mark as read" className="h-5 w-5 data-[state=checked]:bg-emerald-500 border-muted-foreground/40 rounded-md transition-colors"
+                       />
+                        <span className="text-[10px] uppercase font-bold text-muted-foreground/60 tracking-wider hidden md:inline-block ml-1">Mark Read</span>
+                    </div>
+                  )}
+                  {activeView.kind === "subtopic" && activeSubtopic && viewMode === "PAGINATED" && (
+                     <button title="Add bookmark and see in saved content from profile dropdown anytime" onClick={() => toggleBookmark(activeSubtopic.id, "SUBTOPIC")} className={`p-1 rounded border border-transparent text-muted-foreground hover:bg-muted/10`}>
+                       <Bookmark className="h-3.5 w-3.5" />
+                     </button>
+                  )}
+                  <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight leading-tight text-foreground/95">
+                    {activeView.kind === "subtopic" && activeSubtopic && viewMode === "PAGINATED" ? activeSubtopic.title : activeTopic?.title}
+                  </h1>
+                </div>
               </header>
 
               {viewMode === "CONTINUOUS" && activeTopic ? (
@@ -519,7 +677,14 @@ export function StepViewer({
                      <div className="space-y-12">
                        {activeTopic.subtopics.map((sub) => (
                           <div key={sub.id} id={`subtopic-${sub.id}`} className="space-y-4 pt-10 border-t border-border/10 first:pt-0 first:border-0">
-                            <h2 className="text-2xl font-extrabold tracking-tight text-foreground">{sub.title}</h2>
+                            <div className="flex items-center gap-3">
+                              <Checkbox 
+                                checked={completedItems.includes(sub.id)} 
+                                onCheckedChange={() => toggleComplete(sub.id, "SUBTOPIC")} 
+                                title="Click to mark as read" className="h-5 w-5 data-[state=checked]:bg-emerald-500 border-muted-foreground/40 rounded-md transition-colors"
+                              />
+                              <h2 className="text-2xl font-extrabold tracking-tight text-foreground">{sub.title}</h2>
+                            </div>
                             <div className={PROSE} dangerouslySetInnerHTML={{ __html: parseMarkdown(sub.content) }} />
                           </div>
                        ))}
@@ -544,7 +709,13 @@ export function StepViewer({
                             <div className="flex-1 min-w-0">
                               <p className="font-semibold text-sm group-hover:text-primary transition-colors truncate">{sub.title}</p>
                             </div>
-                            <ChevronRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
+                            <div className="flex items-center gap-3 shrink-0" onClick={e => e.stopPropagation()}>
+                              <Checkbox 
+                                checked={completedItems.includes(sub.id)}
+                                onCheckedChange={() => toggleComplete(sub.id, "SUBTOPIC")}
+                                title="Click to mark as read" className="h-5 w-5 rounded-md data-[state=checked]:bg-emerald-500 border-muted-foreground/40"
+                              />
+                            </div>
                           </button>
                         ))}
                       </div>

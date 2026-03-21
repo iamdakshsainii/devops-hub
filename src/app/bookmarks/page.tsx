@@ -28,6 +28,8 @@ export default async function BookmarksPage({
 
   // Separate by type
   const moduleBookmarkRows = rawBookmarks.filter((b) => b.itemType === "MODULE" && b.stepId);
+  const topicBookmarkRows = rawBookmarks.filter((b) => b.itemType === "TOPIC" && b.topicId);
+  const subtopicBookmarkRows = rawBookmarks.filter((b) => b.itemType === "SUBTOPIC" && b.subtopicId);
   const resourceBookmarkRows = rawBookmarks.filter((b) => b.itemType === "RESOURCE" && b.resourceId);
   const eventBookmarkRows = rawBookmarks.filter((b) => b.itemType === "EVENT" && b.eventId);
 
@@ -35,35 +37,28 @@ export default async function BookmarksPage({
   const stepIds = moduleBookmarkRows.map((b) => b.stepId!);
   const resourceIds = resourceBookmarkRows.map((b) => b.resourceId!);
   const eventIds = eventBookmarkRows.map((b) => b.eventId!);
+  const topicIds = topicBookmarkRows.map((b) => b.topicId!);
+  const subtopicIds = subtopicBookmarkRows.map((b) => b.subtopicId!);
 
-  const [steps, resources, events] = await Promise.all([
-    stepIds.length > 0
-      ? prisma.roadmapStep.findMany({
-        where: { id: { in: stepIds } },
-        include: { roadmap: { select: { title: true, color: true } } },
-      })
-      : Promise.resolve([]),
-    resourceIds.length > 0
-      ? prisma.resource.findMany({
-        where: { id: { in: resourceIds } },
-        include: { author: { select: { fullName: true } } },
-      })
-      : Promise.resolve([]),
-    eventIds.length > 0
-      ? prisma.event.findMany({ where: { id: { in: eventIds } } })
-      : Promise.resolve([]),
+  const [steps, resources, events, topics, subtopics] = await Promise.all([
+    stepIds.length > 0 ? prisma.roadmapStep.findMany({ where: { id: { in: stepIds } }, include: { roadmap: { select: { title: true, color: true } } } }) : Promise.resolve([]),
+    resourceIds.length > 0 ? prisma.resource.findMany({ where: { id: { in: resourceIds } }, include: { author: { select: { fullName: true } } } }) : Promise.resolve([]),
+    eventIds.length > 0 ? prisma.event.findMany({ where: { id: { in: eventIds } } }) : Promise.resolve([]),
+    topicIds.length > 0 ? prisma.roadmapTopic.findMany({ where: { id: { in: topicIds } }, include: { step: true } }) : Promise.resolve([]),
+    subtopicIds.length > 0 ? prisma.roadmapSubTopic.findMany({ where: { id: { in: subtopicIds } }, include: { topic: { include: { step: true } } } }) : Promise.resolve([]),
   ]);
 
   const stepMap = Object.fromEntries(steps.map((s) => [s.id, s]));
   const resourceMap = Object.fromEntries(resources.map((r) => [r.id, r]));
   const eventMap = Object.fromEntries(events.map((e) => [e.id, e]));
+  const topicMap = Object.fromEntries(topics.map((t) => [t.id, t]));
+  const subtopicMap = Object.fromEntries(subtopics.map((s) => [s.id, s]));
 
-  const moduleBookmarks = moduleBookmarkRows
-    .map((b) => ({ ...b, step: stepMap[b.stepId!] }))
-    .filter((b) => b.step);
-  const resourceBookmarks = resourceBookmarkRows
-    .map((b) => ({ ...b, resource: resourceMap[b.resourceId!] }))
-    .filter((b) => b.resource);
+  const moduleBookmarks = moduleBookmarkRows.map((b) => ({ ...b, step: stepMap[b.stepId!] })).filter((b) => b.step);
+  const topicBookmarks = topicBookmarkRows.map((b) => ({ ...b, topic: topicMap[b.topicId!] })).filter((b) => b.topic);
+  const subtopicBookmarks = subtopicBookmarkRows.map((b) => ({ ...b, subtopic: subtopicMap[b.subtopicId!] })).filter((b) => b.subtopic);
+
+  const resourceBookmarks = typeof resourceBookmarkRows !== "undefined" ? resourceBookmarkRows.map((b) => ({ ...b, resource: resourceMap[b.resourceId!] })).filter((b) => b.resource) : [];
 
   // Split events into saved and remindMe
   const allEventBookmarks = eventBookmarkRows
@@ -76,7 +71,7 @@ export default async function BookmarksPage({
   const pureEventBookmarks = allEventBookmarks; // all saved events shown in Saved tab
 
   const tabs = [
-    { label: "Modules", value: "modules", count: moduleBookmarks.length },
+    { label: "Modules", value: "modules", count: moduleBookmarks.length + (typeof topicBookmarks !== "undefined" ? topicBookmarks.length : 0) + (typeof subtopicBookmarks !== "undefined" ? subtopicBookmarks.length : 0) },
     { label: "Resources", value: "resources", count: resourceBookmarks.length },
     { label: "Events", value: "events", count: pureEventBookmarks.length },
     { label: "Remind Me", value: "reminders", count: remindMeBookmarks.length },
@@ -114,14 +109,11 @@ export default async function BookmarksPage({
       {/* Modules */}
       {activeTab === "modules" && (
         <div className="space-y-6">
-          {moduleBookmarks.length > 0 ? (
+          {(moduleBookmarks.length > 0 || (typeof topicBookmarks !== "undefined" && topicBookmarks.length > 0) || (typeof subtopicBookmarks !== "undefined" && subtopicBookmarks.length > 0)) ? (
             <div className="grid sm:grid-cols-2 gap-4">
               {moduleBookmarks.map(({ step }) =>
                 step ? (
-                  <Card
-                    key={step.id}
-                    className="hover:border-primary/50 transition-colors relative overflow-hidden flex flex-col"
-                  >
+                  <Card key={step.id} className="hover:border-primary/50 transition-colors relative overflow-hidden flex flex-col">
                     <div className="h-1" style={{ backgroundColor: step.roadmap?.color || "#3B82F6" }} />
                     <CardHeader className="p-5 pb-2">
                       <div className="flex justify-between items-start mb-2">
@@ -132,9 +124,7 @@ export default async function BookmarksPage({
                       <CardTitle className="text-lg leading-tight">{step.title}</CardTitle>
                     </CardHeader>
                     <CardContent className="px-5 pb-5 pt-1 mt-auto space-y-4 flex-grow flex flex-col justify-between">
-                      <p className="text-xs text-muted-foreground line-clamp-2 mb-4">
-                        {step.description || "Standalone knowledge node."}
-                      </p>
+                      <p className="text-xs text-muted-foreground line-clamp-2 mb-4">{step.description || "Standalone knowledge node."}</p>
                       <Link href={`/modules?id=${step.id}`} className="mt-auto">
                         <Button variant="secondary" className="w-full h-8">View Module</Button>
                       </Link>
@@ -142,6 +132,38 @@ export default async function BookmarksPage({
                   </Card>
                 ) : null
               )}
+              {typeof topicBookmarks !== "undefined" && topicBookmarks.map(({ topic }) => (
+                <Card key={topic.id} className="hover:border-primary/50 transition-colors flex flex-col">
+                  <CardHeader className="p-5 pb-2">
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded">Topic</span>
+                    </div>
+                    <CardTitle className="text-lg leading-tight">{topic.title}</CardTitle>
+                    {topic.step && <p className="text-xs text-muted-foreground mt-1">In {topic.step.title}</p>}
+                  </CardHeader>
+                  <CardContent className="px-5 pb-5 pt-1 mt-auto space-y-2">
+                     <Link href={`/modules/${topic.stepId}`}>
+                       <Button variant="secondary" className="w-full h-8 mt-2">View Topic</Button>
+                     </Link>
+                  </CardContent>
+                </Card>
+              ))}
+              {typeof subtopicBookmarks !== "undefined" && subtopicBookmarks.map(({ subtopic }) => (
+                <Card key={subtopic.id} className="hover:border-primary/50 transition-colors flex flex-col">
+                  <CardHeader className="p-5 pb-2">
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded">Subtopic</span>
+                    </div>
+                    <CardTitle className="text-lg leading-tight">{subtopic.title}</CardTitle>
+                    {subtopic.topic?.step && <p className="text-xs text-muted-foreground mt-1">In {subtopic.topic.step.title}</p>}
+                  </CardHeader>
+                  <CardContent className="px-5 pb-5 pt-1 mt-auto space-y-2">
+                     <Link href={`/modules/${subtopic.topic?.stepId || ""}`}>
+                       <Button variant="secondary" className="w-full h-8 mt-2">View Subtopic</Button>
+                     </Link>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           ) : (
             <EmptyState

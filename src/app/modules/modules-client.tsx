@@ -14,6 +14,7 @@ export default function ModulesPageClient({ data }: { data: any[] }) {
   const [typeFilter, setTypeFilter] = useState<"ALL" | "ROADMAP" | "STANDALONE">("ALL");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [sortBy, setSortBy] = useState<"NEWEST" | "OLDEST" | "TOPICS_DESC" | "TOPICS_ASC">("NEWEST");
+  const [difficultyFilter, setDifficultyFilter] = useState<string>("ALL");
   const cyclingColors = ["#3b82f6", "#f97316", "#8b5cf6", "#10b981", "#ec4899", "#14b8a6"];
 
   // Get unique roadmaps for filtering
@@ -31,7 +32,8 @@ export default function ModulesPageClient({ data }: { data: any[] }) {
          : typeFilter === "ROADMAP" 
             ? !!mod.roadmapId 
             : !mod.roadmapId;
-      return matchesSearch && matchesRoadmap && matchesType;
+      const matchesDifficulty = difficultyFilter === "ALL" || (mod.tags && mod.tags.toLowerCase().includes(difficultyFilter.toLowerCase()));
+      return matchesSearch && matchesRoadmap && matchesType && matchesDifficulty;
     })
     .sort((a, b) => {
       if (sortBy === "NEWEST") return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
@@ -109,6 +111,20 @@ export default function ModulesPageClient({ data }: { data: any[] }) {
                      <option value="OLDEST">Oldest Added</option>
                      <option value="TOPICS_DESC">Most topics first</option>
                      <option value="TOPICS_ASC">Least topics first</option>
+                  </select>
+               </div>
+
+               <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Difficulty</label>
+                  <select 
+                     value={difficultyFilter} 
+                     onChange={e => setDifficultyFilter(e.target.value)}
+                     className="flex h-9 w-full rounded-md border border-input bg-background/80 px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                     <option value="ALL">All Levels</option>
+                     <option value="BEGINNER">Beginner</option>
+                     <option value="INTERMEDIATE">Intermediate</option>
+                     <option value="ADVANCED">Advanced</option>
                   </select>
                </div>
 
@@ -193,9 +209,15 @@ export default function ModulesPageClient({ data }: { data: any[] }) {
                                  </div>
                               )}
                               <div className="flex items-center gap-4 text-xs font-semibold text-muted-foreground pt-4 border-t border-border/30">
-                                <span className="flex items-center gap-1.5 bg-muted/50 px-2 py-1 rounded">
-                                   <BookOpen className="h-3.5 w-3.5" style={{ color: cyclingColors[index % cyclingColors.length] }}/>
-                                   {mod._count.topics} Topics
+                                <span className={`flex items-center gap-1.5 px-2 py-1 rounded ${mod.trackingTotal && mod.trackingCompleted === mod.trackingTotal ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" : "bg-muted/50"}`}>
+                                   <BookOpen className="h-3.5 w-3.5" style={{ color: mod.trackingTotal && mod.trackingCompleted === mod.trackingTotal ? "#10b981" : cyclingColors[index % cyclingColors.length] }}/>
+                                   {mod.trackingTotal !== undefined && mod.trackingTotal > 0 ? (
+                                      <span className={mod.trackingCompleted === mod.trackingTotal ? "font-bold" : ""}>
+                                        {mod.trackingCompleted} / {mod.trackingTotal} Topics
+                                      </span>
+                                   ) : (
+                                      <span>{mod._count.topics} Topics</span>
+                                   )}
                                 </span>
                                 <span className="flex items-center gap-1.5 bg-muted/50 px-2 py-1 rounded">
                                    <Layers className="h-3.5 w-3.5" style={{ color: cyclingColors[index % cyclingColors.length] }}/>

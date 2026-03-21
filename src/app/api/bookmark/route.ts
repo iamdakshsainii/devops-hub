@@ -22,14 +22,15 @@ export async function POST(req: Request) {
           itemType === "EVENT" ? { eventId: itemId } :
             itemType === "TOOL" ? { toolId: itemId } :
               itemType === "CERT" ? { certId: itemId } :
-                { resourceId: itemId }),
+                itemType === "TOPIC" ? { topicId: itemId } :
+                  itemType === "SUBTOPIC" ? { subtopicId: itemId } :
+                    { resourceId: itemId }),
     };
 
     const existing = await prisma.bookmark.findFirst({ where: whereClause });
 
     // --- Remind Me toggle on existing bookmark ---
     if (existing && remindMe !== undefined) {
-      // If remindMe is being toggled on an existing bookmark, just update the flag
       const updated = await prisma.bookmark.update({
         where: { id: existing.id },
         data: { remindMe: Boolean(remindMe) },
@@ -55,6 +56,8 @@ export async function POST(req: Request) {
         eventId: itemType === "EVENT" ? itemId : null,
         toolId: itemType === "TOOL" ? itemId : null,
         certId: itemType === "CERT" ? itemId : null,
+        topicId: itemType === "TOPIC" ? itemId : null,
+        subtopicId: itemType === "SUBTOPIC" ? itemId : null,
       },
     });
 

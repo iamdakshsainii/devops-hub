@@ -56,7 +56,7 @@ export default async function DashboardPage() {
 
   const me = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { score: true }
+    select: { score: true, streak: true, _count: { select: { progress: { where: { completed: true } } } } }
   });
 
   return (
