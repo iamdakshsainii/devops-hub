@@ -1,0 +1,9 @@
+﻿src/app/api/admin/blog/[id]/route.ts(56,9): error TS2353: Object literal may only specify known properties, and 'icon' does not exist in type '(Without<BlogPostUpdateInput, BlogPostUncheckedUpdateInput> & BlogPostUncheckedUpdateInput) | (Without<...> & BlogPostUpdateInput)'.
+src/app/api/admin/blog/[id]/route.ts(56,32): error TS2339: Property 'icon' does not exist on type '{ id: string; createdAt: Date; updatedAt: Date; status: string; title: string; content: string; coverImage: string | null; tags: string | null; readTime: number; authorId: string; ... 4 more ...; likeCount: number; }'.
+src/app/api/admin/comparisons/route.ts(39,9): error TS2322: Type 'string | null' is not assignable to type 'string'.
+  Type 'null' is not assignable to type 'string'.
+src/app/blog/[slug]/page.tsx(63,48): error TS2339: Property 'icon' does not exist on type '{ _count: { comments: number; }; author: { fullName: string | null; avatarUrl: string | null; bio: string | null; role: string; createdAt: Date; }; } & { id: string; createdAt: Date; ... 12 more ...; likeCount: number; }'.
+src/app/tools/compare/[id]/page.tsx(59,28): error TS2304: Cannot find name 'Button'.
+src/app/tools/compare/[id]/page.tsx(59,139): error TS2304: Cannot find name 'Button'.
+src/app/tools/compare/[id]/page.tsx(64,28): error TS2304: Cannot find name 'Button'.
+src/app/tools/compare/[id]/page.tsx(64,139): error TS2304: Cannot find name 'Button'.

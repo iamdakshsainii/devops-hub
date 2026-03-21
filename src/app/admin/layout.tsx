@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Shield, LayoutDashboard, FileText, Database, Calendar, Users, Map, ShieldCheck, Library, Archive } from "lucide-react";
+import { Shield, LayoutDashboard, FileText, Database, Calendar, Users, Map, ShieldCheck, Library, Archive, GitMerge } from "lucide-react";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession(authOptions);
@@ -33,6 +33,18 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </Link>
           <Link href="/admin/resources" className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors">
              <Database className="h-4 w-4" /> Resources
+          </Link>
+          <Link href="/admin/cheatsheets" className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors">
+             <FileText className="h-4 w-4" /> Cheatsheets
+          </Link>
+          <Link href="/admin/blog" className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors">
+             <FileText className="h-4 w-4 text-sky-500" /> Blog
+          </Link>
+          <Link href="/admin/tools" className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors">
+             <Archive className="h-4 w-4 text-emerald-500" /> Tools
+          </Link>
+          <Link href="/admin/comparisons" className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors">
+             <GitMerge className="h-4 w-4 text-purple-500" /> Comparisons
           </Link>
           <Link href="/admin/events" className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors">
              <Calendar className="h-4 w-4" /> Events

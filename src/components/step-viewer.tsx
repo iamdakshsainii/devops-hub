@@ -8,7 +8,7 @@ import hljs from "highlight.js";
 import {
   FileText, Youtube, BookOpen,
   Download, Link as LinkIcon, ArrowLeft, ArrowRight,
-  Menu, X, Map, ChevronDown, ChevronRight, Library,
+  Menu, X, Map, ChevronDown, ChevronRight, Library, Heart, Twitter, Linkedin, Copy
 } from "lucide-react";
 import { ResourceCard } from "@/components/resource-card";
 
@@ -219,6 +219,32 @@ export function StepViewer({
   });
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  const [likes, setLikes] = useState(0);
+  const [hasLiked, setHasLiked] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(shareUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const liked = localStorage.getItem(`liked_step_${step.id}`);
+      setHasLiked(!!liked);
+      setLikes(liked ? 1 : 0);
+    }
+  }, [step.id]);
+
+  const handleLike = () => {
+    if (!hasLiked) {
+      setLikes(1);
+      setHasLiked(true);
+      localStorage.setItem(`liked_step_${step.id}`, "true");
+    }
+  };
+
   const navSequence = buildNavSequence(step.topics);
   const currentNavIndex = navSequence.findIndex((v) => viewKey(v) === viewKey(activeView));
 
@@ -270,6 +296,10 @@ export function StepViewer({
   const nextStep = currentStepIndex < roadmapSteps.length - 1 ? roadmapSteps[currentStepIndex + 1] : null;
 
   const themeColor = roadmap?.color || "#6366f1";
+  const [shareUrl, setShareUrl] = useState("");
+  useEffect(() => {
+    setShareUrl(window.location.href);
+  }, []);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -444,6 +474,25 @@ export function StepViewer({
                   )}
                 </>
               ) : null}
+
+              <div className="flex flex-col sm:flex-row justify-between items-center bg-card/40 backdrop-blur-xl p-4 rounded-xl border border-border/10 gap-4 mt-16 shadow-sm">
+                 <Button onClick={handleLike} disabled={hasLiked} variant="outline" className="gap-2 font-semibold">
+                     <Heart className={`h-4 w-4 ${hasLiked ? "fill-red-500 text-red-500" : "text-muted-foreground"}`} /> {likes} Likes
+                 </Button>
+
+                 <div className="flex items-center gap-2">
+                     <span className="text-xs text-muted-foreground mr-1">Share</span>
+                     <a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(step.title)}`} target="_blank">
+                         <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/70"><Twitter className="h-4 w-4" /></Button>
+                     </a>
+                     <a href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`} target="_blank">
+                         <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/70"><Linkedin className="h-4 w-4" /></Button>
+                     </a>
+                     <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/70" onClick={handleCopy}>
+                         {copied ? <span className="text-[10px] text-emerald-500 font-bold">✓</span> : <Copy className="h-4 w-4" />}
+                     </Button>
+                 </div>
+              </div>
 
               {/* Resources — shown at the bottom of the module content */}
               {step.resources.length > 0 && (

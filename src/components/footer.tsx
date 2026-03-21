@@ -24,6 +24,7 @@ export function Footer() {
               <li><Link href="/resources" className="hover:text-foreground transition-colors">Resource Library</Link></li>
               <li><Link href="/events" className="hover:text-foreground transition-colors">Community Events</Link></li>
               <li><Link href="/roadmap" className="hover:text-foreground transition-colors">DevOps Roadmap</Link></li>
+              <li><Link href="/about" className="hover:text-foreground transition-colors">About Us</Link></li>
               <li><Link href="/contact" className="hover:text-foreground transition-colors font-semibold text-primary">Contact / Request</Link></li>
             </ul>
           </div>

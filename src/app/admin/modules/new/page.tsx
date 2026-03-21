@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +20,8 @@ interface ModuleForm {
   description: string;
   icon: string;
   status?: string;
+  roadmapId?: string;
+  order?: number;
   topics: TopicForm[];
   resources: ResourceForm[];
 }
@@ -36,8 +38,17 @@ export default function NewModulePage() {
   const [markdownInput, setMarkdownInput] = useState("");
 
   const [form, setForm] = useState<ModuleForm>({
-    title: "", description: "", icon: "📦", topics: [], resources: []
+    title: "", description: "", icon: "📦", topics: [], resources: [], roadmapId: "", order: 0
   });
+
+  const [roadmaps, setRoadmaps] = useState<any[]>([]);
+
+  useEffect(() => {
+     fetch("/api/roadmaps")
+       .then(res => res.json())
+       .then(data => setRoadmaps(Array.isArray(data) ? data : []))
+       .catch(console.error);
+  }, []);
 
   const handleJsonParse = () => {
     try {
@@ -178,6 +189,20 @@ export default function NewModulePage() {
               <div className="space-y-2">
                 <label className="text-sm font-medium">Description</label>
                 <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Brief summary view..." className="flex w-full rounded-md border px-3 py-2 text-sm min-h-[80px]" />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-border/10 pt-4 mt-2">
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-primary">Link to Roadmap (Optional)</label>
+                  <select value={form.roadmapId} onChange={e => setForm({ ...form, roadmapId: e.target.value })} className="flex h-10 w-full rounded-md border px-3 py-2 text-sm bg-background">
+                     <option value="">Standalone (No Roadmap)</option>
+                     {roadmaps.map((r: any) => <option key={r.id} value={r.id}>{r.title}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-primary">Step Position Number</label>
+                  <Input type="number" value={form.order} onChange={e => setForm({ ...form, order: parseInt(e.target.value) || 0 })} placeholder="0" className="h-10" />
+                </div>
               </div>
             </CardContent>
           </Card>

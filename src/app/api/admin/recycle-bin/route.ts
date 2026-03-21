@@ -49,6 +49,16 @@ export async function POST(req: Request) {
           });
           break;
 
+        case "CHEATSHEET":
+          await prisma.cheatsheet.update({ where: { id }, data: { status: "PUBLISHED" } });
+          break;
+        case "BLOG":
+          await prisma.blogPost.update({ where: { id }, data: { status: "PUBLISHED" } });
+          break;
+        case "TOOL":
+          await prisma.tool.update({ where: { id }, data: { status: "PUBLISHED" } });
+          break;
+
         default:
           return NextResponse.json({ message: "Unknown type" }, { status: 400 });
       }
@@ -78,6 +88,16 @@ export async function POST(req: Request) {
         case "ROADMAP":
           // Cascade in schema handles steps, topics, subtopics, resources
           await prisma.roadmap.delete({ where: { id } });
+          break;
+
+        case "CHEATSHEET":
+          await prisma.cheatsheet.delete({ where: { id } });
+          break;
+        case "BLOG":
+          await prisma.blogPost.delete({ where: { id } });
+          break;
+        case "TOOL":
+          await prisma.tool.delete({ where: { id } });
           break;
 
         default:

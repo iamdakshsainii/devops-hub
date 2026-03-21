@@ -32,7 +32,7 @@ export async function POST(req: Request) {
          return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
       }
 
-      const { title, description, icon, status: payloadStatus, roadmapId, tags, topics, resources } = await req.json();
+      const { title, description, icon, status: payloadStatus, roadmapId, tags, topics, resources, order } = await req.json();
 
       if (!title) return NextResponse.json({ message: "Title required" }, { status: 400 });
 
@@ -53,7 +53,7 @@ export async function POST(req: Request) {
                title,
                description: description || "",
                icon: icon || "📦",
-               order: (maxOrder._max.order ?? -1) + 1,
+               order: order !== undefined ? parseInt(order as any) : (maxOrder._max.order ?? -1) + 1,
                roadmapId: targetRoadmapId,
                tags: tags || "",
                status,

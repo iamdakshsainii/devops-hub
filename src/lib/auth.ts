@@ -61,13 +61,14 @@ export const authOptions: NextAuthOptions = {
       if (token && session.user) {
         session.user.id = token.id as string;
         
-        // Fetch fresh user from DB on every session request for real-time permissions!
         const dbUser = await prisma.user.findUnique({
           where: { id: token.id as string },
-          select: { role: true }
+          select: { role: true, avatarUrl: true, fullName: true }
         });
         
         session.user.role = dbUser?.role || "MEMBER";
+        if (dbUser?.fullName) session.user.name = dbUser.fullName;
+        if (dbUser?.avatarUrl) session.user.image = dbUser.avatarUrl;
       }
       return session;
     }

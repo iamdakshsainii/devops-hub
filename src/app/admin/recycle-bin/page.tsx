@@ -21,6 +21,24 @@ export default async function RecycleBinPage() {
     where: { status: "DELETED" }
   });
 
+  const deletedCheatsheets = await prisma.cheatsheet.findMany({
+    where: { status: "DELETED" },
+    orderBy: { updatedAt: "desc" },
+    select: { id: true, title: true, category: true, updatedAt: true }
+  });
+
+  const deletedBlogPosts = await prisma.blogPost.findMany({
+    where: { status: "DELETED" },
+    orderBy: { updatedAt: "desc" },
+    select: { id: true, title: true, category: true, updatedAt: true }
+  });
+
+  const deletedTools = await prisma.tool.findMany({
+    where: { status: "DELETED" },
+    orderBy: { updatedAt: "desc" },
+    select: { id: true, name: true, category: true, updatedAt: true }
+  });
+
   return (
     <div className="p-6">
       <RecycleBinList 
@@ -28,6 +46,10 @@ export default async function RecycleBinPage() {
         initialResources={deletedResources} 
         initialEvents={deletedEvents}
         initialRoadmaps={deletedRoadmaps}
+        initialCheatsheets={deletedCheatsheets}
+        initialBlogPosts={deletedBlogPosts}
+        // Map name into title for generic render support just in case
+        initialTools={deletedTools.map(t => ({ ...t, title: t.name }))}
       />
     </div>
   );

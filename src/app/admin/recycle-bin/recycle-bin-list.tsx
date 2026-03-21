@@ -9,20 +9,29 @@ export default function RecycleBinList({
   initialModules = [], 
   initialResources = [],
   initialEvents = [],
-  initialRoadmaps = []
+  initialRoadmaps = [],
+  initialCheatsheets = [],
+  initialBlogPosts = [],
+  initialTools = []
 }: { 
   initialModules?: any[], 
   initialResources?: any[],
   initialEvents?: any[],
-  initialRoadmaps?: any[]
+  initialRoadmaps?: any[],
+  initialCheatsheets?: any[],
+  initialBlogPosts?: any[],
+  initialTools?: any[]
 }) {
   const [modules, setModules] = useState(initialModules);
   const [resources, setResources] = useState(initialResources);
   const [events, setEvents] = useState(initialEvents);
   const [roadmaps, setRoadmaps] = useState(initialRoadmaps);
+  const [cheatsheets, setCheatsheets] = useState(initialCheatsheets);
+  const [blogPosts, setBlogPosts] = useState(initialBlogPosts);
+  const [tools, setTools] = useState(initialTools);
   const [loadingId, setLoadingId] = useState<string | null>(null);
 
-  const totalItems = modules.length + resources.length + events.length + roadmaps.length;
+  const totalItems = modules.length + resources.length + events.length + roadmaps.length + cheatsheets.length + blogPosts.length + tools.length;
 
   const handleAction = async (id: string, type: string, action: "restore" | "purge") => {
     setLoadingId(id);
@@ -43,6 +52,9 @@ export default function RecycleBinList({
          else if (type === "RESOURCE") setResources(resources.filter(r => r.id !== id));
          else if (type === "EVENT") setEvents(events.filter(e => e.id !== id));
          else if (type === "ROADMAP") setRoadmaps(roadmaps.filter(r => r.id !== id));
+         else if (type === "CHEATSHEET") setCheatsheets(cheatsheets.filter(c => c.id !== id));
+         else if (type === "BLOG") setBlogPosts(blogPosts.filter(b => b.id !== id));
+         else if (type === "TOOL") setTools(tools.filter(t => t.id !== id));
       } else { alert("Operation failed"); }
     } catch (err) { console.error(err); }
     setLoadingId(null);
@@ -87,7 +99,28 @@ export default function RecycleBinList({
           {roadmaps.length > 0 && (
             <div className="space-y-3">
               <h2 className="text-sm font-semibold flex items-center gap-2 text-purple-500">Roadmaps ({roadmaps.length})</h2>
-              {roadmaps.map((r) => <DeletedCard key={r.id} item={r} type="ROADMAP" loading={loadingId === r.id} onAction={handleAction}/>)}
+              {roadmaps.map((r: any) => <DeletedCard key={r.id} item={r} type="ROADMAP" loading={loadingId === r.id} onAction={handleAction}/>)}
+            </div>
+          )}
+
+          {cheatsheets.length > 0 && (
+            <div className="space-y-3">
+              <h2 className="text-sm font-semibold flex items-center gap-2 text-pink-500">Cheatsheets ({cheatsheets.length})</h2>
+              {cheatsheets.map((c: any) => <DeletedCard key={c.id} item={c} type="CHEATSHEET" loading={loadingId === c.id} onAction={handleAction}/>)}
+            </div>
+          )}
+
+          {blogPosts.length > 0 && (
+            <div className="space-y-3">
+              <h2 className="text-sm font-semibold flex items-center gap-2 text-sky-500">Blog Posts ({blogPosts.length})</h2>
+              {blogPosts.map((b: any) => <DeletedCard key={b.id} item={b} type="BLOG" loading={loadingId === b.id} onAction={handleAction}/>)}
+            </div>
+          )}
+
+          {tools.length > 0 && (
+            <div className="space-y-3">
+              <h2 className="text-sm font-semibold flex items-center gap-2 text-emerald-500">Tools ({tools.length})</h2>
+              {tools.map((t: any) => <DeletedCard key={t.id} item={t} type="TOOL" loading={loadingId === t.id} onAction={handleAction}/>)}
             </div>
           )}
         </div>

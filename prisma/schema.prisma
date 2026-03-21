@@ -34,6 +34,11 @@ model User {
   notifications Notification[]
   adminRequests AdminRequest[]
   steps         RoadmapStep[]
+  cheatsheets      Cheatsheet[]
+  blogPosts        BlogPost[]
+  blogComments     BlogComment[]
+  tools            Tool[]
+  toolComparisons  ToolComparison[]
 }
 
 model Note {
@@ -118,22 +123,21 @@ model Notification {
 }
 
 model ToolComparison {
-  id          String   @id @default(cuid())
-  title       String
-  toolA       String
-  toolB       String
-  prosA       String
-  consA       String
-  prosB       String
-  consB       String
-  useCaseA    String
-  useCaseB    String
-  verdict     String
-  tags        String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  toolAId   String
+  toolBId   String
+  toolA     Tool     @relation("ToolA", fields: [toolAId], references: [id])
+  toolB     Tool     @relation("ToolB", fields: [toolBId], references: [id])
+  criteria  String   @db.Text
+  summary   String?  @db.Text
+  status    String   @default("PUBLISHED")
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  bookmarks   Bookmark[]
+  bookmarks Bookmark[]
 }
 
 model CertGuide {
@@ -300,4 +304,100 @@ model RoadmapResource {
   step             RoadmapStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
 
   @@index([stepId])
+}
+
+model Cheatsheet {
+  id          String              @id @default(cuid())
+  title       String
+  slug        String              @unique
+  description String?
+  category    String
+  icon        String              @default("📋")
+  difficulty  String              @default("BEGINNER")
+  readTime    Int                 @default(10)
+  coverImage  String?
+  tags        String?
+  status      String              @default("DRAFT")
+  viewCount   Int                 @default(0)
+  authorId    String
+  author      User                @relation(fields: [authorId], references: [id])
+  sections    CheatsheetSection[]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+}
+
+model CheatsheetSection {
+  id           String                 @id @default(cuid())
+  cheatsheetId String
+  cheatsheet   Cheatsheet             @relation(fields: [cheatsheetId], references: [id], onDelete: Cascade)
+  title        String
+  order        Int                    @default(0)
+  subsections  CheatsheetSubsection[]
+}
+
+model CheatsheetSubsection {
+  id        String            @id @default(cuid())
+  sectionId String
+  section   CheatsheetSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  title     String
+  content   String            @db.Text
+  order     Int               @default(0)
+}
+
+model BlogPost {
+  id         String        @id @default(cuid())
+  title      String
+  slug       String        @unique
+  excerpt    String?
+  content    String        @db.Text
+  coverImage String?
+  category   String
+  tags       String?
+  readTime   Int           @default(5)
+  status     String        @default("DRAFT")
+  viewCount  Int           @default(0)
+  likeCount  Int           @default(0)
+  authorId   String
+  author     User          @relation(fields: [authorId], references: [id])
+  comments   BlogComment[]
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+}
+
+model BlogComment {
+  id        String   @id @default(cuid())
+  postId    String
+  post      BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  content   String
+  status    String   @default("PUBLISHED")
+  createdAt DateTime @default(now())
+}
+
+model Tool {
+  id           String           @id @default(cuid())
+  name         String
+  slug         String           @unique
+  description  String
+  category     String
+  icon         String?
+  logoUrl      String?
+  docsUrl      String?
+  githubUrl    String?
+  difficulty   String           @default("INTERMEDIATE")
+  license      String?
+  tags         String?
+  moduleUrl    String?
+  resourceUrl  String?
+  pros         String?          @db.Text
+  cons         String?          @db.Text
+  useCases     String?          @db.Text
+  status       String           @default("PUBLISHED")
+  authorId     String
+  author       User             @relation(fields: [authorId], references: [id])
+  comparisonsA ToolComparison[] @relation("ToolA")
+  comparisonsB ToolComparison[] @relation("ToolB")
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
 }

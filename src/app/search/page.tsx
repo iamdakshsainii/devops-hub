@@ -66,6 +66,40 @@ export default async function SearchPage({
     } as any
   });
 
+  const cheatsheetsPromise = prisma.cheatsheet.findMany({
+    where: {
+      status: "PUBLISHED",
+      OR: [
+        { title: { contains: query, mode: "insensitive" } },
+        { tags: { contains: query, mode: "insensitive" } },
+        { description: { contains: query, mode: "insensitive" } }
+      ]
+    }
+  });
+
+  const blogPostsPromise = prisma.blogPost.findMany({
+    where: {
+      status: "PUBLISHED",
+      OR: [
+        { title: { contains: query, mode: "insensitive" } },
+        { tags: { contains: query, mode: "insensitive" } },
+        { excerpt: { contains: query, mode: "insensitive" } }
+      ]
+    },
+    include: { _count: { select: { comments: true } } }
+  });
+
+  const toolsPromise = prisma.tool.findMany({
+    where: {
+      status: "PUBLISHED",
+      OR: [
+        { name: { contains: query, mode: "insensitive" } },
+        { tags: { contains: query, mode: "insensitive" } },
+        { description: { contains: query, mode: "insensitive" } }
+      ]
+    }
+  });
+
   const modulesPromise = prisma.roadmapStep.findMany({
     where: {
       status: { not: "DELETED" },
@@ -88,12 +122,15 @@ export default async function SearchPage({
     }
   });
 
-  const [notes, globalResources, roadmapResources, events, modules] = await Promise.all([
+  const [notes, globalResources, roadmapResources, events, modules, cheatsheets, blogPosts, tools] = await Promise.all([
     notesPromise,
     resourcesPromise,
     roadmapResourcesPromise,
     eventsPromise,
-    modulesPromise
+    modulesPromise,
+    cheatsheetsPromise,
+    blogPostsPromise,
+    toolsPromise
   ]);
 
   const mergedResources = [
@@ -124,7 +161,7 @@ export default async function SearchPage({
     }
   }
 
-  const hasResults = notes.length > 0 || resources.length > 0 || events.length > 0 || finalModules.length > 0;
+  const hasResults = notes.length > 0 || resources.length > 0 || events.length > 0 || finalModules.length > 0 || cheatsheets.length > 0 || blogPosts.length > 0 || tools.length > 0;
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-5xl space-y-12">
@@ -139,6 +176,21 @@ export default async function SearchPage({
             {finalModules.length > 0 && (
               <a href="#modules" className="flex items-center gap-1.5 bg-muted/60 hover:bg-primary/10 hover:text-primary px-3 py-1.5 rounded-full text-xs font-bold transition-all hover:scale-105">
                 📁 Modules ({finalModules.length})
+              </a>
+            )}
+            {blogPosts.length > 0 && (
+              <a href="#blog" className="flex items-center gap-1.5 bg-muted/60 hover:bg-primary/10 hover:text-primary px-3 py-1.5 rounded-full text-xs font-bold transition-all hover:scale-105">
+                📝 Blog ({blogPosts.length})
+              </a>
+            )}
+            {cheatsheets.length > 0 && (
+              <a href="#cheatsheets" className="flex items-center gap-1.5 bg-muted/60 hover:bg-primary/10 hover:text-primary px-3 py-1.5 rounded-full text-xs font-bold transition-all hover:scale-105">
+                📋 Cheatsheets ({cheatsheets.length})
+              </a>
+            )}
+            {tools.length > 0 && (
+              <a href="#tools" className="flex items-center gap-1.5 bg-muted/60 hover:bg-primary/10 hover:text-primary px-3 py-1.5 rounded-full text-xs font-bold transition-all hover:scale-105">
+                🔧 Tools ({tools.length})
               </a>
             )}
             {events.length > 0 && (
@@ -343,6 +395,79 @@ export default async function SearchPage({
             </section>
           )}
 
+          {blogPosts.length > 0 && (
+            <section className="space-y-6 pt-4">
+              <h2 id="blog" className="text-2xl font-bold flex items-center border-b pb-4">
+                 <FileText className="mr-2 h-6 w-6 text-sky-500" /> Blog Posts <span className="ml-3 text-sm font-normal text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{blogPosts.length}</span>
+              </h2>
+              <div className="grid sm:grid-cols-2 gap-6">
+                {blogPosts.map((post: any) => (
+                    <Link key={post.id} href={`/blog/${post.slug}`}>
+                      <Card className="group hover:border-primary/50 transition-colors h-full flex flex-col justify-between">
+                         <CardHeader className="p-4">
+                             <span className="text-[10px] uppercase font-bold tracking-wider text-sky-500 bg-sky-500/10 px-2 py-0.5 rounded mb-2 w-fit">
+                                {post.category || "General"}
+                             </span>
+                             <CardTitle className="text-lg leading-tight group-hover:text-primary transition-colors">{post.title}</CardTitle>
+                         </CardHeader>
+                         <CardContent className="p-4 pt-0">
+                             <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{post.excerpt}</p>
+                             <div className="flex justify-between items-center text-xs text-muted-foreground mt-auto pt-3 border-t">
+                                 <span>{post.readTime} min read</span>
+                                 <span>{post._count?.comments || 0} comments</span>
+                             </div>
+                         </CardContent>
+                      </Card>
+                    </Link>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {cheatsheets.length > 0 && (
+            <section className="space-y-6 pt-4">
+              <h2 id="cheatsheets" className="text-2xl font-bold flex items-center border-b pb-4">
+                 <FileText className="mr-2 h-6 w-6 text-pink-500" /> Cheatsheets <span className="ml-3 text-sm font-normal text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{cheatsheets.length}</span>
+              </h2>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {cheatsheets.map((sheet: any) => (
+                    <Link key={sheet.id} href={`/cheatsheets/${sheet.slug}`}>
+                      <Card className="group hover:border-primary/50 transition-colors p-4 flex flex-col h-full bg-card/60">
+                         <div className="flex items-center gap-3 mb-2">
+                             <div className="h-10 w-10 text-xl flex items-center justify-center bg-muted/50 rounded-lg">{sheet.icon || "📋"}</div>
+                             <div>
+                                 <h4 className="font-bold text-sm group-hover:text-primary transition-colors line-clamp-1">{sheet.title}</h4>
+                                 <span className="text-[10px] text-muted-foreground">{sheet.category}</span>
+                             </div>
+                         </div>
+                         <p className="text-xs text-muted-foreground line-clamp-2 mt-2">{sheet.description}</p>
+                      </Card>
+                    </Link>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {tools.length > 0 && (
+            <section className="space-y-6 pt-4">
+              <h2 id="tools" className="text-2xl font-bold flex items-center border-b pb-4">
+                 <Database className="mr-2 h-6 w-6 text-emerald-500" /> Tools <span className="ml-3 text-sm font-normal text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{tools.length}</span>
+              </h2>
+              <div className="grid sm:grid-cols-3 gap-4">
+                {tools.map((tool: any) => (
+                    <Link key={tool.id} href={`/tools/${tool.slug}`}>
+                      <Card className="group hover:border-primary/50 transition-colors p-4 flex items-center gap-3 bg-card/60">
+                         <div className="h-10 w-10 text-xl flex items-center justify-center bg-muted/50 rounded-lg">{tool.icon}</div>
+                         <div>
+                             <h4 className="font-bold text-sm group-hover:text-primary transition-colors">{tool.name}</h4>
+                             <span className="text-[10px] text-muted-foreground">{tool.category}</span>
+                         </div>
+                      </Card>
+                    </Link>
+                ))}
+              </div>
+            </section>
+          )}
         </div>
       )}
     </div>

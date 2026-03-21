@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
   BookOpen, Layers, Calendar, ArrowRight,
-  GitBranch, Terminal, Zap, Users, Map,
+  GitBranch, Terminal, Zap, Users, Map, FileText, Search
 } from "lucide-react";
 
 export default function Home() {
@@ -10,7 +10,7 @@ export default function Home() {
     <div className="flex flex-col w-full overflow-x-hidden">
 
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
-      <section className="relative w-full min-h-[92vh] flex items-center justify-center overflow-hidden bg-background">
+      <section className="relative w-full min-h-[92vh] flex items-center justify-center overflow-hidden bg-transparent">
 
         {/* Dot grid */}
         <div
@@ -82,11 +82,11 @@ export default function Home() {
 
         {/* Bottom fade */}
         <div className="absolute bottom-0 left-0 right-0 h-32
-          bg-gradient-to-t from-background to-transparent pointer-events-none" />
+          bg-gradient-to-t from-background/80 to-transparent pointer-events-none" />
       </section>
 
       {/* ── What's inside ─────────────────────────────────────────────────── */}
-      <section className="w-full py-24 bg-muted/20 border-t border-border/50">
+      <section className="w-full py-24 bg-background/40 backdrop-blur-md border-t border-border/50">
         <div className="container px-6 mx-auto max-w-6xl">
 
           <div className="text-center mb-16 space-y-3 max-w-xl mx-auto">
@@ -112,39 +112,60 @@ export default function Home() {
                 cta: "View Roadmap",
               },
               {
-                icon: BookOpen,
-                title: "Learning Modules",
-                desc: "Deep-dive modules covering every core concept, each with curated resources and practical context.",
+                icon: Terminal,
+                title: "Deeply Nested Modules",
+                desc: "Step-by-step technological implementation guides covering core concepts with structured sub-topics and practical context.",
                 href: "/modules",
                 cta: "Browse Modules",
               },
               {
                 icon: Layers,
                 title: "Resource Library",
-                desc: "Hand-picked videos, articles, tools and notes — vetted by engineers, not algorithms.",
+                desc: "Hand-picked videos, articles, and production architectures — vetted by living engineers, not algorithms.",
                 href: "/resources",
                 cta: "Explore Library",
               },
               {
+                icon: FileText,
+                title: "Quick Cheatsheets", 
+                desc: "Instantly search and copy native commands for Kubernetes, Docker, Terraform, and CI/CD pipelines.",
+                href: "/cheatsheets",
+                cta: "View Cheatsheets",
+              },
+              {
+                icon: BookOpen,
+                title: "Engineering Blog",
+                desc: "Deep-dive production stories, post-mortems, and authentic framework architectures without the filler.",
+                href: "/blog",
+                cta: "Read Blog",
+              },
+              {
+                icon: Zap,
+                title: "Head-to-Head Tools",
+                desc: "Side-by-side benchmarking of DevOps platforms. Compare pros, cons, and direct use cases before you adopt.",
+                href: "/tools",
+                cta: "Explore Tools",
+              },
+              {
                 icon: Calendar,
                 title: "Community Events",
-                desc: "Webinars, workshops, and meetups submitted by the community and approved by admins.",
+                desc: "Webinars, workshops, and meetups submitted by the community and approved by the moderation team.",
                 href: "/events",
                 cta: "See Events",
               },
               {
-                icon: Users,
-                title: "Open Community",
-                desc: "Submit resources, share events, write notes — the platform grows with the engineers using it.",
-                href: "/signup",
-                cta: "Join Now",
+                icon: Search,
+                title: "Global Command Engine",
+                desc: "Hit Cmd+K from anywhere to instantly scan across every single blog, module, tool, roadmap, and cheatsheet natively.",
+                href: "#",
+                cta: "Try pressing Cmd+K",
               },
               {
-                icon: GitBranch,
-                title: "Production-Grounded",
-                desc: "Configs and architectures from real setups — not simplified toy examples built for demos.",
-                href: "/modules",
-                cta: "See Modules",
+                icon: Users,
+                title: "Active Network",
+                desc: "Save resources, track your reading progress, upvote concepts, and grow with the engineers building the platform.",
+                href: "/signup",
+                cta: "Join Network",
               },
             ].map((f) => (
               <div key={f.title}
@@ -175,13 +196,13 @@ export default function Home() {
       </section>
 
       {/* ── Why this is different ──────────────────────────────────────────── */}
-      <section className="w-full py-24 border-t border-border/50 bg-background">
+      <section className="w-full py-24 border-t border-border/50 bg-background/20 backdrop-blur-md">
         <div className="container px-6 mx-auto max-w-5xl">
           <div className="grid md:grid-cols-2 gap-16 items-center">
 
             <div className="space-y-6">
               <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                Why DevOps Hub
+                Why DevOps Network
               </p>
               <h2 className="text-4xl font-black tracking-tight leading-tight">
                 Not another<br />YouTube playlist.
@@ -229,7 +250,7 @@ export default function Home() {
       </section>
 
       {/* ── CTA ───────────────────────────────────────────────────────────── */}
-      <section className="w-full py-24 border-t border-border bg-foreground text-background">
+      <section className="w-full py-24 border-t border-border/50 bg-foreground/95 backdrop-blur-xl text-background">
         <div className="container px-6 mx-auto max-w-3xl text-center space-y-8">
           <div className="inline-flex items-center gap-2 text-xs font-bold uppercase
             tracking-widest text-background/50 border border-background/10
