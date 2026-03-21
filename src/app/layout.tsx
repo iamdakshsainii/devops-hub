@@ -5,6 +5,8 @@ import { Providers } from "@/components/providers";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { FloatingContact } from "@/components/floating-contact";
+import { Toaster } from "sonner";
+import { WelcomeToast } from "@/components/welcome-toast";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -35,6 +37,8 @@ export default function RootLayout({
             </main>
             <FloatingContact />
             <Footer />
+            <Toaster position="bottom-right" theme="system" richColors closeButton />
+            <WelcomeToast />
           </div>
         </Providers>
       </body>
