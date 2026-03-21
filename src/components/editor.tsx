@@ -5,6 +5,7 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
 import { Button } from "@/components/ui/button";
+import { marked } from "marked";
 import {
   Bold,
   Italic,
@@ -41,13 +42,27 @@ export function Editor({ content, onChange }: EditorProps) {
     immediatelyRender: false,
     editorProps: {
       attributes: {
-        class: "prose prose-sm sm:prose-base dark:prose-invert max-w-none focus:outline-none min-h-[300px] px-4 py-4 w-full",
+        class: "prose prose-sm sm:prose-base dark:prose-invert max-w-none focus:outline-none min-h-[120px] px-4 py-3 w-full",
       },
     },
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
     },
   });
+
+  React.useEffect(() => {
+    if (!editor) return;
+    const currentHTML = editor.getHTML();
+    if (content === currentHTML) return;
+
+    const trimmed = (content || "").trim();
+    const isHTML = trimmed.startsWith("<") && trimmed.includes(">");
+    const parsed = isHTML ? content : (marked.parse(content) as string);
+
+    if (parsed !== currentHTML) {
+      editor.commands.setContent(parsed);
+    }
+  }, [content, editor]);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

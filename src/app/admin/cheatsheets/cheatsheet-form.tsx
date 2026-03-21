@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { PlusCircle, Trash2, Save, FileText } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { ContentImageManager } from "@/components/content-image-manager";
 
 export function CheatsheetForm({ initialData }: { initialData?: any }) {
   const router = useRouter();
@@ -262,6 +263,7 @@ export function CheatsheetForm({ initialData }: { initialData?: any }) {
                               </Button>
                           </div>
                           <Textarea value={sub.content} onChange={e => updateSubsection(sec.id, sub.id, "content", e.target.value)} placeholder="Content Support Layouts..." className="text-xs font-mono" rows={3} />
+                          <ContentImageManager content={sub.content} onChange={val => updateSubsection(sec.id, sub.id, "content", val)} />
                       </div>
                   ))}
                   <Button type="button" variant="outline" size="sm" onClick={() => addSubsection(sec.id)} className="gap-1.5 h-8 text-xs">

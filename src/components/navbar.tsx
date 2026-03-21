@@ -29,39 +29,6 @@ export function Navbar() {
   const [searching, setSearching] = useState(false)
   const reminderChecked = useRef(false)
 
-  const [animatedPlaceholder, setAnimatedPlaceholder] = useState("");
-  const [phraseIndex, setPhraseIndex] = useState(0);
-  const [charIndex, setCharIndex] = useState(0);
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  useEffect(() => {
-    const phrases = [
-      "Search anything in 1-click...",
-      "Search Blogs & Guides...",
-      "Search across platform nodes..."
-    ];
-    const currentPhrase = phrases[phraseIndex];
-
-    const type = () => {
-      if (!isDeleting && charIndex < currentPhrase.length) {
-        setAnimatedPlaceholder(currentPhrase.substring(0, charIndex + 1));
-        setCharIndex(prev => prev + 1);
-      } else if (isDeleting && charIndex > 0) {
-        setAnimatedPlaceholder(currentPhrase.substring(0, charIndex - 1));
-        setCharIndex(prev => prev - 1);
-      } else if (charIndex === currentPhrase.length) {
-        setTimeout(() => setIsDeleting(true), 1500);
-      } else if (charIndex === 0 && isDeleting) {
-        setIsDeleting(false);
-        setPhraseIndex(prev => (prev + 1) % phrases.length);
-      }
-    };
-
-    const speed = isDeleting ? 30 : 60;
-    const timer = setTimeout(type, speed);
-    return () => clearTimeout(timer);
-  }, [charIndex, isDeleting, phraseIndex]);
-
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
@@ -180,16 +147,10 @@ export function Navbar() {
             <Link href="/blog" className={getLinkClass("/blog")} title="Clear your doubts and solve issues faced by every DevOps engineer">Blog</Link>
           </nav>
           <div className="w-full max-w-sm relative group/search">
-            {/* Pop Glow Alert */}
-            <div className="absolute -top-6 left-2 scale-90 opacity-0 group-hover/search:opacity-100 group-hover/search:scale-100 transition-all duration-300 origin-bottom-left bg-gradient-to-r from-primary to-blue-500 text-[9px] font-black text-white px-2 py-0.5 rounded-full shadow-lg z-20 flex items-center gap-1 uppercase tracking-wider">
-               <span className="h-1.5 w-1.5 rounded-full bg-white animate-ping"></span> Instant Search
-            </div>
-
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <div onClick={() => setCmdkOpen(true)} className="flex items-center justify-between w-full bg-muted/40 border border-border/40 rounded-md h-9 pl-9 pr-2 text-sm text-muted-foreground cursor-pointer hover:bg-muted/60 transition-colors">
               <span className="flex items-center gap-0.5">
-                {animatedPlaceholder}
-                <span className="h-3 w-[2px] bg-primary animate-pulse" />
+                Search everything...
               </span>
               <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-background px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
                 <span className="text-xs">⌘</span>K

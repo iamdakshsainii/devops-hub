@@ -8,7 +8,7 @@ import hljs from "highlight.js";
 import {
   FileText, Youtube, BookOpen,
   Download, Link as LinkIcon, ArrowLeft, ArrowRight,
-  Menu, X, Map, ChevronDown, ChevronRight, Library, Heart, Twitter, Linkedin, Copy
+  Menu, X, Map, ChevronDown, ChevronRight, Library, Heart, Twitter, Linkedin, Copy, Search
 } from "lucide-react";
 import { ResourceCard } from "@/components/resource-card";
 
@@ -212,12 +212,15 @@ export function StepViewer({
   };
 
   const [activeView, setActiveView] = useState<ActiveView>(getDefaultView);
+  const [viewMode, setViewMode] = useState<"PAGINATED" | "CONTINUOUS">("PAGINATED");
   const [expandedTopics, setExpandedTopics] = useState<Set<string>>(() => {
     const s = new Set<string>();
     if (step.topics[0]) s.add(step.topics[0].id);
     return s;
   });
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [localSearch, setLocalSearch] = useState("");
+  const [localSearchOpen, setLocalSearchOpen] = useState(false);
 
   const [likes, setLikes] = useState(0);
   const [hasLiked, setHasLiked] = useState(false);
@@ -260,15 +263,24 @@ export function StepViewer({
   }, [activeView]);
 
   const navigate = useCallback((view: ActiveView) => {
-    setActiveView(view);
-    setSidebarOpen(false);
     setExpandedTopics((prev) => {
       const next = new Set(prev);
       next.add(view.topicId);
       return next;
     });
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, []);
+
+    if (viewMode === "CONTINUOUS" && view.kind === "subtopic") {
+      // Stay on current Topic node, simply jump jump offset offset.
+      setTimeout(() => {
+        const anchor = document.getElementById(`subtopic-${view.subtopicId}`);
+        if (anchor) anchor.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 50);
+    } else {
+      setActiveView(view);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+    setSidebarOpen(false);
+  }, [viewMode]);
 
   const toggleTopicExpand = useCallback((topicId: string) => {
     setExpandedTopics((prev) => {
@@ -434,21 +446,87 @@ export function StepViewer({
             <article id="devhub-content-area" className="max-w-4xl mx-auto">
 
               <header className="mb-10 pb-8 border-b space-y-4">
-                <div className="flex flex-wrap gap-2">
-                  <span className="text-[10px] px-2.5 py-1 rounded bg-muted text-muted-foreground uppercase tracking-wider font-bold border">
-                    {roadmap?.title || "Standalone Module"}
-                  </span>
-                  <span className="text-[10px] uppercase tracking-wider font-bold px-2.5 py-1 rounded text-white" style={{ backgroundColor: themeColor }}>
-                    Module {step.order + 1}: {step.title}
-                  </span>
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                  
+                  {/* Local Search Area replacing Duplicate Badge framing Node triggers */}
+                  <div className="flex items-center gap-2 flex-1 max-w-md relative">
+                    <Search className="h-3.5 w-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/60" />
+                    <input 
+                      type="text" 
+                      placeholder="Search subtopics / content..." 
+                      value={localSearch || ""}
+                      onChange={(e) => setLocalSearch(e.target.value)}
+                      onFocus={() => setLocalSearchOpen(true)}
+                      onBlur={() => setTimeout(() => setLocalSearchOpen(false), 200)}
+                      className="pl-8 pr-3 py-1.5 rounded-lg bg-muted/50 border text-xs w-full focus:outline-none focus:ring-1 focus:ring-primary/40 focus:bg-background transition-all"
+                    />
+                    
+                    {/* Floating Search Dropdown dialogue sync framing sequential triggers */}
+                    {localSearchOpen && localSearch && (
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-popover/95 backdrop-blur-xl border rounded-xl shadow-2xl z-50 overflow-hidden max-h-60 overflow-y-auto">
+                        <div className="p-1.5 space-y-0.5">
+                          {activeTopic?.subtopics?.filter(s => s.title.toLowerCase().includes(localSearch.toLowerCase())).map((sub) => (
+                            <button 
+                              key={sub.id} 
+                              onClick={() => {
+                                setLocalSearch("");
+                                if (viewMode === "CONTINUOUS") {
+                                  const el = document.getElementById(`subtopic-${sub.id}`);
+                                  el?.scrollIntoView({ behavior: 'smooth' });
+                                } else {
+                                  navigate({ kind: "subtopic", topicId: activeTopic.id, subtopicId: sub.id });
+                                }
+                              }}
+                              className="w-full text-left px-3 py-2 rounded-lg text-xs hover:bg-primary/10 hover:text-primary transition-colors flex items-center gap-2 group"
+                            >
+                              <div className="w-1.5 h-1.5 rounded-full bg-primary/40 group-hover:bg-primary shrink-0" />
+                              <span className="truncate font-medium">{sub.title}</span>
+                            </button>
+                          ))}
+                          {(!activeTopic?.subtopics?.filter(s => s.title.toLowerCase().includes(localSearch.toLowerCase())).length) && (
+                            <p className="p-3 text-[11px] text-muted-foreground text-center">No matching headings found Node</p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex bg-muted p-1 rounded-lg w-fit gap-1 text-[11px] font-bold border">
+                    <button 
+                      onClick={() => setViewMode("PAGINATED")} 
+                      className={`px-3 py-1.5 rounded-md transition-all ${viewMode === "PAGINATED" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                    >
+                      Step-by-Step
+                    </button>
+                    <button 
+                      onClick={() => setViewMode("CONTINUOUS")} 
+                      className={`px-3 py-1.5 rounded-md transition-all ${viewMode === "CONTINUOUS" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                    >
+                      Continuous
+                    </button>
+                  </div>
                 </div>
 
-                <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight leading-tight">
-                  {activeView.kind === "subtopic" && activeSubtopic ? activeSubtopic.title : activeTopic?.title}
+                <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight leading-tight text-foreground/95">
+                  {activeView.kind === "subtopic" && activeSubtopic && viewMode === "PAGINATED" ? activeSubtopic.title : activeTopic?.title}
                 </h1>
               </header>
 
-              {activeView.kind === "subtopic" && activeSubtopic ? (
+              {viewMode === "CONTINUOUS" && activeTopic ? (
+                <div className="space-y-12">
+                   {activeTopic.content && <div className={PROSE} dangerouslySetInnerHTML={{ __html: parseMarkdown(activeTopic.content) }} />}
+                   {activeTopic.subtopics && activeTopic.subtopics.length > 0 && (
+                     <div className="space-y-12">
+                       {activeTopic.subtopics.map((sub) => (
+                          <div key={sub.id} id={`subtopic-${sub.id}`} className="space-y-4 pt-10 border-t border-border/10 first:pt-0 first:border-0">
+                            <h2 className="text-2xl font-extrabold tracking-tight text-foreground">{sub.title}</h2>
+                            <div className={PROSE} dangerouslySetInnerHTML={{ __html: parseMarkdown(sub.content) }} />
+                          </div>
+                       ))}
+                     </div>
+                   )}
+                </div>
+              ) : activeView.kind === "subtopic" && activeSubtopic ? (
                 <div className={PROSE} dangerouslySetInnerHTML={{ __html: parseMarkdown(activeSubtopic.content) }} />
               ) : activeTopic ? (
                 <>
@@ -474,45 +552,6 @@ export function StepViewer({
                   )}
                 </>
               ) : null}
-
-              <div className="flex flex-col sm:flex-row justify-between items-center bg-card/40 backdrop-blur-xl p-4 rounded-xl border border-border/10 gap-4 mt-16 shadow-sm">
-                 <Button onClick={handleLike} disabled={hasLiked} variant="outline" className="gap-2 font-semibold">
-                     <Heart className={`h-4 w-4 ${hasLiked ? "fill-red-500 text-red-500" : "text-muted-foreground"}`} /> {likes} Likes
-                 </Button>
-
-                 <div className="flex items-center gap-2">
-                     <span className="text-xs text-muted-foreground mr-1">Share</span>
-                     <a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(step.title)}`} target="_blank">
-                         <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/70"><Twitter className="h-4 w-4" /></Button>
-                     </a>
-                     <a href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`} target="_blank">
-                         <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/70"><Linkedin className="h-4 w-4" /></Button>
-                     </a>
-                     <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/70" onClick={handleCopy}>
-                         {copied ? <span className="text-[10px] text-emerald-500 font-bold">✓</span> : <Copy className="h-4 w-4" />}
-                     </Button>
-                 </div>
-              </div>
-
-              {/* Resources — shown at the bottom of the module content */}
-              {step.resources.length > 0 && (
-                <div className="mt-20 pt-10 border-t space-y-6">
-                  <div>
-                    <h3 className="text-2xl font-bold tracking-tight">📚 Recommended Resources</h3>
-                    <p className="text-muted-foreground mt-1 text-sm">Curated materials to go deeper.</p>
-                  </div>
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    {step.resources.map((resource) => (
-                      <ResourceCard key={resource.id} resource={{
-                        ...resource,
-                        description: resource.description || "",
-                        imageUrl: (resource as any).imageUrl || "",
-                        tags: ""
-                      }} />
-                    ))}
-                  </div>
-                </div>
-              )}
 
               {/* Prev / Next navigation */}
               <div className="mt-16 pt-8 border-t flex gap-4">
@@ -554,6 +593,45 @@ export function StepViewer({
                   </Link>
                 )}
               </div>
+
+              <div className="flex flex-col sm:flex-row justify-between items-center bg-card/40 backdrop-blur-xl p-4 rounded-xl border border-border/10 gap-4 mt-8 shadow-sm">
+                 <Button onClick={handleLike} disabled={hasLiked} variant="outline" className="gap-2 font-semibold">
+                     <Heart className={`h-4 w-4 ${hasLiked ? "fill-red-500 text-red-500" : "text-muted-foreground"}`} /> {likes} Likes
+                 </Button>
+
+                 <div className="flex items-center gap-2">
+                     <span className="text-xs text-muted-foreground mr-1">Share</span>
+                     <a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(step.title)}`} target="_blank">
+                         <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/70"><Twitter className="h-4 w-4" /></Button>
+                     </a>
+                     <a href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`} target="_blank">
+                         <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/70"><Linkedin className="h-4 w-4" /></Button>
+                     </a>
+                     <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/70" onClick={handleCopy}>
+                         {copied ? <span className="text-[10px] text-emerald-500 font-bold">✓</span> : <Copy className="h-4 w-4" />}
+                     </Button>
+                 </div>
+              </div>
+
+              {/* Resources — shown at the bottom of the module content */}
+              {step.resources.length > 0 && (
+                <div className="mt-20 pt-10 border-t space-y-6">
+                  <div>
+                    <h3 className="text-2xl font-bold tracking-tight">📚 Recommended Resources</h3>
+                    <p className="text-muted-foreground mt-1 text-sm">Curated materials to go deeper.</p>
+                  </div>
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    {step.resources.map((resource) => (
+                      <ResourceCard key={resource.id} resource={{
+                        ...resource,
+                        description: resource.description || "",
+                        imageUrl: (resource as any).imageUrl || "",
+                        tags: ""
+                      }} />
+                    ))}
+                  </div>
+                </div>
+              )}
 
             </article>
           ) : (

@@ -12,7 +12,7 @@ import {
 
 import { Editor } from "@/components/editor";
 
-interface TopicForm { title: string; content: string; }
+interface TopicForm { title: string; content: string; expanded?: boolean; }
 interface ResourceForm { title: string; url: string; type: string; }
 
 interface ModuleForm {
@@ -26,7 +26,7 @@ interface ModuleForm {
   resources: ResourceForm[];
 }
 
-const emptyTopic = (): TopicForm => ({ title: "", content: "" });
+const emptyTopic = (): TopicForm => ({ title: "", content: "", expanded: true });
 const emptyResource = (): ResourceForm => ({ title: "", url: "", type: "ARTICLE" });
 
 export default function NewModulePage() {
@@ -40,6 +40,51 @@ export default function NewModulePage() {
   const [form, setForm] = useState<ModuleForm>({
     title: "", description: "", icon: "📦", topics: [], resources: [], roadmapId: "", order: 0
   });
+
+  const [openTopicPaste, setOpenTopicPaste] = useState<number | null>(null);
+  const [topicMarkdownInput, setTopicMarkdownInput] = useState("");
+  const [topicParseMode, setTopicParseMode] = useState<Record<number, "CONTINUOUS" | "STEPWISE">>({});
+
+  const handleTopicMarkdownParse = (ti: number) => {
+    try {
+      const mode = topicParseMode[ti] || "STEPWISE";
+      const lines = topicMarkdownInput.split("\n");
+      let currentSubtopic: { title: string; content: string } | null = null;
+      let introContent = "";
+      const subtopics: { title: string; content: string }[] = [];
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        const isHeader = mode === "STEPWISE" ? (trimmed.startsWith("### ") || trimmed.startsWith("## ")) : trimmed.startsWith("## ");
+        
+        if (isHeader) {
+          currentSubtopic = { title: trimmed.replace(/^### /, "").replace(/^## /, "").trim(), content: "" };
+          subtopics.push(currentSubtopic);
+        } else if (currentSubtopic) {
+          currentSubtopic.content += line + "\n";
+        } else {
+          introContent += line + "\n";
+        }
+      }
+
+      const nt = [...form.topics];
+      nt[ti] = {
+        ...nt[ti],
+        content: introContent.trim(),
+        expanded: true
+      };
+      
+      for (const s of subtopics) {
+         nt[ti].content += `\n### ${s.title}\n${s.content}`;
+      }
+
+      setForm({ ...form, topics: nt });
+      setOpenTopicPaste(null);
+      setTopicMarkdownInput("");
+    } catch {
+      alert("Failed to parse topic markdown");
+    }
+  };
 
   const [roadmaps, setRoadmaps] = useState<any[]>([]);
 
@@ -111,10 +156,10 @@ export default function NewModulePage() {
 
   return (
     <div className="space-y-8 max-w-4xl">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
+      <div className="sticky top-[53px] z-40 bg-background/95 backdrop-blur border-b -mx-6 px-6 py-4 mb-4 flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Create Standalone Module</h1>
-          <p className="text-muted-foreground mt-1 text-sm">Standalone pages explaining elite system design concepts.</p>
+          <h1 className="text-xl font-bold tracking-tight">Create Standalone Module</h1>
+          <p className="text-muted-foreground mt-1 text-xs">Standalone pages explaining elite system design concepts.</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => handleSave("PENDING")} disabled={saving || !form.title}>
@@ -211,7 +256,12 @@ export default function NewModulePage() {
           <Card>
              <CardHeader className="pb-4 flex flex-row items-center justify-between">
                 <CardTitle className="text-base">📄 Topics ({form.topics.length})</CardTitle>
-                <Button size="sm" variant="outline" onClick={() => setForm({ ...form, topics: [...form.topics, emptyTopic()] })}><Plus className="h-3 w-3 mr-1" /> Add Topic</Button>
+                <div className="flex gap-1.5 items-center">
+                  {form.topics.length > 0 && (
+                    <Button size="sm" variant="ghost" className="text-xs h-7 gap-1 px-2 text-destructive hover:bg-destructive/10" onClick={() => { if (confirm("Clear all topics?")) setForm({ ...form, topics: [] }); }}>Clear All</Button>
+                  )}
+                  <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setForm({ ...form, topics: [...form.topics, emptyTopic()] })}><Plus className="h-3 w-3 mr-1" /> Add Topic</Button>
+                </div>
              </CardHeader>
              <CardContent className="space-y-4">
                 {form.topics.map((t, i) => (

@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Save, FileText } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { ContentImageManager } from "@/components/content-image-manager";
 
 const CATEGORIES = ["Docker", "Kubernetes", "Terraform", "Linux", "Security", "CI/CD", "MLOps", "AIOps", "SecOps", "Career", "General"];
 
@@ -164,6 +165,7 @@ export function BlogForm({ initialData }: { initialData?: any }) {
                 className="font-mono text-xs"
                 rows={16} 
               />
+              <ContentImageManager content={content} onChange={setContent} />
           </div>
         </CardContent>
       </Card>)}

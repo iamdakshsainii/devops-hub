@@ -45,6 +45,49 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
     title: "", description: "", icon: "📦", tags: "", topics: [], resources: []
   });
 
+  const [openTopicPaste, setOpenTopicPaste] = useState<number | null>(null);
+  const [topicMarkdownInput, setTopicMarkdownInput] = useState("");
+  const [topicParseMode, setTopicParseMode] = useState<Record<number, "CONTINUOUS" | "STEPWISE">>({});
+  const [collapsedIntro, setCollapsedIntro] = useState<Record<number, boolean>>({});
+
+  const handleTopicMarkdownParse = (ti: number) => {
+    try {
+      const mode = topicParseMode[ti] || "STEPWISE";
+      const lines = topicMarkdownInput.split("\n");
+      const subtopics: { title: string; content: string }[] = [];
+      let currentSub: { title: string; content: string } | null = null;
+      let introContent = "";
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        const isHeader = mode === "STEPWISE" ? (trimmed.startsWith("### ") || trimmed.startsWith("## ")) : false;
+        
+        if (isHeader) {
+          currentSub = { title: trimmed.replace(/^### /, "").replace(/^## /, "").trim(), content: "" };
+          subtopics.push(currentSub);
+        } else if (currentSub) {
+          currentSub.content += line + "\n";
+        } else {
+          introContent += line + "\n";
+        }
+      }
+
+      const nt = [...form.topics];
+      nt[ti] = {
+        ...nt[ti],
+        content: introContent.trim(),
+        subtopics: subtopics.map(s => ({ title: s.title, content: s.content.trim() })),
+        expanded: true
+      };
+
+      setForm({ ...form, topics: nt });
+      setOpenTopicPaste(null);
+      setTopicMarkdownInput("");
+    } catch {
+      alert("Failed to parse topic markdown");
+    }
+  };
+
   useEffect(() => {
     params.then(p => {
       setModuleId(p.id);
@@ -424,6 +467,14 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
                   <span className="text-xs font-mono font-bold text-muted-foreground/60 shrink-0">{String(ti + 1).padStart(2, "0")}</span>
                   <span className="text-sm font-semibold flex-1 truncate">{topic.title || `Topic ${ti + 1}`}</span>
                   <span className="text-xs text-muted-foreground hidden sm:inline">{topic.subtopics.length} subtopics</span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-6 text-[11px] text-primary gap-1 py-0 px-1.5 hover:bg-primary/10"
+                    onClick={(e) => { e.stopPropagation(); setOpenTopicPaste(openTopicPaste === ti ? null : ti); setTopicMarkdownInput(""); }}
+                  >
+                    <FileText className="h-3 w-3" /> Paste .md
+                  </Button>
                   <button
                     onClick={(e) => { e.stopPropagation(); setForm({ ...form, topics: form.topics.filter((_, j) => j !== ti) }); }}
                     className="p-1 hover:bg-destructive/10 rounded ml-1"
@@ -435,6 +486,38 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
 
                 {topic.expanded && (
                   <CardContent className="pt-4 space-y-5">
+                    {/* Topic Paste Area */}
+                    {openTopicPaste === ti && (
+                      <div className="border border-primary/20 bg-primary/5 rounded-lg p-3 space-y-2 mb-2">
+                        <div className="flex items-center justify-between">
+                          <label className="text-xs font-bold text-primary flex items-center gap-1.5"><FileText className="h-3.5 w-3.5" /> AI / Markdown Paste for this Topic</label>
+                          <div className="flex bg-muted p-0.5 rounded-md w-fit gap-1 text-[10px] font-bold border">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setTopicParseMode({ ...topicParseMode, [ti]: "STEPWISE" }); }}
+                              className={`px-2 py-1 rounded-sm ${(!topicParseMode[ti] || topicParseMode[ti] === "STEPWISE") ? "bg-background shadow-sm text-foreground" : "text-muted-foreground"}`}
+                            >
+                              Stepwise
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setTopicParseMode({ ...topicParseMode, [ti]: "CONTINUOUS" }); }}
+                              className={`px-2 py-1 rounded-sm ${(topicParseMode[ti] === "CONTINUOUS") ? "bg-background shadow-sm text-foreground" : "text-muted-foreground"}`}
+                            >
+                              Continuous
+                            </button>
+                          </div>
+                        </div>
+                        <textarea
+                          value={topicMarkdownInput}
+                          onChange={(e) => setTopicMarkdownInput(e.target.value)}
+                          className="w-full h-32 rounded-md border text-xs p-2 font-mono"
+                          placeholder={(!topicParseMode[ti] || topicParseMode[ti] === "STEPWISE") ? "Extracts ### into separate cards" : "Keeps ### as continuous texts stacked offset."}
+                        />
+                        <div className="flex justify-end gap-1.5">
+                          <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setOpenTopicPaste(null)}>Cancel</Button>
+                          <Button size="sm" className="h-7 text-xs" onClick={() => handleTopicMarkdownParse(ti)}>Parse & Overwrite</Button>
+                        </div>
+                      </div>
+                    )}
                     {/* Topic title */}
                     <div className="space-y-2">
                       <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Topic Title</label>
@@ -447,25 +530,59 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
 
                     {/* Topic content (intro text before subtopics) */}
                     <div className="space-y-2">
-                      <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Intro Content (optional — shown before subtopics)</label>
-                      <Editor
-                        content={topic.content}
-                        onChange={(html) => updateTopic(ti, { content: html })}
-                      />
+                      <div className="flex items-center justify-between">
+                        <div 
+                          className="flex items-center gap-1 cursor-pointer hover:bg-muted/30 p-1 rounded-md transition-colors"
+                          onClick={() => setCollapsedIntro({ ...collapsedIntro, [ti]: !collapsedIntro[ti] })}
+                        >
+                          <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer flex items-center gap-1">
+                            {collapsedIntro[ti] ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                            Intro Content (optional)
+                          </label>
+                        </div>
+                        {topic.content && topic.content !== "<p></p>" && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-[10px] h-5 px-1.5 text-destructive hover:bg-destructive/10 gap-1"
+                            onClick={() => { if (confirm("Clear intro content?")) updateTopic(ti, { content: "" }); }}
+                          >
+                            <Trash2 className="h-3 w-3" /> Clear
+                          </Button>
+                        )}
+                      </div>
+                      {!collapsedIntro[ti] && (
+                        <Editor
+                          content={topic.content}
+                          onChange={(html) => updateTopic(ti, { content: html })}
+                        />
+                      )}
                     </div>
 
                     {/* Subtopics */}
                     <div className="space-y-3 pt-2 border-t">
                       <div className="flex items-center justify-between">
                         <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Subtopics ({topic.subtopics.length})</h4>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="text-xs h-7"
-                          onClick={() => updateTopic(ti, { subtopics: [...topic.subtopics, emptySubtopic()] })}
-                        >
-                          <Plus className="h-3 w-3 mr-1" /> Add Subtopic
-                        </Button>
+                        <div className="flex gap-1.5">
+                          {topic.subtopics.length > 0 && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-xs h-7 text-destructive hover:bg-destructive/10"
+                              onClick={() => { if (confirm("Clear all subtopics?")) updateTopic(ti, { subtopics: [] }); }}
+                            >
+                              <Trash2 className="h-3 w-3 mr-1" /> Clear All
+                            </Button>
+                          )}
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-xs h-7"
+                            onClick={() => updateTopic(ti, { subtopics: [...topic.subtopics, emptySubtopic()] })}
+                          >
+                            <Plus className="h-3 w-3 mr-1" /> Add Subtopic
+                          </Button>
+                        </div>
                       </div>
 
                       {topic.subtopics.map((sub, si) => (
