@@ -127,7 +127,17 @@ function EventCard({ event, badge }: { event: any; badge: "ongoing" | "upcoming"
   const isPast = badge === "past";
   const isOngoing = badge === "ongoing";
   const date = new Date(event.startTime);
+  const now = new Date();
   const images = event.imageUrls ? event.imageUrls.split(",").filter(Boolean) : [];
+
+  const diffDays = Math.ceil((date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  const diffHours = Math.ceil((date.getTime() - now.getTime()) / (1000 * 60 * 60));
+
+  // Calendar URL Generator
+  const startTimeISO = date.toISOString().replace(/-|:|\.\d\d\d/g, "");
+  const endTimeObj = event.endTime ? new Date(event.endTime) : new Date(date.getTime() + 60 * 60 * 1000);
+  const endTimeISO = endTimeObj.toISOString().replace(/-|:|\.\d\d\d/g, "");
+  const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${startTimeISO}/${endTimeISO}&details=${encodeURIComponent(event.description || "")}&location=${encodeURIComponent(event.type === "MEETUP" ? "In-person" : "Online")}`;
 
   return (
     <Card
@@ -166,6 +176,11 @@ function EventCard({ event, badge }: { event: any; badge: "ongoing" | "upcoming"
                 <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse inline-block" /> Live
               </span>
             )}
+            {!isPast && !isOngoing && diffDays > 0 && diffDays <= 4 && (
+              <span className="text-[10px] uppercase font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded flex items-center gap-1">
+                <Clock className="h-3 w-3 animate-pulse" /> in {diffHours <= 23 ? `${diffHours}h` : `${diffDays}d`}
+              </span>
+            )}
           </div>
           <div className="flex flex-col items-end text-right">
             <span className="text-sm font-semibold text-primary">
@@ -195,12 +210,19 @@ function EventCard({ event, badge }: { event: any; badge: "ongoing" | "upcoming"
             ))}
           </div>
         )}
-        <div className="flex items-center justify-between mt-auto pt-4 border-t">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mt-auto pt-4 border-t">
           <div className="flex items-center text-xs font-medium text-muted-foreground">
             <MapPin className="h-3 w-3 mr-1" />
             {event.type === "MEETUP" ? "In-person" : "Online"}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center flex-wrap gap-2 sm:justify-end">
+            {!isPast && (
+              <a href={googleCalendarUrl} target="_blank" rel="noopener noreferrer">
+                <Button variant="outline" size="icon" className="h-8 w-8 text-foreground/80 hover:text-foreground" title="Add to Google Calendar">
+                  <Calendar className="h-3.5 w-3.5" />
+                </Button>
+              </a>
+            )}
             {/* Save + Remind Me — client component */}
             <EventActions eventId={event.id} isPast={isPast} />
 

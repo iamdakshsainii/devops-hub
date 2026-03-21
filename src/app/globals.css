@@ -83,6 +83,14 @@
   }
 }
 
+@layer components {
+  .bg-card {
+    background-color: hsl(var(--card) / 0.72) !important;
+    backdrop-filter: blur(14px) saturate(120%);
+    -webkit-backdrop-filter: blur(14px) saturate(120%);
+  }
+}
+
 /* ════════════════════════════════════════════════════════════════════
    TAILWIND PROSE CSS VARIABLES — override at root so prose reads them
 ════════════════════════════════════════════════════════════════════ */

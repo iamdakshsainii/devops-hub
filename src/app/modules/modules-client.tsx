@@ -161,6 +161,8 @@ export default function ModulesPageClient({ data }: { data: any[] }) {
                  filteredModules.map((mod, index) => (
                     <Link key={mod.id} href={`/roadmap/${mod.roadmapId}/${mod.id}`} className="group block h-full">
                        <Card className="h-full hover:shadow-xl hover:border-foreground/30 transition-all duration-300 relative overflow-hidden flex flex-col items-start bg-card">
+                           {/* Backlight Glow Animation */}
+                           <div className="absolute -top-12 -right-12 w-36 h-36 rounded-full blur-3xl opacity-0 group-hover:opacity-25 transition-all duration-300 pointer-events-none" style={{ backgroundColor: cyclingColors[index % cyclingColors.length] }} />
                           {/* Hover Tint */}
                           <div className="absolute top-0 left-0 w-1.5 h-full opacity-60 group-hover:opacity-100 transition-opacity" style={{ backgroundColor: cyclingColors[index % cyclingColors.length] }} />
                           
@@ -180,7 +182,17 @@ export default function ModulesPageClient({ data }: { data: any[] }) {
                              <p className="text-sm text-muted-foreground line-clamp-2 md:line-clamp-3 mb-6 flex-1">
                                 {mod.description || "Explore this module to view its curated topics and community resources."}
                              </p>
-                             <div className="flex items-center gap-4 mt-auto text-xs font-semibold text-muted-foreground pt-4 border-t border-border/30">
+
+                              {mod.tags && (
+                                 <div className="flex flex-wrap gap-1 mt-auto mb-4">
+                                    {mod.tags.split(",").map((t: string) => (
+                                       <div key={t} className="text-[10px] bg-muted/40 text-muted-foreground/80 px-1.5 py-0.5 rounded border border-border/20 font-semibold">
+                                          {t.trim()}
+                                       </div>
+                                    ))}
+                                 </div>
+                              )}
+                              <div className="flex items-center gap-4 text-xs font-semibold text-muted-foreground pt-4 border-t border-border/30">
                                 <span className="flex items-center gap-1.5 bg-muted/50 px-2 py-1 rounded">
                                    <BookOpen className="h-3.5 w-3.5" style={{ color: cyclingColors[index % cyclingColors.length] }}/>
                                    {mod._count.topics} Topics

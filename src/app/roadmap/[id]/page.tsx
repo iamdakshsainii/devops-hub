@@ -15,6 +15,7 @@ export default async function RoadmapDetailPage({ params }: { params: Promise<{ 
         where: { status: "PUBLISHED" },
         orderBy: { order: "asc" },
         include: {
+          topics: { take: 3, select: { title: true, id: true } },
           _count: { select: { topics: true, resources: true } }
         }
       }
@@ -61,8 +62,8 @@ export default async function RoadmapDetailPage({ params }: { params: Promise<{ 
         <div className="space-y-6 relative">
           {/* Vertical connecting line */}
           <div
-            className="absolute top-8 bottom-8 left-8 w-1 rounded-full hidden sm:block"
-            style={{ backgroundColor: `${roadmap.color}20` }}
+            className="absolute top-8 bottom-8 left-8 w-1 rounded-full hidden sm:block bg-gradient-to-b"
+            style={{ backgroundImage: `linear-gradient(to bottom, ${roadmap.color}, ${roadmap.color}20)` }}
           />
 
           {roadmap.steps.map((step, i) => (
@@ -113,6 +114,24 @@ export default async function RoadmapDetailPage({ params }: { params: Promise<{ 
                     </div>
                     <ArrowRight className="h-6 w-6 text-muted-foreground/30 sm:mt-2 group-hover:text-primary group-hover:translate-x-1 sm:group-hover:translate-x-2 transition-all shrink-0 hidden sm:block" />
                   </div>
+
+                  {(step as any).topics && (step as any).topics.length > 0 && (
+                     <div className="flex flex-wrap gap-1.5 mt-4">
+                        {(step as any).topics.map((t: any) => (
+                           <div 
+                              key={t.id} 
+                              className="text-[11px] bg-muted/50 text-foreground/80 px-2 py-0.5 rounded border border-border/30 font-medium"
+                           >
+                              {t.title}
+                           </div>
+                        ))}
+                        {step._count.topics > 3 && (
+                           <div className="text-[11px] text-muted-foreground/60 px-1 py-0.5">
+                              +{step._count.topics - 3} more...
+                           </div>
+                        )}
+                     </div>
+                  )}
 
                   <div className="flex items-center gap-4 mt-6 pt-4 border-t border-border/50 text-xs sm:text-sm font-medium text-muted-foreground">
                     <div className="flex items-center gap-1.5 bg-muted/40 px-3 py-1.5 rounded-md">

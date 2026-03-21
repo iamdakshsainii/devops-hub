@@ -102,6 +102,41 @@ export default async function RoadmapPage({
 
       {/* Main Grid Layout */}
       <section className="container px-4 mx-auto max-w-7xl py-12">
+        {/* Core selection portal layout */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+           <Link href="/roadmap?q=DevOps" className="group">
+              <div className="p-6 h-full bg-gradient-to-br from-primary/5 via-transparent to-transparent border rounded-2xl hover:border-primary/40 hover:shadow-xl hover:shadow-primary/[0.03] transition-all duration-300 relative overflow-hidden flex flex-col items-start bg-card">
+                 <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">🚀</div>
+                 <h3 className="text-xl font-bold">Core DevOps</h3>
+                 <p className="text-xs text-muted-foreground mt-1 flex-1">Master core infrastructure components, CI/CD, and pipelined automation.</p>
+                 <div className="mt-4 flex items-center gap-1 text-xs font-semibold text-primary/80 group-hover:text-primary">
+                    Explore Focus <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform" />
+                 </div>
+              </div>
+           </Link>
+
+           <Link href="/roadmap?q=Security" className="group">
+              <div className="p-6 h-full bg-gradient-to-br from-amber-500/5 via-transparent to-transparent border rounded-2xl hover:border-amber-500/40 hover:shadow-xl hover:shadow-amber-500/[0.03] transition-all duration-300 relative overflow-hidden flex flex-col items-start bg-card">
+                 <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">🛡️</div>
+                 <h3 className="text-xl font-bold">DevSecOps</h3>
+                 <p className="text-xs text-muted-foreground mt-1 flex-1">Implement security scanning, compliance grids, and shift-left configurations.</p>
+                 <div className="mt-4 flex items-center gap-1 text-xs font-semibold text-amber-500/80 group-hover:text-amber-500">
+                    Explore Focus <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform" />
+                 </div>
+              </div>
+           </Link>
+
+           <Link href="/roadmap?q=AI" className="group">
+              <div className="p-6 h-full bg-gradient-to-br from-purple-500/5 via-transparent to-transparent border rounded-2xl hover:border-purple-500/40 hover:shadow-xl hover:shadow-purple-500/[0.03] transition-all duration-300 relative overflow-hidden flex flex-col items-start bg-card">
+                 <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">🧠</div>
+                 <h3 className="text-xl font-bold">AIOps / MLOps</h3>
+                 <p className="text-xs text-muted-foreground mt-1 flex-1">Monitor models, LLM Deployments, and setup metric anomaly detection streams.</p>
+                 <div className="mt-4 flex items-center gap-1 text-xs font-semibold text-purple-500/80 group-hover:text-purple-500">
+                    Explore Focus <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform" />
+                 </div>
+              </div>
+           </Link>
+        </div>
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar Area */}
           <aside className="w-full lg:w-64 flex-shrink-0 space-y-5">
@@ -205,30 +240,49 @@ export default async function RoadmapPage({
                         </div>
 
                         {/* Station dots linear representation */}
-                        <div className="relative pt-2">
-                          <div className="absolute top-4 left-4 right-4 h-0.5 rounded-full" style={{ backgroundColor: `${roadmap.color}30` }} />
-                          <div className="relative flex justify-between">
-                            {roadmap.steps.map((step, i) => (
-                              <div key={step.id} className="flex flex-col items-center" style={{ width: `${100 / Math.max(roadmap.steps.length, 1)}%` }}>
-                                <div
-                                  className="w-8 h-8 rounded-full border-2 border-background flex items-center justify-center text-[10px] font-bold z-10 text-white shadow-sm transition-transform duration-300 group-hover:scale-105"
-                                  style={{ backgroundColor: roadmap.color }}
-                                >
-                                  {String(i + 1).padStart(2, "0")}
+                        {/* Station dots linear representation */}
+                        {roadmap.steps.length > 0 && (
+                          <div className="relative pt-4 pb-2">
+                            {/* Glowing connecting ribbon */}
+                            <div 
+                              className="absolute top-8 left-6 right-6 h-1 rounded-full bg-gradient-to-r" 
+                              style={{ backgroundImage: `linear-gradient(to right, ${roadmap.color}, ${roadmap.color}40)` }} 
+                            />
+                            <div className="relative flex justify-between">
+                              {roadmap.steps.map((step, i) => (
+                                <div key={step.id} className="flex flex-col items-center relative z-10" style={{ width: `${100 / Math.max(roadmap.steps.length, 1)}%` }}>
+                                  {/* Dot node with back glow */}
+                                  <div className="relative group/dot flex items-center justify-center">
+                                    <div className="absolute inset-0 rounded-full scale-125 blur-sm opacity-60 group-hover/dot:scale-150 transition-all duration-300" style={{ backgroundColor: `${roadmap.color}40` }} />
+                                    <div
+                                      className="w-10 h-10 rounded-full border-2 border-background flex items-center justify-center text-xs font-black text-white shadow-md relative group-hover/dot:scale-110 transition-transform duration-300"
+                                      style={{ backgroundColor: roadmap.color }}
+                                    >
+                                      {String(i + 1).padStart(2, "0")}
+                                    </div>
+                                  </div>
+                                  <span className="text-[11px] font-semibold mt-2.5 text-center line-clamp-1 max-w-[90px] text-foreground/80 group-hover:text-primary transition-colors">
+                                    {step.title}
+                                  </span>
                                 </div>
-                                <span className="text-[10px] font-medium mt-1.5 text-center line-clamp-1 max-w-[80px]">
-                                  {step.title}
-                                </span>
-                              </div>
-                            ))}
+                              ))}
+                            </div>
                           </div>
-                        </div>
+                        )}
 
                         {/* Footer Stat Row */}
-                        <div className="flex items-center gap-5 mt-6 pt-4 border-t text-[11px] text-muted-foreground">
-                          <span className="flex items-center gap-1"><BookOpen className="h-3.5 w-3.5 text-blue-500" /> {roadmap.steps.length} Steps</span>
-                          <span className="flex items-center gap-1"><FileText className="h-3.5 w-3.5 text-purple-500" /> {roadmap.steps.reduce((s, st) => s + st._count.topics, 0)} Topics</span>
-                          <span className="flex items-center gap-1">📚 {roadmap.steps.reduce((s, st) => s + st._count.resources, 0)} Resources</span>
+                        <div className="flex items-center gap-4 mt-6 pt-4 border-t border-border/40 text-xs font-semibold text-muted-foreground">
+                          <div className="flex items-center gap-1.5 bg-muted/40 px-3 py-1.5 rounded-lg border border-border/20">
+                            <BookOpen className="h-3.5 w-3.5" style={{ color: roadmap.color }} /> 
+                            <span>{roadmap.steps.length} Steps</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 bg-muted/40 px-3 py-1.5 rounded-lg border border-border/20">
+                            <FileText className="h-3.5 w-3.5" style={{ color: `${roadmap.color}bb` }} /> 
+                            <span>{roadmap.steps.reduce((s, st) => s + st._count.topics, 0)} Topics</span>
+                          </div>
+                          <div className="ml-auto text-xs text-primary/80 group-hover:text-primary font-bold flex items-center gap-1">
+                             Start Roadmap <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform" />
+                          </div>
                         </div>
                       </div>
                     </div>
