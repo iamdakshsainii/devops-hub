@@ -210,13 +210,16 @@ export default async function DashboardPage() {
           <Card className="bg-card/50 border overflow-hidden rounded-2xl">
             <CardHeader className="bg-muted/30 border-b pb-4">
                <div className="flex items-center justify-between w-full">
-                 <div className="flex items-center gap-2">
-                   <FileText className="h-5 w-5 text-primary" />
-                   <CardTitle className="text-base font-bold">My Event Submissions</CardTitle>
+                 <div className="flex flex-col">
+                   <div className="flex items-center gap-2">
+                     <FileText className="h-5 w-5 text-primary" />
+                     <CardTitle className="text-base font-bold">My Event Submissions</CardTitle>
+                   </div>
+                   <CardDescription className="text-[11px] text-muted-foreground mt-1">Host & manage your community events, webinars, and meetups.</CardDescription>
                  </div>
                  <Link href="/events/dashboard">
                    <Button variant="ghost" size="sm" className="h-7 text-[11px] px-2 py-0">
-                     View All <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                     Track All <ArrowRight className="h-3.5 w-3.5 ml-1" />
                    </Button>
                  </Link>
                </div>
@@ -289,10 +292,10 @@ export default async function DashboardPage() {
               <Link href="/bookmarks" className="flex items-center justify-between p-3 rounded-xl hover:bg-muted transition-colors font-medium text-sm group">
                 <div className="flex items-center gap-3">
                   <div className="bg-primary/10 p-2 rounded-lg group-hover:bg-primary/20 transition-colors"><Bookmark className="h-4 w-4 text-primary" /></div>
-                  My Bookmarks
-                </div>
+                  Saves / Remind
+                </div >
                 <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
-              </Link>
+              </Link >
               <Link href="/roadmap" className="flex items-center justify-between p-3 rounded-xl hover:bg-muted transition-colors font-medium text-sm group">
                 <div className="flex items-center gap-3">
                   <div className="bg-primary/10 p-2 rounded-lg group-hover:bg-primary/20 transition-colors"><Map className="h-4 w-4 text-primary" /></div>
@@ -305,9 +308,31 @@ export default async function DashboardPage() {
 
           {/* Coming Soon Locked */}
           <div className="space-y-4 pt-4 border-t px-2">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Coming Soon</h3>
-            
-            <div className="border border-dashed rounded-xl p-4 bg-muted/10 flex items-start gap-4">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse"></span> Pipeline Roadmap
+            </h3>
+
+            <div className="group border border-dashed rounded-xl p-4 bg-background/40 backdrop-blur-sm flex items-start gap-4 transition-all hover:border-primary/30 cursor-not-allowed">
+              <div className="bg-muted-foreground/10 rounded-full p-2 border shadow-sm group-hover:bg-primary/5 transition-colors">
+                <Terminal className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
+              </div>
+              <div>
+                <p className="text-sm font-bold flex items-center gap-1.5">Interview Prep <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full uppercase tracking-wider font-bold">Planned</span></p>
+                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">Solve real mock scenarios, check dynamic flashcards loaded with CI/CD benchmark guides.</p>
+              </div>
+            </div>
+
+            <div className="group border border-emerald-500/20 border-dashed rounded-xl p-4 bg-emerald-500/3 backdrop-blur-sm flex items-start gap-4 transition-all hover:border-emerald-500/40 cursor-not-allowed">
+              <div className="bg-emerald-500/10 rounded-full p-2 border border-emerald-500/20 shadow-sm">
+                <Lightbulb className="h-4 w-4 text-emerald-500" />
+              </div>
+              <div>
+                <p className="text-sm font-bold flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">DevOps AI Chatbot <span className="text-[9px] bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded-full uppercase tracking-wider font-bold animate-pulse">Alpha</span></p>
+                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">Ask anything about platform nodes, config scripts, and scaling errors natively without jumping Tabs.</p>
+              </div>
+            </div>
+
+            <div className="border border-dashed rounded-xl p-4 bg-muted/10 flex items-start gap-4 opacity-70">
               <div className="bg-background rounded-full p-2 border shadow-sm">
                  <Lock className="h-4 w-4 text-muted-foreground" />
               </div>
@@ -317,7 +342,7 @@ export default async function DashboardPage() {
               </div>
             </div>
 
-            <div className="border border-dashed rounded-xl p-4 bg-muted/10 flex items-start gap-4">
+            <div className="border border-dashed rounded-xl p-4 bg-muted/10 flex items-start gap-4 opacity-70">
                <div className="bg-background rounded-full p-2 border shadow-sm">
                  <Lock className="h-4 w-4 text-muted-foreground" />
               </div>

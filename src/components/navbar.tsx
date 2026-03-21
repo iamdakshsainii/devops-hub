@@ -93,31 +93,58 @@ export function Navbar() {
 
         <div className="flex-1 hidden md:flex items-center justify-between mr-4 space-x-8">
           <nav className="flex items-center space-x-5 text-sm font-medium">
-            <Link href="/" className={getLinkClass("/")}>Home</Link>
+            <Link href="/" className={getLinkClass("/")} title="Homepage">Home</Link>
             
             <DropdownMenu>
-              <DropdownMenuTrigger className={getLinkClass("/modules") + " flex items-center gap-1 cursor-pointer outline-none"}>
-                Modules <PlusCircle className="h-3 w-3 opacity-60 ml-0.5" />
+              <DropdownMenuTrigger className={getLinkClass("/modules") + " flex items-center gap-1 cursor-pointer outline-none"} title="Modules & Tools">
+                Learn <PlusCircle className="h-3 w-3 opacity-60 ml-0.5" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-44 bg-background/95 backdrop-blur-md rounded-xl border border-border/40 shadow-lg">
                 <DropdownMenuItem asChild>
-                  <Link href="/modules" className="flex items-center gap-2 cursor-pointer w-full text-xs font-semibold">
-                     <FileText className="h-3.5 w-3.5 text-primary" /> Standalone Modules
+                  <Link href="/modules" className="flex items-center gap-2 cursor-pointer w-full text-xs font-semibold" title="Detailed Learning modules">
+                     <FileText className="h-3.5 w-3.5 text-primary" /> Detailed Modules
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/tools" className="flex items-center gap-2 cursor-pointer w-full text-xs font-semibold">
+                  <Link href="/tools" className="flex items-center gap-2 cursor-pointer w-full text-xs font-semibold" title="Examine Trending Tools">
                      <Terminal className="h-3.5 w-3.5 text-amber-500" /> Trending Tools
                   </Link>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Link href="/cheatsheets" className={getLinkClass("/cheatsheets")}>Cheatsheet</Link>
-            <Link href="/roadmap" className={getLinkClass("/roadmap")}>Roadmap</Link>
-            <Link href="/resources" className={getLinkClass("/resources")}>Resources</Link>
-            <Link href="/events" className={getLinkClass("/events")}>Events</Link>
-            <Link href="/blog" className={getLinkClass("/blog")}>Blog</Link>
+            <Link href="/cheatsheets" className={getLinkClass("/cheatsheets")} title="Quick Commands Lookup">Cheatsheet</Link>
+            <Link href="/roadmap" className={getLinkClass("/roadmap")} title="Visual Learning Path">Roadmap</Link>
+            <DropdownMenu>
+              <DropdownMenuTrigger className={getLinkClass("/resources") + " flex items-center gap-1 cursor-pointer outline-none"} title="Shared Links & PDFs">
+                Resources <PlusCircle className="h-3 w-3 opacity-60 ml-0.5" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-44 bg-background/95 backdrop-blur-md rounded-xl border border-border/40 shadow-lg">
+                <DropdownMenuItem asChild>
+                  <Link href="/resources" className="flex items-center gap-2 cursor-pointer w-full text-xs font-semibold" title="All curated items">
+                     <FileText className="h-3.5 w-3.5 text-primary" /> All Resources
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/resources?type=ARTICLE" className="flex items-center gap-2 cursor-pointer w-full text-xs font-semibold" title="Read articles and guides">
+                     <FileText className="h-3.5 w-3.5 text-blue-500" /> Articles
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/resources?type=VIDEO" className="flex items-center gap-2 cursor-pointer w-full text-xs font-semibold" title="Watch workshops or videos">
+                     <PlusCircle className="h-3.5 w-3.5 text-red-500" /> Videos
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/resources?type=NOTES" className="flex items-center gap-2 cursor-pointer w-full text-xs font-semibold" title="Shared engineering notes">
+                     <PlusCircle className="h-3.5 w-3.5 text-green-500" /> Notes
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Link href="/events" className={getLinkClass("/events")} title="Webinars and Workshops">Events</Link>
+            <Link href="/blog" className={getLinkClass("/blog")} title="Clear your doubts and solve issues faced by every DevOps engineer">Blog</Link>
           </nav>
           <div className="w-full max-w-sm relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -227,9 +254,13 @@ export function Navbar() {
             <div className="h-9 w-20 animate-pulse bg-muted rounded ml-2" />
           ) : session ? (
             <div className="flex items-center space-x-2 pl-2 border-l ml-2">
-              {["ADMIN", "SUPER_ADMIN"].includes(session.user.role) && (
-                <Link href="/admin">
-                  <Button variant="ghost" size="sm" className="hidden sm:inline-flex">Admin</Button>
+              {["ADMIN", "SUPER_ADMIN"].includes(session.user.role) ? (
+                <Link href="/admin" title="Admin Control Panel">
+                  <Button variant="ghost" size="sm" className="hidden sm:inline-flex">Admin Panel</Button>
+                </Link>
+              ) : (
+                <Link href="/dashboard" title="View your dashboard">
+                  <Button variant="ghost" size="sm" className="hidden sm:inline-flex">Dashboard</Button>
                 </Link>
               )}
                {["ADMIN", "SUPER_ADMIN"].includes(session.user.role) && (
