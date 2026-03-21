@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,15 +18,15 @@ export default function RequestAdminPage() {
   const [success, setSuccess] = useState(false);
   const [cooldown, setCooldown] = useState<{ isBlocked: boolean; message: string } | null>(null);
 
-  useState(() => {
+  useEffect(() => {
     fetch("/api/admin/requests/check")
       .then(res => res.json())
       .then(data => {
          if (data.isBlocked) {
             setCooldown(data);
          }
-      });
-  });
+      }).catch(() => {});
+  }, []);
 
   if (status === "loading") return <div className="p-12 text-center text-muted-foreground">Loading...</div>;
   if (!session) { router.push("/login"); return null; }
