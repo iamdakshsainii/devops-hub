@@ -37,7 +37,7 @@ export default function RootLayout({
             </main>
             <FloatingContact />
             <Footer />
-            <Toaster position="bottom-right" theme="system" richColors closeButton />
+            <Toaster position="top-right" theme="system" richColors closeButton />
             <WelcomeToast />
           </div>
         </Providers>
