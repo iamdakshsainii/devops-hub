@@ -27,7 +27,9 @@ export async function POST(req: Request) {
                     { resourceId: itemId }),
     };
 
-    const existing = await prisma.bookmark.findFirst({ where: whereClause });
+    const fs = require('fs');
+fs.appendFileSync('c:/my-stuff/devops-hub/.agents/scripts/bookmark_route_trace.log', JSON.stringify({ timestamp: new Date().toISOString(), itemId, itemType, whereClause }) + '\n');
+const existing = await prisma.bookmark.findFirst({ where: whereClause });
 
     // --- Remind Me toggle on existing bookmark ---
     if (existing && remindMe !== undefined) {
@@ -67,7 +69,8 @@ export async function POST(req: Request) {
       remindMe: created.remindMe,
     });
   } catch (error) {
-    console.error("Bookmark error:", error);
+    fs.appendFileSync('c:/my-stuff/devops-hub/.agents/scripts/bookmark_route_trace.log', JSON.stringify({ error: error.message, stack: error.stack }) + '\n');
+console.error("Bookmark error:", error);
     return NextResponse.json({ message: "Error processing bookmark" }, { status: 500 });
   }
 }

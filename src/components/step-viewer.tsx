@@ -651,11 +651,6 @@ export function StepViewer({
                        <button title="Add bookmark and see in saved content from profile dropdown anytime" onClick={() => toggleBookmark(activeTopic.id)} className={`p-1.5 rounded-lg border transition-all ${bookmarkedItems.includes(activeTopic.id) ? "bg-primary/10 text-primary border-primary/20" : "bg-muted/30 text-muted-foreground border-transparent hover:border-border"}`}>
                          <Bookmark className="h-4 w-4" />
                        </button>
-                       <Checkbox 
-                         checked={completedItems.includes(activeTopic.id)} 
-                         onCheckedChange={() => toggleComplete(activeTopic.id, "TOPIC")} 
-                         title="Click to mark as read" className="h-5 w-5 data-[state=checked]:bg-emerald-500 border-muted-foreground/40 rounded-md transition-colors"
-                       />
                         <span className="text-[10px] uppercase font-bold text-muted-foreground/60 tracking-wider hidden md:inline-block ml-1">Mark Read</span>
                     </div>
                   )}
