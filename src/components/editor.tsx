@@ -248,11 +248,9 @@ export function Editor({ content, onChange }: EditorProps) {
     const current = editor.getHTML();
     if (content === current) return;
     const trimmed = (content || "").trim();
-    const isHTML = trimmed.startsWith("<") && (trimmed.startsWith("<p>") || trimmed.startsWith("<h1>") || trimmed.startsWith("<h2>") || trimmed.startsWith("<h3>") || trimmed.startsWith("<ul") || trimmed.startsWith("<ol") || trimmed.startsWith("<div") || trimmed.startsWith("<blockquote"));
-    if (!isHTML && (trimmed.includes("# ") || trimmed.includes("**") || trimmed.includes("\n"))) {
-      editor.commands.setContent(marked.parse(content) as string);
-      return;
-    }
+    const isHTML = trimmed.startsWith("<") && (trimmed.startsWith("<p>") || trimmed.startsWith("<h1>") || trimmed.startsWith("<h2>") || trimmed.startsWith("<h3>") || trimmed.startsWith("<ul") || trimmed.startsWith("<ol") || trimmed.startsWith("<div") || trimmed.startsWith("<blockquote") || trimmed.startsWith("<table"));
+
+    if (!isHTML && content !== "") return;
     if (content !== current) editor.commands.setContent(content);
 
 
@@ -372,11 +370,7 @@ export function Editor({ content, onChange }: EditorProps) {
             value={rawText}
             onChange={(e) => {
               setRawText(e.target.value);
-              try {
-                const html = marked.parse(e.target.value) as string;
-                editor.commands.setContent(html);
-                onChange?.(html);
-              } catch (_) { }
+              onChange?.(e.target.value);
             }}
             className="w-full flex-1 min-h-[300px] p-4 bg-background font-mono text-sm resize-none focus:outline-none"
             placeholder="Type your markdown here..."

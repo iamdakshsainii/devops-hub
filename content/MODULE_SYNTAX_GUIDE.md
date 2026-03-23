@@ -2,190 +2,61 @@
 
 ---
 
-## 1. Header Rules
+## 🏗️ 1. Structure & Headers
 
-| Syntax | Creates | Rule |
-|---|---|---|
-| `# ` | Module title | Use **once only** at the very top |
-| `## ` | Sidebar nav item | Every `##` MUST have 3-4 paragraphs of content before any `###` or `####` — otherwise the page renders blank |
-| `### ` | Subtopic card | Use ONLY for major category switches — not for small inline titles |
-| `#### ` | Inline divider | Use for ALL small sub-headings that stay on the page |
+*   **No `#` title needed**: The module title is set in the dashboard form. Do not include a `# Title` line.
+*   `## Topic Title`: Creates a master topic card on the step reader.
+*   `### Subtopic Anchor`: Creates an **Anchor Scroll Link** in the sidebar that smoothly jumps directly to that inside section on click. No strict spacing or content counts required after `##` now!
 
 ---
 
-## 2. The Empty Page Rule — Most Critical
+## 💻 2. Code Blocks Rules — CRITICAL
 
-If a `##` jumps immediately to `###` or `####` with nothing in between, the platform shows a blank page.
-
-Every `##` intro MUST include:
-- 3-4 paragraphs of plain English explanation
-- At least one table, code block, or flow diagram
-- Real-world "why this matters for DevOps" context
-- The page must require scrolling before the first card appears
+*   **Always use Triple Backticks (`` ``` ``) with a language label**: For isolation commands or config scripts.
+    *   **Opening fence**: ` ```bash `, ` ```yaml `, ` ```dockerfile ` — language tag required.
+    *   **Closing fence**: ` ``` ` — ALWAYS plain, never add a language tag.
+*   **Never use Single Backticks (`` ` ``) for standalone lines**: Single backticks are strictly for *inline code statements* inside sentences (e.g., `cd /root`). They won't trigger standard styled copy-to-clipboard blocks.
+*   **Comment inline**: Add `# comments` on the same line as your bash triggers so highlighting parses beautifully downstream.
 
 ---
 
-## 3. Language Style
+## 📊 3. Diagrams & Flow Charts
 
-Always explain the concept BEFORE showing commands:
-1. What IS this? (plain English + analogy)
-2. Why does it matter in DevOps?
-3. How does it work? (concept first)
-4. Show the command or code
-5. Comment every non-obvious line inline
-6. Show a real-world example
-
-Never dump commands without explanation.
+*   **Use 4-space indentation for diagrams**: This triggers the platform's terminal/diagram overlay dashboard frame. Do not use fenced code blocks for diagrams if you want the visual wrapper setup.
+*   Use raw arrows `↓` `↑` `→` `←` freely between step coordinates.
+*   Avoid heavy Unicode box-drawing characters (e.g., `──`, `┐`, `┘`, `│`, `►`, `═`).
 
 ---
 
-## 4. Diagrams & Flow Charts — What Works and What Breaks
+## 📝 4. Style & Media Formatting
 
-**Single arrows `↓` `↑` `→` `←` work perfectly — use them freely.**
-
-The platform only breaks on heavy Unicode **box-drawing** characters. Avoid: `──`, `┐`, `┘`, `└`, `│` in box diagrams, `►`, `═`
-
-**For side-by-side diagrams** (like OSI sender/receiver) — skip arrows entirely. Use spacing and a `---` separator line.
-
-**For flow diagrams** — use `↓` between steps. Clean and renders perfectly.
-
-**For request/response diagrams** — use `-->` and `<--` with spaces. Keep it simple.
-
----
-
-## 5. Code Block Rules — CRITICAL
-
-Every code block MUST open and close with plain triple backticks.
-
-**Correct — always close with plain triple backticks:**
-````
-```bash
-ping google.com
-```
-````
-
-**Wrong — never use a language tag on a closing fence:**
-````
-```bash
-ping google.com
-```text       ← THIS BREAKS THE BLOCK — never do this
-````
-
-**Rules:**
-- Opening fence: ` ```bash `, ` ```text `, ` ``` ` — language tag allowed here
-- Closing fence: ` ``` ` — ALWAYS plain, NEVER add a language tag
-- For plain diagrams and flow charts with no language: use ` ```text ` to open, ` ``` ` to close
-- For bash/shell commands: use ` ```bash ` to open, ` ``` ` to close
-- Never write ` ```text ` as a closing line — it will swallow the next block into the current one
+*   **Bullet Lists**: Use `*` to form lists, NOT `-`.
+*   **Images**: Place real Unsplash media using standard format:
+    `![Description](https://images.unsplash.com/photo-ID?auto=format&fit=crop&w=800&q=80)`
+*   **Context first**: Always explain WHY a concept matters to a DevOps engineer before you show configuration setups.
+*   **Tables**: Use clean pipe `|` separators for grid scaling:
+    | Concept | What it does | Why it matters |
+    |---|---|---|
+    | Value | Value | Value |
+*   **Beginner-Friendly**: Simplify layout terms, use analogies, and keep it digestible. Detailed content but absolute zero unwanted fluff.
+*   **Cover All Topics**: Ensure no critical details of the references provided are left out!
+*   **Dynamic References**: Always include/seamlessly map any reference details given in the user input back into the document framing smoothly.
 
 ---
 
-## 6. Images
+## 🤖 AI Prompt to Use
 
-Place real Unsplash images at key concept moments using:
-```
-![Description of what image shows](https://images.unsplash.com/photo-ID?auto=format&fit=crop&w=800&q=80)
-```
-
-If no good image exists, write:
-```
-![Add image here: describe the concept this should show]()
-```
-
-Place images at:
-- Section intro (one per `##`)
-- Before complex diagrams
-- After a big concept is introduced
-
----
-
-## 7. Structure Template
-
-```markdown
-# Module Title
-1-2 sentence description.
-
----
-
-## 01. First Topic
-
-3-4 paragraphs of intro content here.
-Real-world DevOps context.
-At least one table or diagram.
-
-#### Inline Sub-heading
-Explanation then code...
-
-### Major Subtopic Card
-
-Explanation of this major topic.
-
-#### Sub-section inside card
-Detail here...
-
----
-
-## 02. Second Topic
-
-[Never jump straight to ### or #### here]
-```
-
----
-
-## 8. Pre-Publish Checklist
-
-```
-Structure:
-[ ] # used exactly once
-[ ] Every ## has 3+ paragraphs before first ### or ####
-[ ] ### used only for major subtopic cards
-[ ] #### used for all inline dividers
-
-Code Blocks:
-[ ] Every closing fence is plain ``` with no language tag after it
-[ ] No line anywhere reads ```text, ```bash, ```js as a CLOSING fence
-[ ] Opening fences use language tags, closing fences never do
-
-Diagrams:
-[ ] No Unicode box-drawing characters in code blocks
-[ ] All flows use plain ASCII (|, -, >, +, arrows ↓ ↑ → ←)
-[ ] Images placed at key concept moments
-
-Content:
-[ ] Every concept explained in plain English before code
-[ ] Every code block has inline comments
-[ ] Real-world DevOps context in every ## intro
-[ ] At least one table or diagram per ## section
-
-Language:
-[ ] Beginner-friendly throughout
-[ ] Analogies used for complex concepts
-[ ] "Why does this matter?" answered for every topic
-```
-
----
-
-## 9. AI Prompt to Use
-
-```
-Act as an Elite DevOps Instructor creating a Course Module for the DevOps Network platform.
-
-TOPIC: [topic here]
+```text
+Act as an Elite DevOps Instructor creating content for the DevOps Network platform.
 
 RULES:
-1. # Module Title + 1-2 sentence description
-2. ## for each main topic (sidebar nav)
-3. Every ## MUST have 3-4 paragraphs + table/diagram before first ### or ####
-4. ### ONLY for major subtopic cards
-5. #### for all inline sub-headings
-6. Explain every concept in plain beginner English BEFORE showing commands
-7. Comment every non-obvious line in code blocks
-8. Single arrows ↓ ↑ → ← are fine. Avoid only heavy box-drawing chars: ──, └, ┐, ►, ═, │ in diagrams
-9. Place Unsplash images at key concept moments
-10. Answer "why does this matter in DevOps?" for every major topic
-11. CRITICAL — Code block closing fences: always close with plain ``` on its own line.
-    NEVER write ```text or ```bash or any language tag on a closing fence.
-    Opening fence example: ```bash
-    Closing fence example: ```
-    A closing fence with a language tag (e.g. ```text) will break the next block.
+1. No `#` top headers — start with `##` for topics.
+2. `##` for high-level Scroll Cards.
+3. `###` for Subtopics (anchors trigger smooth-scrolling to it).
+4. Diagrams: use 4-space indentation (triggers styled terminal wrapping frames).
+5. Code Blocks: Opening fence requires a language tag (` ```bash `). Closing fence is plain ` ``` `.
+6. Code Blocks: No single backticks isolation commands on standalone rows.
+7. Bullet lists use `*` not `-`.
+8. Beginner-Friendly: Simplified terms, analogies, deep coverage containing zero unwanted fluff.
+9. Dynamic References: Fully integrate any reference materials/details given strictly back into content flows.
 ```

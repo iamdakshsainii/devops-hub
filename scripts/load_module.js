@@ -10,6 +10,8 @@
  *   Everything below       → becomes the content (markdown, images work)
  */
 
+require('dotenv').config();
+console.log("Script starting...");
 const { PrismaClient } = require('@prisma/client');
 const fs = require('fs');
 const path = require('path');
@@ -19,28 +21,18 @@ const prisma = new PrismaClient();
 function parseMarkdownToTopics(content) {
   const lines = content.split('\n');
   let currentTopic = null;
-  let currentSubtopic = null;
   const topics = [];
 
   for (const line of lines) {
     const trimmed = line.trim();
 
     if (trimmed.startsWith('## ')) {
-      currentSubtopic = null;
       currentTopic = {
         title: trimmed.replace(/^## /, '').trim(),
         content: '',
-        subtopics: [],
+        subtopics: [], // keep empty initialization so the down-stream SQL doesn't crash on undefined map loops
       };
       topics.push(currentTopic);
-    } else if (trimmed.startsWith('### ') && currentTopic) {
-      currentSubtopic = {
-        title: trimmed.replace(/^### /, '').trim(),
-        content: '',
-      };
-      currentTopic.subtopics.push(currentSubtopic);
-    } else if (currentSubtopic) {
-      currentSubtopic.content += line + '\n';
     } else if (currentTopic) {
       currentTopic.content += line + '\n';
     }
@@ -62,7 +54,11 @@ async function main() {
   const moduleOrder = parseInt(getRaw('--order') || '99');
 
   const contentDir = path.join(__dirname, '../content');
-  const files = fs.readdirSync(contentDir).filter(f => f.endsWith('.md') && f !== 'HOW_TO_ADD_CONTENT.md');
+  const specificFile = getRaw('--file');
+  let files = fs.readdirSync(contentDir).filter(f => f.endsWith('.md') && f !== 'HOW_TO_ADD_CONTENT.md' && f !== 'MODULE_SYNTAX_GUIDE.md');
+  if (specificFile) {
+    files = [specificFile];
+  }
 
   if (files.length === 0) {
     console.log('❌ No .md files found in /content folder.');

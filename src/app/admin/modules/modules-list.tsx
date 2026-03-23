@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
-import { PlusCircle, Edit, Search, Trash2, Eye, EyeOff, Loader2, X } from "lucide-react";
+import { PlusCircle, Edit, Search, Trash2, Eye, EyeOff, Loader2, X, RefreshCw } from "lucide-react";
 import { StepViewer } from "@/components/step-viewer";
 
 export default function AdminModulesList({ modules, roadmaps = [] }: { modules: any[], roadmaps?: any[] }) {
@@ -342,7 +342,10 @@ export default function AdminModulesList({ modules, roadmaps = [] }: { modules: 
       {previewStep && (
 
          <div className="fixed inset-0 z-50 bg-background flex flex-col overflow-hidden">
-             <div className="absolute top-3 right-4 z-[60]">
+             <div className="absolute top-3 right-4 z-[60] flex items-center gap-2">
+                 <Button variant="outline" size="sm" className="text-xs font-bold gap-1 bg-background/80 backdrop-blur-md border border-border/20 shadow-md" onClick={() => handlePreview(previewStep.id)} disabled={previewLoadingId === previewStep.id}>
+                     {previewLoadingId === previewStep.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />} Refresh
+                 </Button>
                  <Button variant="outline" size="sm" className="text-xs font-bold gap-1 bg-background/80 backdrop-blur-md border border-border/20 shadow-md" onClick={() => setPreviewStep(null)}>
                      <X className="h-3.5 w-3.5" /> Close Preview
                  </Button>

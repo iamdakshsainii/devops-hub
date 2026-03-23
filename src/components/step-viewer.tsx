@@ -10,7 +10,7 @@ import hljs from "highlight.js";
 import {
   FileText, Youtube, BookOpen,
   Download, Link as LinkIcon, ArrowLeft, ArrowRight,
-  Menu, X, Map, ChevronDown, ChevronRight, Library, Heart, Twitter, Linkedin, Copy, Search, Bookmark, Check
+  Menu, X, Map, ChevronDown, ChevronRight, ChevronLeft, Library, Heart, Twitter, Linkedin, Copy, Search, Bookmark, Check
 } from "lucide-react";
 import { ResourceCard } from "@/components/resource-card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -133,14 +133,7 @@ const PROSE = [
 function buildNavSequence(topics: Topic[]): ActiveView[] {
   const seq: ActiveView[] = [];
   for (const topic of topics) {
-    if (topic.content || !topic.subtopics || topic.subtopics.length === 0) {
-      seq.push({ kind: "topic", topicId: topic.id });
-    }
-    if (topic.subtopics) {
-      for (const sub of topic.subtopics) {
-        seq.push({ kind: "subtopic", topicId: topic.id, subtopicId: sub.id });
-      }
-    }
+    seq.push({ kind: "topic", topicId: topic.id });
   }
   return seq;
 }
@@ -227,10 +220,11 @@ export function StepViewer({
 
   const [expandedTopics, setExpandedTopics] = useState<Set<string>>(() => {
     const s = new Set<string>();
-    if (step.topics[0]) s.add(step.topics[0].id);
+    step.topics.forEach(t => s.add(t.id));
     return s;
   });
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [localSearch, setLocalSearch] = useState("");
   const [localSearchOpen, setLocalSearchOpen] = useState(false);
 
@@ -498,16 +492,17 @@ export function StepViewer({
         )}
 
         {/* Breadcrumb row */}
-        <div className="container mx-auto px-4 max-w-7xl flex items-center h-14 gap-2 overflow-x-auto whitespace-nowrap scrollbar-hide text-sm">
+        <div className={`container mx-auto px-4 ${isSidebarCollapsed ? "max-w-none" : "max-w-7xl"} flex items-center h-14 gap-2 overflow-x-auto whitespace-nowrap scrollbar-hide text-sm transition-all duration-300`}>
           <button className="md:hidden p-1.5 rounded-md hover:bg-muted shrink-0" onClick={() => setSidebarOpen(!sidebarOpen)}>
             {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
 
-          <Button variant="ghost" size="sm" onClick={() => router.back()} className="text-muted-foreground hover:text-foreground gap-1.5 p-1.5 h-8 font-medium">
-            <ArrowLeft className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Back</span>
-          </Button>
-          <span className="text-muted-foreground/30 ml-1 hidden sm:inline">|</span>
+          {/* Desktop Collapse Toggle */}
+          <button className="hidden md:flex p-1.5 rounded-md hover:bg-muted shrink-0 text-muted-foreground hover:text-foreground" onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}>
+            <Menu className="h-4 w-4" />
+          </button>
 
+          {isSidebarCollapsed && <span className="text-muted-foreground/30 ml-1 hidden md:inline">|</span>}
 
           {!isStandalone ? (
             <>
@@ -518,14 +513,6 @@ export function StepViewer({
               <Link href={`/roadmap/${roadmap.id}`} className="text-muted-foreground hover:text-foreground truncate max-w-[130px] md:max-w-xs transition-colors font-medium">
                 {roadmap.title}
               </Link>
-              {urlStepId && (
-                <>
-                  <span className="text-muted-foreground/40">/</span>
-                  <Link href={`/roadmap/${roadmap.id}/${urlStepId}`} className="text-muted-foreground hover:text-foreground transition-colors font-medium flex items-center gap-1">
-                    <ArrowLeft className="h-3.5 w-3.5" /> Back to Step
-                  </Link>
-                </>
-              )}
             </>
           ) : (
             <Link href="/modules" className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors shrink-0 font-medium">
@@ -570,17 +557,25 @@ export function StepViewer({
         {/* Sidebar */}
         <aside className={`
           fixed md:sticky top-32 left-0 z-40 md:z-auto
-          w-72 md:w-72 lg:w-80 h-[calc(100vh-8rem)] overflow-y-auto
           bg-background md:bg-transparent border-r md:border-r-0
           transform transition-transform md:transform-none shadow-2xl md:shadow-none
           ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
-          shrink-0 px-4 py-8
+          
+          ${isSidebarCollapsed ? "md:w-0 md:opacity-0 md:pointer-events-none md:p-0 md:m-0" : "w-72 md:w-72 lg:w-80 px-4 py-8"}
+          shrink-0 transition-all duration-300 ease-in-out
         `}>
-          {urlStepId && (
-            <Link href={`/roadmap/${roadmap.id}/${urlStepId}`} className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors mb-5 border-b pb-4 w-full">
-              <ArrowLeft className="h-3.5 w-3.5" /> Back to Step: {step.title}
-            </Link>
-          )}
+          <div className={isSidebarCollapsed ? "hidden" : "block"}>
+            {/* Sidebar actions: Back and Collapse */}
+            <div className="flex items-center justify-end mb-4 mt-1 border-b pb-2.5">
+              <button 
+                title="Collapse Sidebar"
+                className="hidden md:flex p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors" 
+                onClick={() => setIsSidebarCollapsed(true)}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+            </div>
+
           <div className="mb-8 pb-6 border-b">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white text-lg font-bold shadow-sm shrink-0" style={{ backgroundColor: themeColor }}>{step.icon}</div>
@@ -604,14 +599,16 @@ export function StepViewer({
             {step.topics.map((topic, i) => {
               const isTopicActive = activeView.topicId === topic.id;
               const isExpanded = expandedTopics.has(topic.id);
-              const hasSubtopics = topic.subtopics && topic.subtopics.length > 0;
-              const hasIntro = !!topic.content;
               const isActive = isTopicActive && (activeView.kind === "topic" || activeView.kind === "subtopic");
+
+              const subtopicMatches = (topic.content || "").match(/^###\s+(.*)$/gm) || [];
+              const subtopics = subtopicMatches.map(m => m.replace(/^###\s+/, '').trim());
+              const hasAnchors = subtopics.length > 0;
 
               return (
                 <div key={topic.id} className={`rounded-xl transition-all ${isActive ? "bg-primary/5 border border-primary/10 mb-2 p-1" : "border border-transparent"}`}>
-                  <div className="flex items-start gap-1">
-                    <button onClick={() => { if (hasIntro) navigate({ kind: "topic", topicId: topic.id }); else if (hasSubtopics) { toggleTopicExpand(topic.id); if (!isTopicActive && topic.subtopics![0]) navigate({ kind: "subtopic", topicId: topic.id, subtopicId: topic.subtopics![0].id }); } else navigate({ kind: "topic", topicId: topic.id }); }}
+                  <div className="flex items-center gap-1 group">
+                    <button onClick={() => navigate({ kind: "topic", topicId: topic.id })}
                       className={`flex-1 flex items-start gap-3 px-3 py-2 text-sm text-left transition-all rounded-lg ${isActive ? "text-primary font-bold" : "text-muted-foreground hover:text-foreground"}`}
                     >
                       <span className={`text-[10px] font-mono shrink-0 mt-0.5 ${isActive ? "text-primary/70" : "text-muted-foreground/40"}`}>
@@ -621,31 +618,52 @@ export function StepViewer({
                       </span>
                       <div className="flex-1 min-w-0 flex items-start justify-between gap-1">
                         <span className="leading-snug break-words">{topic.title}</span>
-                        <span className="text-[9px] text-muted-foreground/60 font-medium shrink-0 mt-0.5">{getTopicReadTime(topic)}m</span>
+                        <span className="text-[9px] text-muted-foreground/60 font-medium shrink-0 mt-0.5">{hasAnchors ? "" : getTopicReadTime(topic) + "m"}</span>
                       </div>
                     </button>
-                    {hasSubtopics && (
-                      <button onClick={() => toggleTopicExpand(topic.id)} className="p-1.5 mt-1 hover:bg-muted/60 rounded-md shrink-0 text-muted-foreground hover:text-foreground">
-                        {isExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+
+                    {hasAnchors && (
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setExpandedTopics(prev => {
+                            const n = new Set(prev);
+                            if (n.has(topic.id)) n.delete(topic.id); else n.add(topic.id);
+                            return n;
+                          });
+                        }}
+                        className="p-1.5 rounded-md hover:bg-muted text-muted-foreground/40 hover:text-foreground mr-2 group/chevron transition-colors"
+                      >
+                        <ChevronRight className={`h-3.5 w-3.5 transition-transform duration-200 ${isExpanded ? "rotate-90 text-foreground" : "rotate-0"}`} />
                       </button>
                     )}
                   </div>
 
-                  {hasSubtopics && isExpanded && (
-                    <div className="ml-4 pl-3 mt-0 mb-1 border-l-2 border-muted/50 flex flex-col gap-0.5">
-                      {topic.subtopics!.map((sub) => {
-                        const isSubActive = activeView.kind === "subtopic" && activeView.subtopicId === sub.id;
-                        return (
-                          <button key={sub.id} onClick={() => navigate({ kind: "subtopic", topicId: topic.id, subtopicId: sub.id })}
-                            className={`text-xs text-left py-1.5 px-2.5 rounded-md transition-all ${isSubActive ? "bg-primary/10 text-primary font-semibold border border-primary/20" : "text-muted-foreground hover:bg-muted/30 hover:text-foreground border border-transparent"}`}
-                          >
-                            <div className="flex items-center justify-between w-full gap-1">
-                              <span className="truncate">{sub.title}</span>
-                              <span className="text-[9px] text-muted-foreground/50 font-medium shrink-0">{getReadTime(sub.content)}m</span>
-                            </div>
-                          </button>
-                        );
-                      })}
+                  {isExpanded && hasAnchors && (
+                    <div className="ml-5 pl-3 mt-1 mb-1 border-l-2 border-primary/20 flex flex-col gap-0.5">
+                      {(() => {
+                        return subtopics.map((subtitle, idx) => {
+                          const slug = subtitle.toLowerCase()
+                            .replace(/[^\w\s-]/g, '')
+                            .replace(/\s+/g, '-')
+                            .replace(/-+/g, '-')
+                            .trim();
+
+                          return (
+                            <button
+                              key={idx}
+                              onClick={() => {
+                                const el = document.getElementById(slug);
+                                if (el) el.scrollIntoView({ behavior: "smooth" });
+                              }}
+                              className="text-xs text-left py-1.5 px-2 rounded-md text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-all flex items-center gap-1.5"
+                            >
+                              <div className="w-1 h-1 rounded-full bg-muted-foreground/40 shrink-0" />
+                              <span className="truncate">{subtitle}</span>
+                            </button>
+                          );
+                        });
+                      })()}
                     </div>
                   )}
                 </div>
@@ -661,123 +679,129 @@ export function StepViewer({
               </div>
             </div>
           )}
+          </div>
         </aside>
 
         {/* Main content */}
-        <main className="flex-1 min-w-0 px-4 md:px-10 py-8 lg:py-12 md:border-l">
+        <main className={`flex-1 min-w-0 px-4 ${isSidebarCollapsed ? "md:px-16" : "md:px-10"} py-8 lg:py-12 ${isSidebarCollapsed ? "" : "md:border-l"} transition-all duration-300`}>
           {(activeTopic || activeSubtopic) ? (
             <article id="devhub-content-area" className="max-w-4xl mx-auto">
 
               <header className="mb-10 pb-8 border-b space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-4">
 
-                  {/* Local search */}
-                  <div className="flex items-center gap-2 flex-1 max-w-md relative">
-                    <Search className="h-3.5 w-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/60" />
-                    <input
-                      type="text"
-                      placeholder="Search subtopics / content..."
-                      value={localSearch || ""}
-                      onChange={(e) => setLocalSearch(e.target.value)}
-                      onFocus={() => setLocalSearchOpen(true)}
-                      onBlur={() => setTimeout(() => setLocalSearchOpen(false), 200)}
-                      className="pl-8 pr-3 py-1.5 rounded-lg bg-muted/50 border text-xs w-full focus:outline-none focus:ring-1 focus:ring-primary/40 focus:bg-background transition-all"
-                    />
-
-                    {localSearchOpen && localSearch && (
-                      <div className="absolute top-full left-0 right-0 mt-1 bg-popover/95 backdrop-blur-xl border rounded-xl shadow-2xl z-50 overflow-hidden max-h-60 overflow-y-auto">
-                        <div className="p-1.5 space-y-0.5">
-                          {searchResults.length > 0 ? (
-                            searchResults.map((item, idx) => (
-                              <button
-                                key={`${item.topicId}-${item.subtopicId || idx}`}
-                                onClick={() => {
-                                  setLocalSearch("");
-                                  if (viewMode === "CONTINUOUS") {
-                                    const el = document.getElementById(item.subtopicId ? `subtopic-${item.subtopicId}` : `topic-${item.topicId}`);
-                                    el?.scrollIntoView({ behavior: 'smooth' });
-                                  } else {
-                                    if (item.kind === "subtopic") {
-                                      navigate({ kind: "subtopic", topicId: item.topicId, subtopicId: item.subtopicId! });
-                                    } else {
-                                      navigate({ kind: "topic", topicId: item.topicId });
-                                    }
-                                  }
-                                }}
-                                className="w-full text-left px-3 py-2 rounded-lg text-xs hover:bg-primary/10 hover:text-primary transition-colors flex flex-col gap-0.5 group"
-                              >
-                                <span className="truncate font-medium flex items-center gap-1.5">
-                                  <div className="w-1.5 h-1.5 rounded-full bg-primary/40 group-hover:bg-primary shrink-0" />
-                                  {item.title}
-                                </span>
-                              </button>
-                            ))
-                          ) : (
-                            <p className="p-3 text-[11px] text-muted-foreground text-center">No matching results found</p>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* View mode toggle */}
-                  {!isBlog && (
-
-                  <div className="flex bg-muted p-1 rounded-lg w-fit gap-1 text-[11px] font-bold border">
-                    <button
-                      onClick={() => setViewMode("PAGINATED")}
-                      className={`px-3 py-1.5 rounded-md transition-all ${viewMode === "PAGINATED" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                  {/* Expand Sidebar for Desktop */}
+                  {isSidebarCollapsed && (
+                    <button 
+                      onClick={() => setIsSidebarCollapsed(false)}
+                      className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg border bg-background hover:bg-muted text-xs font-semibold text-muted-foreground hover:text-foreground transition-all shadow-sm"
                     >
-                      Step-by-Step
+                      <ChevronRight className="h-3.5 w-3.5" /> Table of Contents
                     </button>
-                    <button
-                      onClick={() => setViewMode("CONTINUOUS")}
-                      className={`px-3 py-1.5 rounded-md transition-all ${viewMode === "CONTINUOUS" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-                    >
-                      Continuous
-                    </button>
-                  </div>
                   )}
 
-                </div>
-
-                {/* ── MARK READ row ─────────────────────────────────────────────────
-                    FIX: was using <Bookmark> icon — now correctly uses <Checkbox>.
-                    The checkbox toggles the current topic as complete/incomplete.
-                    Title text updates to reflect current state.
-                */}
-                <div className="flex items-center gap-3">
-                  {activeTopic && (
-                    <div className="flex items-center gap-2.5">
-                      <Checkbox
-                        id="mark-read-checkbox"
-                        checked={completedItems.includes(activeTopic.id)}
-                        onCheckedChange={() => toggleComplete(activeTopic.id, activeTopic)}
-                        title={completedItems.includes(activeTopic.id) ? "Mark as unread" : "Mark as read"}
-                        className="h-5 w-5 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500 border-muted-foreground/40 rounded-md transition-colors cursor-pointer"
+                  {/* Local search + Bookmark grouped */}
+                  <div className="flex items-center gap-2 flex-1 max-w-lg">
+                    <div className="relative flex-1">
+                      <Search className="h-3.5 w-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/60" />
+                      <input
+                        type="text"
+                        placeholder="Search subtopics / content..."
+                        value={localSearch || ""}
+                        onChange={(e) => setLocalSearch(e.target.value)}
+                        onFocus={() => setLocalSearchOpen(true)}
+                        onBlur={() => setTimeout(() => setLocalSearchOpen(false), 200)}
+                        className="pl-8 pr-3 py-1.5 rounded-lg bg-muted/50 border text-xs w-full focus:outline-none focus:ring-1 focus:ring-primary/40 focus:bg-background transition-all"
                       />
-                      <label
-                        htmlFor="mark-read-checkbox"
-                        className={`text-[10px] uppercase font-bold tracking-wider cursor-pointer select-none transition-colors ${completedItems.includes(activeTopic.id)
-                          ? "text-emerald-500"
-                          : "text-muted-foreground/60 hover:text-muted-foreground"
-                          }`}
-                      >
-                        {completedItems.includes(activeTopic.id) ? "Completed ✓" : "Mark Read"}
-                      </label>
 
-                      {/* Bookmark button kept separately, does not affect progress */}
+                      {localSearchOpen && localSearch && (
+                        <div className="absolute top-full left-0 right-0 mt-1 bg-popover/95 backdrop-blur-xl border rounded-xl shadow-2xl z-50 overflow-hidden max-h-60 overflow-y-auto">
+                          <div className="p-1.5 space-y-0.5">
+                            {searchResults.length > 0 ? (
+                              searchResults.map((item, idx) => (
+                                <button
+                                  key={`${item.topicId}-${item.subtopicId || idx}`}
+                                  onClick={() => {
+                                    setLocalSearch("");
+                                    if (viewMode === "CONTINUOUS") {
+                                      const el = document.getElementById(item.subtopicId ? `subtopic-${item.subtopicId}` : `topic-${item.topicId}`);
+                                      el?.scrollIntoView({ behavior: 'smooth' });
+                                    } else {
+                                      if (item.kind === "subtopic") {
+                                        navigate({ kind: "subtopic", topicId: item.topicId, subtopicId: item.subtopicId! });
+                                      } else {
+                                        navigate({ kind: "topic", topicId: item.topicId });
+                                      }
+                                    }
+                                  }}
+                                  className="w-full text-left px-3 py-2 rounded-lg text-xs hover:bg-primary/10 hover:text-primary transition-colors flex flex-col gap-0.5 group"
+                                >
+                                  <span className="truncate font-medium flex items-center gap-1.5">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-primary/40 group-hover:bg-primary shrink-0" />
+                                    {item.title}
+                                  </span>
+                                </button>
+                              ))
+                            ) : (
+                              <p className="p-3 text-[11px] text-muted-foreground text-center">No matching results found</p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Bookmark Button sits immediately after search bar */}
+                    {activeTopic && (
                       <button
                         title="Bookmark this topic"
                         onClick={() => toggleBookmark(activeTopic.id)}
-                        className={`ml-1 p-1.5 rounded-lg border transition-all ${bookmarkedItems.includes(activeTopic.id)
+                        className={`p-1.5 rounded-lg border transition-all shrink-0 ${bookmarkedItems.includes(activeTopic.id)
                           ? "bg-primary/10 text-primary border-primary/20"
                           : "bg-muted/30 text-muted-foreground border-transparent hover:border-border"
                           }`}
                       >
                         <Bookmark className="h-4 w-4" />
                       </button>
-                    </div>
+                    )}
+                  </div>
+
+                  {/* View mode toggle */}
+                  <div className="flex items-center gap-2">
+                    {!isBlog && (
+                      <div className="flex flex-col items-end gap-1">
+                        <div className="flex bg-muted p-1 rounded-lg w-fit gap-1 text-[11px] font-bold border shadow-sm">
+                          <button
+                            onClick={() => setViewMode("PAGINATED")}
+                            className={`px-3 py-1.5 rounded-md transition-all ${viewMode === "PAGINATED" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                          >
+                            Step-by-Step
+                          </button>
+                          <button
+                            onClick={() => setViewMode("CONTINUOUS")}
+                            className={`px-3 py-1.5 rounded-md transition-all ${viewMode === "CONTINUOUS" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                          >
+                            Continuous
+                          </button>
+                        </div>
+                        <p className="text-[9px] text-muted-foreground/60 font-medium pr-1">
+                          {viewMode === "PAGINATED" ? "💡 Tip: Use Continuous for full scrolling" : "💡 Tip: Use Step-by-Step for focused reading"}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* ── Heading Row ── */}
+                <div className="flex items-center gap-3">
+                  {/* Checkbox to toggle completion */}
+                  {activeTopic && (
+                    <Checkbox
+                      id="mark-read-checkbox"
+                      checked={completedItems.includes(activeTopic.id)}
+                      onCheckedChange={() => toggleComplete(activeTopic.id, activeTopic)}
+                      title={completedItems.includes(activeTopic.id) ? "Mark completed" : "Mark as read"}
+                      className="h-5 w-5 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500 border-muted-foreground/40 rounded-md transition-colors cursor-pointer shrink-0"
+                    />
                   )}
 
                   <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight leading-tight text-foreground/95">
@@ -851,10 +875,20 @@ export function StepViewer({
                   </button>
                 ) : !isStandalone && prevStep ? (
                   <Link href={`/modules/${prevStep.id}?roadmapId=${roadmap.id}`} className="flex-1 flex flex-col items-start gap-1 p-4 border rounded-2xl hover:bg-muted transition-all text-left group">
-                    <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-muted-foreground font-bold"><ArrowLeft /> Prev Step</span>
+                    <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-muted-foreground font-bold"><ArrowLeft className="h-3.5 w-3.5 group-hover:-translate-x-1 transition-transform" /> Prev Step</span>
                     <p className="text-base font-bold group-hover:text-primary transition-colors">{prevStep.title}</p>
                   </Link>
-                ) : <div className="flex-1" />}
+                ) : isStandalone ? (
+                  <Link href="/modules" className="flex-1 flex flex-col items-start gap-1 p-4 border rounded-2xl hover:bg-muted/30 transition-all text-left group">
+                    <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-muted-foreground font-bold"><ArrowLeft className="h-3.5 w-3.5 group-hover:-translate-x-1 transition-transform" /> Exit</span>
+                    <p className="text-base font-bold group-hover:text-primary transition-colors">Back to Modules</p>
+                  </Link>
+                ) : (
+                  <Link href={`/roadmap/${roadmap.id}`} className="flex-1 flex flex-col items-start gap-1 p-4 border rounded-2xl hover:bg-muted/30 transition-all text-left group">
+                    <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-muted-foreground font-bold"><ArrowLeft className="h-3.5 w-3.5 group-hover:-translate-x-1 transition-transform" /> Exit</span>
+                    <p className="text-base font-bold group-hover:text-primary transition-colors">Back to Roadmap</p>
+                  </Link>
+                )}
 
                 {currentNavIndex < navSequence.length - 1 ? (
                   <button onClick={() => goToNav(currentNavIndex + 1)} className="flex-1 flex flex-col items-end gap-1 p-4 border rounded-2xl hover:bg-muted hover:border-foreground/30 transition-all text-right group">

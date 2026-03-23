@@ -7,12 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Save, Plus, Code2, Type, FileText,
-  Loader2, X, Trash2, ChevronDown, ChevronRight, Image as ImageIcon
+  Loader2, X, Trash2, ChevronDown, ChevronRight, Image as ImageIcon,
+  Eye, Edit
 } from "lucide-react";
 import { toast } from "sonner";
-import { Editor } from "@/components/editor";
 
 import { marked } from "marked";
+import { parseMarkdown } from "@/lib/markdown";
 
 
 interface SubtopicForm { title: string; content: string; }
@@ -56,6 +57,7 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
   const [topicParseMode, setTopicParseMode] = useState<Record<number, "CONTINUOUS" | "STEPWISE">>({});
   const [collapsedIntro, setCollapsedIntro] = useState<Record<number, boolean>>({});
   const [globalResources, setGlobalResources] = useState<any[]>([]);
+  const [previewModes, setPreviewModes] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     fetch('/api/admin/resources')
@@ -69,29 +71,17 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
     try {
       const mode = topicParseMode[ti] || "STEPWISE";
       const lines = topicMarkdownInput.split("\n");
-      const subtopics: { title: string; content: string }[] = [];
-      let currentSub: { title: string; content: string } | null = null;
       let introContent = "";
 
       for (const line of lines) {
-        const trimmed = line.trim();
-        const isHeader = mode === "STEPWISE" ? (/^#+\s+/.test(trimmed) && trimmed.split(" ")[0].length >= 2) : false;
-
-        if (isHeader) {
-          currentSub = { title: trimmed.replace(/^#+\s+/, "").trim(), content: "" };
-          subtopics.push(currentSub);
-        } else if (currentSub) {
-          currentSub.content += line + "\n";
-        } else {
-          introContent += line + "\n";
-        }
+        introContent += line + "\n";
       }
 
       const nt = [...form.topics];
       nt[ti] = {
         ...nt[ti],
         content: introContent.trim(),
-        subtopics: subtopics.map(s => ({ title: s.title, content: s.content.trim() })),
+        subtopics: [],
         expanded: true
       };
 
@@ -121,17 +111,13 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
             difficulty: data.difficulty || "BEGINNER",
             tags: data.tags || "",
             topics: (data.topics || []).map((t: any) => {
-              const tc = (t.content || "").trim();
-              const isHTML = tc.startsWith("<") && tc.includes(">");
               return {
                 title: t.title,
-                content: isHTML ? tc : marked.parse(tc) as string,
+                content: t.content || "",
                 subtopics: (t.subtopics || []).map((s: any) => {
-                  const sc = (s.content || "").trim();
-                  const isHTML = sc.startsWith("<") && sc.includes(">");
                   return {
                     title: s.title,
-                    content: isHTML ? sc : marked.parse(sc) as string,
+                    content: s.content || "",
                   };
                 }),
                 expanded: false,
@@ -167,6 +153,27 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
     }
   };
 
+  const handleContentImageUpload = async (ti: number, si: number | null, file: File | undefined) => {
+    if (!file) return;
+    const formData = new FormData();
+    formData.append("file", file);
+    try {
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      const data = await res.json();
+      if (data.url) {
+        if (si !== null) {
+          const current = form.topics[ti].subtopics[si].content || "";
+          updateSubtopic(ti, si, { content: current + `\n\n![Image](${data.url})\n` });
+        } else {
+          const current = form.topics[ti].content || "";
+          updateTopic(ti, { content: current + `\n\n![Image](${data.url})\n` });
+        }
+      }
+    } catch {
+       setError("Image upload failed");
+    }
+  };
+
   // ── JSON parse ──────────────────────────────────────────────────────────
   const handleJsonParse = () => {
     try {
@@ -194,7 +201,6 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
     try {
       const lines = markdownInput.split("\n");
       let currentTopic: TopicForm | null = null;
-      let currentSubtopic: SubtopicForm | null = null;
       const topics: TopicForm[] = [];
       
       let mTitle = form.title;
@@ -208,7 +214,6 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
           mTitle = trimmed.replace(/^# /, "").trim();
           foundHeader1 = true;
         } else if (trimmed.startsWith("## ")) {
-          currentSubtopic = null;
           currentTopic = {
             title: trimmed.replace(/^## /, "").trim(),
             content: "",
@@ -216,15 +221,6 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
             expanded: false,
           };
           topics.push(currentTopic);
-        } else if ((trimmed.startsWith("### ") || trimmed.startsWith("#### ")) && currentTopic) {
-          const depth = trimmed.indexOf(" ") + 1;
-          currentSubtopic = {
-            title: trimmed.replace(/^#+ /, "").trim(),
-            content: "",
-          };
-          currentTopic.subtopics.push(currentSubtopic);
-        } else if (currentSubtopic) {
-          currentSubtopic.content += line + "\n";
         } else if (currentTopic) {
           currentTopic.content += line + "\n";
         } else if (!currentTopic && foundHeader1 && trimmed && !trimmed.startsWith("---")) {
@@ -610,63 +606,61 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
                         )}
                       </div>
                       {!collapsedIntro[ti] && (
-                        <Editor
-                          content={topic.content}
-                          onChange={(html) => updateTopic(ti, { content: html })}
-                        />
+                        <div className="space-y-1">
+                          <div className="flex justify-end gap-1">
+                            <Button 
+                              type="button" 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-6 text-[10px] gap-1 px-1.5 text-muted-foreground hover:text-foreground"
+                              onClick={() => setPreviewModes(prev => ({ ...prev, [`intro-${ti}`]: !prev[`intro-${ti}`] }))}
+                            >
+                              {previewModes[`intro-${ti}`] ? <Edit className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                              {previewModes[`intro-${ti}`] ? "Edit" : "Preview"}
+                            </Button>
+
+                            {!previewModes[`intro-${ti}`] && (
+                              <>
+                                <input 
+                                  type="file" 
+                                  accept="image/*" 
+                                  className="hidden" 
+                                  id={`upload-intro-${ti}`} 
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) handleContentImageUpload(ti, null, file);
+                                  }} 
+                                />
+                                <Button 
+                                  type="button" 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="h-6 text-[10px] gap-1 px-1.5 text-muted-foreground hover:text-foreground"
+                                  onClick={() => document.getElementById(`upload-intro-${ti}`)?.click()}
+                                >
+                                  <ImageIcon className="h-3 w-3" /> Upload Image
+                                </Button>
+                              </>
+                            )}
+                          </div>
+
+                          {previewModes[`intro-${ti}`] ? (
+                            <div 
+                              className="p-3 border rounded-md bg-muted/20 prose prose-sm dark:prose-invert max-w-none prose-table:border prose-th:bg-muted prose-pre:bg-black/40 prose-code:bg-black/20 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none" 
+                              dangerouslySetInnerHTML={{ __html: parseMarkdown(topic.content || "") }} 
+                            />
+                          ) : (
+                            <textarea
+                              value={topic.content || ""}
+                              onChange={(e) => updateTopic(ti, { content: e.target.value })}
+                              className="w-full h-32 rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring font-mono"
+                              placeholder="Intro content (Markdown supported)..."
+                            />
+                          )}
+                        </div>
                       )}
                     </div>
 
-                    {/* Subtopics */}
-                    <div className="space-y-3 pt-2 border-t">
-                      <div className="flex items-center justify-between">
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Subtopics ({topic.subtopics.length})</h4>
-                        <div className="flex gap-1.5">
-                          {topic.subtopics.length > 0 && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="text-xs h-7 text-destructive hover:bg-destructive/10"
-                              onClick={() => { if (confirm("Clear all subtopics?")) updateTopic(ti, { subtopics: [] }); }}
-                            >
-                              <Trash2 className="h-3 w-3 mr-1" /> Clear All
-                            </Button>
-                          )}
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-xs h-7"
-                            onClick={() => updateTopic(ti, { subtopics: [...topic.subtopics, emptySubtopic()] })}
-                          >
-                            <Plus className="h-3 w-3 mr-1" /> Add Subtopic
-                          </Button>
-                        </div>
-                      </div>
-
-                      {topic.subtopics.map((sub, si) => (
-                        <div key={si} className="border rounded-lg p-4 space-y-3 bg-muted/5 border-l-2 border-l-primary/20">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-mono text-primary/60">{String(si + 1).padStart(2, "0")}</span>
-                            <Input
-                              value={sub.title}
-                              onChange={e => updateSubtopic(ti, si, { title: e.target.value })}
-                              placeholder="Subtopic title"
-                              className="flex-1 h-8 text-sm"
-                            />
-                            <button
-                              onClick={() => updateTopic(ti, { subtopics: topic.subtopics.filter((_, j) => j !== si) })}
-                              className="p-1.5 hover:bg-destructive/10 rounded"
-                            >
-                              <X className="h-3.5 w-3.5 text-destructive" />
-                            </button>
-                          </div>
-                          <Editor
-                            content={sub.content}
-                            onChange={(html) => updateSubtopic(ti, si, { content: html })}
-                          />
-                        </div>
-                      ))}
-                    </div>
                   </CardContent>
                 )}
               </Card>

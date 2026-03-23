@@ -2879,4 +2879,4 @@ Every single tool above runs on Linux and uses the commands you learned here. No
 > - [Linux Man Pages](https://man7.org/linux/man-pages/) — Official documentation for every command
 > - [OverTheWire: Bandit](https://overthewire.org/wargames/bandit/) — Linux command challenges (game format!)
 > - [Linux Journey](https://linuxjourney.com) — Free interactive learning path
-> - [TLDRPages](https://tldr.sh) — Simplified man pages with practical examples
+> - [TLDRPages](https://tldr.sh![alt text](image-2.png)) — Simplified man pages with practical examples

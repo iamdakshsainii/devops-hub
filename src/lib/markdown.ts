@@ -153,6 +153,22 @@ export function buildRenderer() {
 </div>`;
   };
 
+  renderer.heading = function ({ text, depth }: { text: string; depth: number }) {
+    const slug = text.toLowerCase()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .trim();
+    const sizeClasses: Record<number, string> = {
+      1: "text-3xl font-extrabold mb-6 mt-12",
+      2: "text-2xl font-bold mb-4 mt-10 scroll-mt-24",
+      3: "text-xl font-bold mb-3 mt-8 scroll-mt-24",
+      4: "text-lg font-bold mb-2 mt-6",
+    };
+    const classes = sizeClasses[depth] || "font-bold";
+    return `<h${depth} id="${slug}" class="${classes}">${text}</h${depth}>`;
+  };
+
   return renderer;
 }
 
