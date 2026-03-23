@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ArrowLeft, Clock, Eye, Heart, MessageSquare, Bookmark, Reply, Tag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BlogContent } from "../blog-content";
+import { BlogContent, SwitchViewButton } from "../blog-content";
 
 export const dynamic = "force-dynamic";
 
@@ -89,7 +89,7 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
 
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl space-y-6">
+    <div className="container mx-auto px-4 py-8 max-w-7xl space-y-6">
 
       <Link href="/blog" className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors mb-2">
          <ArrowLeft className="h-4 w-4" /> Back to Blog
@@ -108,8 +108,12 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
 
          <div className="flex flex-col items-center justify-center gap-2 pt-4 border-t border-border/20 max-w-xs mx-auto">
              <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center font-bold text-xs ring-1 ring-primary/20">
-                     {post.author?.fullName?.[0]?.toUpperCase() || "A"}
+                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center font-bold text-xs ring-1 ring-primary/20 overflow-hidden">
+                      {post.author?.avatarUrl ? (
+                          <img src={post.author.avatarUrl} className="h-full w-full object-cover" alt={post.author.fullName || "Author"} />
+                      ) : (
+                          post.author?.fullName?.[0]?.toUpperCase() || "A"
+                      )}
                   </div>
                   <div className="text-left">
                       <p className="text-xs font-bold text-foreground">{post.author?.fullName || "Admin"}</p>
@@ -124,22 +128,19 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
              <span className="h-1 w-1 rounded-full bg-muted-foreground/40" />
              <span className="flex items-center gap-1"><Eye className="h-3.5 w-3.5" /> {post.viewCount} views</span>
          </div>
+
+         <SwitchViewButton />
       </header>
 
       <div className="flex flex-col lg:grid lg:grid-cols-10 gap-8">
          {/* Main Content (7/10) */}
          <div className="lg:col-span-7">
-              {post.coverImage && (
-                  <div className="w-full relative overflow-hidden rounded-2xl border border-border/20 mb-8 bg-card/60 shadow-sm flex items-center justify-center">
-                      <img src={post.coverImage} className="object-contain w-full h-auto max-h-[480px]" alt={post.title} />
-                  </div>
-              )}
+              {/* Cover moved below Client layout Toggle to support stacking bounds */}
 
 
               <BlogContent post={post} initialComments={comments} />
          </div>
 
-         {/* Sidebar (3/10) */}
          <div className="lg:col-span-3 space-y-6 sticky top-24 self-start">
               <Card className="bg-gradient-to-br from-primary/5 via-card/40 to-background/10 backdrop-blur-xl rounded-2xl border border-primary/10 shadow-[0_0_50px_-12px_rgba(0,0,0,0.3)] shadow-primary/5">
                   <CardHeader className="pb-3 border-b border-border/10">
@@ -175,8 +176,12 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
                       <CardTitle className="text-sm font-bold">About Author</CardTitle>
                   </CardHeader>
                   <CardContent className="p-4 space-y-3 flex flex-col items-center text-center">
-                      <div className="h-14 w-14 rounded-full bg-primary/20 flex items-center justify-center font-black text-lg ring-2 ring-primary/20 shadow-md">
-                           {post.author.fullName?.[0]?.toUpperCase() || "A"}
+                      <div className="h-14 w-14 rounded-full bg-primary/20 flex items-center justify-center font-black text-lg ring-2 ring-primary/20 shadow-md overflow-hidden">
+                          {post.author?.avatarUrl ? (
+                              <img src={post.author.avatarUrl} className="h-full w-full object-cover" alt={post.author.fullName || "Author"} />
+                          ) : (
+                              post.author?.fullName?.[0]?.toUpperCase() || "A"
+                          )}
                       </div>
                       <div>
                           <p className="text-sm font-bold text-foreground">{post.author.fullName}</p>

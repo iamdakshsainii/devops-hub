@@ -401,6 +401,30 @@ export function StepViewer({
       ? activeTopic?.subtopics?.find((s) => s.id === activeView.subtopicId) ?? null
       : null;
 
+  const searchResults = useMemo(() => {
+    if (!localSearch) return [];
+
+    return step.topics.flatMap((topic, tIdx) => {
+      const matches: { kind: "topic" | "subtopic"; topicId: string; subtopicId?: string; title: string; topicLabel: string }[] = [];
+      const sTerm = localSearch.toLowerCase();
+
+      const tTitle = topic.title.toLowerCase();
+
+      if (tTitle.includes(sTerm)) {
+        matches.push({ kind: "topic", topicId: topic.id, title: topic.title, topicLabel: `Topic ${tIdx + 1}` });
+      }
+
+      topic.subtopics?.forEach((sub) => {
+        const sTitle = sub.title.toLowerCase();
+
+        if (sTitle.includes(sTerm)) {
+          matches.push({ kind: "subtopic", topicId: topic.id, subtopicId: sub.id, title: sub.title, topicLabel: topic.title });
+        }
+      });
+      return matches;
+    });
+  }, [localSearch, step.topics]);
+
   useEffect(() => {
     const t = setTimeout(() => wireCopyButtons("devhub-content-area"), 150);
     return () => clearTimeout(t);
@@ -663,26 +687,33 @@ export function StepViewer({
                     {localSearchOpen && localSearch && (
                       <div className="absolute top-full left-0 right-0 mt-1 bg-popover/95 backdrop-blur-xl border rounded-xl shadow-2xl z-50 overflow-hidden max-h-60 overflow-y-auto">
                         <div className="p-1.5 space-y-0.5">
-                          {activeTopic?.subtopics?.filter(s => s.title.toLowerCase().includes(localSearch.toLowerCase())).map((sub) => (
-                            <button
-                              key={sub.id}
-                              onClick={() => {
-                                setLocalSearch("");
-                                if (viewMode === "CONTINUOUS") {
-                                  const el = document.getElementById(`subtopic-${sub.id}`);
-                                  el?.scrollIntoView({ behavior: 'smooth' });
-                                } else {
-                                  navigate({ kind: "subtopic", topicId: activeTopic.id, subtopicId: sub.id });
-                                }
-                              }}
-                              className="w-full text-left px-3 py-2 rounded-lg text-xs hover:bg-primary/10 hover:text-primary transition-colors flex items-center gap-2 group"
-                            >
-                              <div className="w-1.5 h-1.5 rounded-full bg-primary/40 group-hover:bg-primary shrink-0" />
-                              <span className="truncate font-medium">{sub.title}</span>
-                            </button>
-                          ))}
-                          {(!activeTopic?.subtopics?.filter(s => s.title.toLowerCase().includes(localSearch.toLowerCase())).length) && (
-                            <p className="p-3 text-[11px] text-muted-foreground text-center">No matching headings found</p>
+                          {searchResults.length > 0 ? (
+                            searchResults.map((item, idx) => (
+                              <button
+                                key={`${item.topicId}-${item.subtopicId || idx}`}
+                                onClick={() => {
+                                  setLocalSearch("");
+                                  if (viewMode === "CONTINUOUS") {
+                                    const el = document.getElementById(item.subtopicId ? `subtopic-${item.subtopicId}` : `topic-${item.topicId}`);
+                                    el?.scrollIntoView({ behavior: 'smooth' });
+                                  } else {
+                                    if (item.kind === "subtopic") {
+                                      navigate({ kind: "subtopic", topicId: item.topicId, subtopicId: item.subtopicId! });
+                                    } else {
+                                      navigate({ kind: "topic", topicId: item.topicId });
+                                    }
+                                  }
+                                }}
+                                className="w-full text-left px-3 py-2 rounded-lg text-xs hover:bg-primary/10 hover:text-primary transition-colors flex flex-col gap-0.5 group"
+                              >
+                                <span className="truncate font-medium flex items-center gap-1.5">
+                                  <div className="w-1.5 h-1.5 rounded-full bg-primary/40 group-hover:bg-primary shrink-0" />
+                                  {item.title}
+                                </span>
+                              </button>
+                            ))
+                          ) : (
+                            <p className="p-3 text-[11px] text-muted-foreground text-center">No matching results found</p>
                           )}
                         </div>
                       </div>

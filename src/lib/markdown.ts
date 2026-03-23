@@ -38,7 +38,12 @@ export function buildRenderer() {
   const renderer = new marked.Renderer();
 
   renderer.code = function ({ text, lang }: { text: string; lang?: string }) {
-    const blockId = "code-" + Math.random().toString(36).substring(2, 9);
+    let hash = 0;
+    for (let i = 0; i < text.length; i++) {
+      hash = (hash << 5) - hash + text.charCodeAt(i);
+      hash |= 0;
+    }
+    const blockId = "code-" + Math.abs(hash).toString(36);
     const unescaped = text
 
       .replace(/&amp;/g, "&")

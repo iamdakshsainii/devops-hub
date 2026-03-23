@@ -41,6 +41,12 @@ export function BlogContent({ post, initialComments }: { post: any; initialComme
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [viewMode, setViewMode] = useState<"continuous" | "stepwise">("continuous");
 
+  useEffect(() => {
+     const handleTrigger = () => setViewMode("stepwise");
+     window.addEventListener("switch-to-stepwise", handleTrigger);
+     return () => window.removeEventListener("switch-to-stepwise", handleTrigger);
+  }, []);
+
   const parseBlogToStep = (p: any) => {
      const sections = p.content.split(/\n##\s+/);
      const intro = sections[0];
@@ -136,11 +142,11 @@ Ref of Continuous view button absolute layout flawlessly trigger
 
   return (
     <div className="space-y-12">
-      <div className="flex justify-center p-4 bg-muted/20 border border-border/10 rounded-xl">
-          <Button variant="default" size="sm" className="text-xs font-bold gap-1 bg-primary text-primary-foreground hover:bg-primary/90" onClick={() => setViewMode("stepwise")}>
-               🧭 Switch to Step-wise View
-          </Button>
-      </div>
+      {post.coverImage && (
+          <div className="w-full relative overflow-hidden rounded-2xl border border-border/20 mb-8 bg-card/60 shadow-sm flex items-center justify-center">
+              <img src={post.coverImage} className="object-contain w-full h-auto max-h-[480px]" alt={post.title} />
+          </div>
+      )}
 
       {/* Content */}
       <div 
@@ -205,6 +211,20 @@ Ref of Continuous view button absolute layout flawlessly trigger
              ))}
          </div>
       </div>
+    </div>
+  );
+}
+
+export function SwitchViewButton() {
+  const triggerToggle = () => {
+      window.dispatchEvent(new Event("switch-to-stepwise"));
+  };
+
+  return (
+    <div className="flex justify-center pt-2">
+        <Button variant="default" size="sm" onClick={triggerToggle} className="text-xs font-bold gap-1 bg-primary text-primary-foreground hover:bg-primary/90 rounded-full shadow-sm px-4 h-8 transition-transform hover:scale-105 active:scale-95">
+             🧭 Switch to Step-wise View
+        </Button>
     </div>
   );
 }

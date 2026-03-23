@@ -75,10 +75,10 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
 
       for (const line of lines) {
         const trimmed = line.trim();
-        const isHeader = mode === "STEPWISE" ? (trimmed.startsWith("### ") || trimmed.startsWith("## ")) : false;
+        const isHeader = mode === "STEPWISE" ? (/^#+\s+/.test(trimmed) && trimmed.split(" ")[0].length >= 2) : false;
 
         if (isHeader) {
-          currentSub = { title: trimmed.replace(/^### /, "").replace(/^## /, "").trim(), content: "" };
+          currentSub = { title: trimmed.replace(/^#+\s+/, "").trim(), content: "" };
           subtopics.push(currentSub);
         } else if (currentSub) {
           currentSub.content += line + "\n";
@@ -196,12 +196,18 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
       let currentTopic: TopicForm | null = null;
       let currentSubtopic: SubtopicForm | null = null;
       const topics: TopicForm[] = [];
+      
+      let mTitle = form.title;
+      let mDesc = "";
+      let foundHeader1 = false;
 
       for (const line of lines) {
         const trimmed = line.trim();
 
-        if (trimmed.startsWith("## ")) {
-          // New Topic
+        if (trimmed.startsWith("# ") && !trimmed.startsWith("## ")) {
+          mTitle = trimmed.replace(/^# /, "").trim();
+          foundHeader1 = true;
+        } else if (trimmed.startsWith("## ")) {
           currentSubtopic = null;
           currentTopic = {
             title: trimmed.replace(/^## /, "").trim(),
@@ -210,10 +216,10 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
             expanded: false,
           };
           topics.push(currentTopic);
-        } else if (trimmed.startsWith("### ") && currentTopic) {
-          // New Subtopic under current topic
+        } else if ((trimmed.startsWith("### ") || trimmed.startsWith("#### ")) && currentTopic) {
+          const depth = trimmed.indexOf(" ") + 1;
           currentSubtopic = {
-            title: trimmed.replace(/^### /, "").trim(),
+            title: trimmed.replace(/^#+ /, "").trim(),
             content: "",
           };
           currentTopic.subtopics.push(currentSubtopic);
@@ -221,10 +227,18 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
           currentSubtopic.content += line + "\n";
         } else if (currentTopic) {
           currentTopic.content += line + "\n";
+        } else if (!currentTopic && foundHeader1 && trimmed && !trimmed.startsWith("---")) {
+          // Collect intro text before the first ## as Module Description
+          mDesc += line + "\n";
         }
       }
 
-      setForm({ ...form, topics: replaceExisting ? topics : [...form.topics, ...topics] });
+      setForm({ 
+        ...form, 
+        title: mTitle || form.title,
+        description: mDesc.trim() || form.description,
+        topics: replaceExisting ? topics : [...form.topics, ...topics] 
+      });
       setMode("FORM");
       setMarkdownInput("");
       setError("");
