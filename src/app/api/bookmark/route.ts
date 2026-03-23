@@ -68,9 +68,10 @@ const existing = await prisma.bookmark.findFirst({ where: whereClause });
       status: "added",
       remindMe: created.remindMe,
     });
-  } catch (error) {
-    fs.appendFileSync('c:/my-stuff/devops-hub/.agents/scripts/bookmark_route_trace.log', JSON.stringify({ error: error.message, stack: error.stack }) + '\n');
-console.error("Bookmark error:", error);
+  } catch (error: any) {
+
+    try { require('fs').appendFileSync('c:/my-stuff/devops-hub/.agents/scripts/bookmark_route_trace.log', 'API Error: ' + JSON.stringify(error, Object.getOwnPropertyNames(error)) + '\n'); } catch(e) {}
+    console.error("Bookmark error:", error);
     return NextResponse.json({ message: "Error processing bookmark" }, { status: 500 });
   }
 }

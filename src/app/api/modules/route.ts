@@ -8,9 +8,18 @@ export async function GET(req: Request) {
    try {
       const { searchParams } = new URL(req.url);
       const all = searchParams.get("all") === "true";
+      const search = searchParams.get("search") || "";
 
       const steps = await prisma.roadmapStep.findMany({
-         where: all ? {} : { status: "PUBLISHED" },
+         where: {
+            ...(all ? {} : { status: "PUBLISHED" }),
+            ...(search ? {
+               OR: [
+                  { title: { contains: search, mode: "insensitive" } },
+                  { description: { contains: search, mode: "insensitive" } },
+               ]
+            } : {})
+         },
          orderBy: { createdAt: "desc" },
          include: {
             roadmap: { select: { id: true, title: true, color: true, status: true } },

@@ -1,187 +1,191 @@
-# 📘 DevOps Hub — Course Module Markdown Guide
-Use this as a system prompt when generating Course Modules for the DevOps Network platform.
+# 📘 DevOps Network — Course Module Guide
 
 ---
 
-## 🏆 1. Parser Toggle Settings
+## 1. Header Rules
 
-- **`Stepwise` Mode** — Treats `##` and `###` headers as Individual Cards. Best for step-by-step structured modules.
-- **`Continuous` Mode** — Keeps everything on one scrolling page. Best for narrative walkthroughs.
-
----
-
-## 📝 2. Header Hierarchy
-
-| Syntax | Creates | How It Renders |
-| :--- | :--- | :--- |
-| `# ` (H1) | Module Title | Module cover — use **once only** at the very top |
-| `## ` (H2) | Main Topic | Left sidebar clickable nav item |
-| `### ` (H3) | Subtopic Card | Separate nested card in Step-by-Step view |
-| `#### ` (H4) | Section Divider | Stays **inside** the page — no card break |
-
-### Rules:
-- Use `### ` **ONLY** for major category switches (e.g. `### SSH Keys`, `### LVM Setup`)
-- Use `#### ` for ALL inline sub-headings, small steps, and description titles
-- Never use `### ` for simple titles that should stay on the page
+| Syntax | Creates | Rule |
+|---|---|---|
+| `# ` | Module title | Use **once only** at the very top |
+| `## ` | Sidebar nav item | Every `##` MUST have 3-4 paragraphs of content before any `###` or `####` — otherwise the page renders blank |
+| `### ` | Subtopic card | Use ONLY for major category switches — not for small inline titles |
+| `#### ` | Inline divider | Use for ALL small sub-headings that stay on the page |
 
 ---
 
-## 🚨 3. The Empty Page Problem — Most Important Rule
+## 2. The Empty Page Rule — Most Critical
 
-**If a `##` section jumps immediately to `###` or `####` with no content directly under it, the platform renders that page completely blank — just a title with nothing below it.**
+If a `##` jumps immediately to `###` or `####` with nothing in between, the platform shows a blank page.
 
-```markdown
-# ❌ BAD — Creates a blank ## page:
-## 05. System Administration
-### ✏️ The vi/vim Editor
-
-# ✅ GOOD — ## page has real content:
-## 05. System Administration
-
-System administration is the day-to-day management of a Linux server...
-[3-4 paragraphs + table or diagram or code block here]
-
-### ✏️ The vi/vim Editor
-```
-
-**Every `##` section MUST have direct intro content before the first `###` or `####`.**
-
----
-
-## 📏 4. Content Density — Pages Must Be Scrollable
-
-A 2-line intro under `##` still feels like a blank page. Every `##` intro must be substantial enough to scroll through before the first card appears.
-
-**Minimum for each `##` page intro:**
-- 3–4 paragraphs of explanation
+Every `##` intro MUST include:
+- 3-4 paragraphs of plain English explanation
 - At least one table, code block, or flow diagram
-- Real-world context — what does a DevOps engineer actually do with this?
-- Key rules or gotchas the reader must know before going deeper
+- Real-world "why this matters for DevOps" context
+- The page must require scrolling before the first card appears
 
 ---
 
-## 🗣️ 5. Language Style — Always Beginner Friendly
+## 3. Language Style
 
-Explain every concept in plain language **before** showing commands. Pattern to follow:
-
-```
-1. What IS this? (plain English + analogy if helpful)
-2. Why does it matter in DevOps? (real-world context)
-3. How does it work? (concept first, not commands yet)
+Always explain the concept BEFORE showing commands:
+1. What IS this? (plain English + analogy)
+2. Why does it matter in DevOps?
+3. How does it work? (concept first)
 4. Show the command or code
 5. Comment every non-obvious line inline
-6. Show a real-world usage example
-```
+6. Show a real-world example
 
-Never dump commands without explanation. A beginner should understand WHY before HOW.
+Never dump commands without explanation.
 
 ---
 
-## 🏗️ 6. Full Structure Template
+## 4. Diagrams & Flow Charts — What Works and What Breaks
+
+**Single arrows `↓` `↑` `→` `←` work perfectly — use them freely.**
+
+The platform only breaks on heavy Unicode **box-drawing** characters. Avoid: `──`, `┐`, `┘`, `└`, `│` in box diagrams, `►`, `═`
+
+**For side-by-side diagrams** (like OSI sender/receiver) — skip arrows entirely. Use spacing and a `---` separator line.
+
+**For flow diagrams** — use `↓` between steps. Clean and renders perfectly.
+
+**For request/response diagrams** — use `-->` and `<--` with spaces. Keep it simple.
+
+---
+
+## 5. Code Block Rules — CRITICAL
+
+Every code block MUST open and close with plain triple backticks.
+
+**Correct — always close with plain triple backticks:**
+````
+```bash
+ping google.com
+```
+````
+
+**Wrong — never use a language tag on a closing fence:**
+````
+```bash
+ping google.com
+```text       ← THIS BREAKS THE BLOCK — never do this
+````
+
+**Rules:**
+- Opening fence: ` ```bash `, ` ```text `, ` ``` ` — language tag allowed here
+- Closing fence: ` ``` ` — ALWAYS plain, NEVER add a language tag
+- For plain diagrams and flow charts with no language: use ` ```text ` to open, ` ``` ` to close
+- For bash/shell commands: use ` ```bash ` to open, ` ``` ` to close
+- Never write ` ```text ` as a closing line — it will swallow the next block into the current one
+
+---
+
+## 6. Images
+
+Place real Unsplash images at key concept moments using:
+```
+![Description of what image shows](https://images.unsplash.com/photo-ID?auto=format&fit=crop&w=800&q=80)
+```
+
+If no good image exists, write:
+```
+![Add image here: describe the concept this should show]()
+```
+
+Place images at:
+- Section intro (one per `##`)
+- Before complex diagrams
+- After a big concept is introduced
+
+---
+
+## 7. Structure Template
 
 ```markdown
-# 🐧 Module Title
-Short 1-2 sentence description of what this module covers.
+# Module Title
+1-2 sentence description.
 
 ---
 
-## 🧠 01. First Main Topic
+## 01. First Topic
 
-[REQUIRED — 3-4 paragraphs of intro content]
-[Real-world DevOps context for this section]
-[Table or flow diagram or motivating code example]
-[Key rules or gotchas]
+3-4 paragraphs of intro content here.
+Real-world DevOps context.
+At least one table or diagram.
 
-#### Inline Sub-heading (stays on this page)
-Plain English explanation first, then code...
+#### Inline Sub-heading
+Explanation then code...
 
-\```bash
-command --flag    # what this flag does
-\```
+### Major Subtopic Card
 
-#### Another Inline Sub-heading
-More content staying on the same ## page...
+Explanation of this major topic.
 
-### 🔑 Major Subtopic Card
-Access Control Lists (ACL)
-[Plain language explanation of this subtopic]
-[Enough content to be worth its own card]
-
-#### Sub-section inside the card
-Detail that stays inside the card...
+#### Sub-section inside card
+Detail here...
 
 ---
 
-## 💻 02. Second Main Topic
+## 02. Second Topic
 
-[REQUIRED — never jump straight to ### or ####]
-[Same rules apply — scrollable intro before any cards]
-
-### 🖥️ Major Subtopic Card
-...
+[Never jump straight to ### or #### here]
 ```
 
 ---
 
-## ⚠️ 7. Common Mistakes
-
-| Mistake | Problem | Fix |
-|---|---|---|
-| `##` jumps straight to `###` | Blank page | Add 3–4 paragraphs under `##` first |
-| `##` jumps straight to `####` | Blank page | Same fix |
-| `###` used for small inline titles | Unwanted card pagination | Use `####` instead |
-| 2-line intro under `##` | Page feels empty | Expand with table, diagram, real-world example |
-| Commands without explanation | Beginners lost | Explain concept in plain English first |
-| No real-world context | Content feels academic | Add "what engineers actually do with this" |
-| No inline code comments | Reader doesn't know what flags do | Comment every non-obvious line |
-
----
-
-## ✅ 8. Pre-Publish Checklist
+## 8. Pre-Publish Checklist
 
 ```
 Structure:
-□ # used exactly once at the top
-□ Every ## has 3+ paragraphs before first ### or ####
-□ ### used only for major subtopic cards
-□ #### used for all inline section dividers
+[ ] # used exactly once
+[ ] Every ## has 3+ paragraphs before first ### or ####
+[ ] ### used only for major subtopic cards
+[ ] #### used for all inline dividers
+
+Code Blocks:
+[ ] Every closing fence is plain ``` with no language tag after it
+[ ] No line anywhere reads ```text, ```bash, ```js as a CLOSING fence
+[ ] Opening fences use language tags, closing fences never do
+
+Diagrams:
+[ ] No Unicode box-drawing characters in code blocks
+[ ] All flows use plain ASCII (|, -, >, +, arrows ↓ ↑ → ←)
+[ ] Images placed at key concept moments
 
 Content:
-□ Every concept explained in plain English before code
-□ Every code block has inline comments
-□ Real-world DevOps context in every ## intro
-□ At least one table or diagram per ## section
-□ Each ## page requires scrolling before first card
+[ ] Every concept explained in plain English before code
+[ ] Every code block has inline comments
+[ ] Real-world DevOps context in every ## intro
+[ ] At least one table or diagram per ## section
 
 Language:
-□ Written for a smart beginner
-□ Analogies used for complex concepts
-□ "Why does this matter?" answered for every topic
+[ ] Beginner-friendly throughout
+[ ] Analogies used for complex concepts
+[ ] "Why does this matter?" answered for every topic
 ```
 
 ---
 
-## 💬 9. AI Generation Prompt
+## 9. AI Prompt to Use
 
 ```
-Act as an Elite DevOps Instructor generating a Course Module for the DevOps Network platform.
+Act as an Elite DevOps Instructor creating a Course Module for the DevOps Network platform.
 
-TOPIC: [Your topic here]
+TOPIC: [topic here]
 
-STRICT RULES:
-1. Start with # Module Title + 1-2 sentence description
-2. Use ## for each main topic (sidebar nav items)
-3. EVERY ## MUST have 3-4 paragraphs of intro content directly under it
-   before any ### or #### — otherwise the page renders completely blank
-4. ## intro must include: plain-English explanation, real-world DevOps context,
-   and at least one table, diagram, or code example — must be scrollable
-5. Use ### ONLY for major subtopic cards (major category switches)
-6. Use #### for ALL inline sub-headings that stay on the page
-7. Explain every concept in plain beginner language BEFORE showing commands
-8. Every code block must have inline comments on non-obvious lines
-9. Answer "why does this matter in DevOps?" for every major topic
+RULES:
+1. # Module Title + 1-2 sentence description
+2. ## for each main topic (sidebar nav)
+3. Every ## MUST have 3-4 paragraphs + table/diagram before first ### or ####
+4. ### ONLY for major subtopic cards
+5. #### for all inline sub-headings
+6. Explain every concept in plain beginner English BEFORE showing commands
+7. Comment every non-obvious line in code blocks
+8. Single arrows ↓ ↑ → ← are fine. Avoid only heavy box-drawing chars: ──, └, ┐, ►, ═, │ in diagrams
+9. Place Unsplash images at key concept moments
+10. Answer "why does this matter in DevOps?" for every major topic
+11. CRITICAL — Code block closing fences: always close with plain ``` on its own line.
+    NEVER write ```text or ```bash or any language tag on a closing fence.
+    Opening fence example: ```bash
+    Closing fence example: ```
+    A closing fence with a language tag (e.g. ```text) will break the next block.
 ```
-
----
-
-*Rules validated against live platform — Linux for DevOps module (2024)*

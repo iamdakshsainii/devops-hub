@@ -148,7 +148,7 @@ export function Navbar() {
           </nav>
           <div className="w-full max-w-sm relative group/search">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <div onClick={() => setCmdkOpen(true)} className="flex items-center justify-between w-full bg-muted/40 border border-border/40 rounded-md h-9 pl-9 pr-2 text-sm text-muted-foreground cursor-pointer hover:bg-muted/60 transition-colors">
+            <div onClick={() => setCmdkOpen(true)} title="Search across building blocks, modules, & roadmaps (Ctrl+K)" className="flex items-center justify-between w-full bg-muted/40 border border-border/40 rounded-md h-9 pl-9 pr-2 text-sm text-muted-foreground cursor-pointer hover:bg-muted/60 hover:text-foreground hover:border-foreground/10 hover:shadow-[0_0_15px_rgba(255,255,255,0.02)] transition-all duration-300">
               <span className="flex items-center gap-0.5">
                 Search everything...
               </span>
@@ -258,7 +258,7 @@ export function Navbar() {
             <div className="flex items-center space-x-2 pl-2 border-l ml-2">
               {["ADMIN", "SUPER_ADMIN"].includes(session.user.role) ? (
                 <Link href="/admin" title="Admin Control Panel">
-                  <Button variant="ghost" size="sm" className="hidden sm:inline-flex">Admin Panel</Button>
+                  <Button variant="ghost" title="Manage Administrative dashboard" size="sm" className="hidden sm:inline-flex hover:bg-amber-500/10 hover:text-amber-500 border border-transparent hover:border-amber-500/20 transition-all duration-300 shadow-sm">Admin Panel</Button>
                 </Link>
               ) : (
                 <Link href="/dashboard" title="View your dashboard">
@@ -283,7 +283,7 @@ export function Navbar() {
               <NotificationsDropdown />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="rounded-full overflow-hidden h-8 w-8 hover:opacity-90">
+                  <Button variant="ghost" title="Your Account & Profile" size="icon" className="rounded-full overflow-hidden h-8 w-8 hover:scale-110 hover:ring-2 hover:ring-primary/30 transition-all duration-300">
                     {session.user.image ? (
                       <img src={session.user.image} alt="User" className="h-full w-full object-cover" />
                     ) : (

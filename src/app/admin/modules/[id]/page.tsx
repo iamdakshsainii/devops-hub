@@ -10,6 +10,7 @@ import {
   Loader2, X, Trash2, ChevronDown, ChevronRight, Image as ImageIcon
 } from "lucide-react";
 import { Editor } from "@/components/editor";
+import { marked } from "marked";
 
 interface SubtopicForm { title: string; content: string; }
 interface TopicForm { title: string; content: string; subtopics: SubtopicForm[]; expanded: boolean; }
@@ -61,7 +62,7 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
       for (const line of lines) {
         const trimmed = line.trim();
         const isHeader = mode === "STEPWISE" ? (trimmed.startsWith("### ") || trimmed.startsWith("## ")) : false;
-        
+
         if (isHeader) {
           currentSub = { title: trimmed.replace(/^### /, "").replace(/^## /, "").trim(), content: "" };
           subtopics.push(currentSub);
@@ -91,6 +92,10 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
   useEffect(() => {
     params.then(p => {
       setModuleId(p.id);
+      if (p.id === "new") {
+        setLoading(false);
+        return;
+      }
       fetch(`/api/modules/${p.id}`)
         .then(res => res.json())
         .then(data => {
@@ -100,15 +105,23 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
             icon: data.icon || "📦",
             status: data.status || "PENDING",
             tags: data.tags || "",
-            topics: (data.topics || []).map((t: any) => ({
-              title: t.title,
-              content: t.content || "",
-              subtopics: (t.subtopics || []).map((s: any) => ({
-                title: s.title,
-                content: s.content || ""
-              })),
-              expanded: false,
-            })),
+            topics: (data.topics || []).map((t: any) => {
+              const tc = (t.content || "").trim();
+              const isHTML = tc.startsWith("<") && tc.includes(">");
+              return {
+                title: t.title,
+                content: isHTML ? tc : marked.parse(tc) as string,
+                subtopics: (t.subtopics || []).map((s: any) => {
+                  const sc = (s.content || "").trim();
+                  const isHTML = sc.startsWith("<") && sc.includes(">");
+                  return {
+                    title: s.title,
+                    content: isHTML ? sc : marked.parse(sc) as string,
+                  };
+                }),
+                expanded: false,
+              };
+            }),
             resources: (data.resources || []).map((r: any) => ({
               title: r.title, url: r.url, type: r.type || "ARTICLE", description: r.description || "", imageUrl: r.imageUrl || ""
             })),
@@ -217,8 +230,9 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
       const payload = { ...form };
       if (forceStatus) payload.status = forceStatus;
 
-      const res = await fetch(`/api/modules/${moduleId}`, {
-        method: "PUT",
+      const isNew = moduleId === "new";
+      const res = await fetch(isNew ? `/api/modules` : `/api/modules/${moduleId}`, {
+        method: isNew ? "POST" : "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
@@ -232,7 +246,7 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
     try {
       await fetch(`/api/modules/${moduleId}`, { method: "DELETE" });
       router.push("/admin/modules"); router.refresh();
-    } catch {}
+    } catch { }
   };
 
   // ── Topic helpers ───────────────────────────────────────────────────────
@@ -262,7 +276,7 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
       {/* Header */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Edit Module</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{moduleId === "new" ? "Create Module" : "Edit Module"}</h1>
           <p className="text-muted-foreground mt-1 text-sm">
             <span className="text-xl mr-2">{form.icon}</span>
             {form.title || "Untitled Module"}
@@ -347,14 +361,14 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
                 />
                 <span className="text-sm font-medium">Replace existing topics</span>
               </label>
-              
+
               <Button onClick={handleMarkdownParse} className="gap-2">
                 <FileText className="h-4 w-4" />
                 {replaceExisting ? "Parse & Replace All" : "Parse & Append"}
               </Button>
               <p className="text-xs text-muted-foreground">
-                {replaceExisting 
-                  ? "Existing topics will be wiped and replaced with these." 
+                {replaceExisting
+                  ? "Existing topics will be wiped and replaced with these."
                   : "Topics will be added to the bottom."}
               </p>
             </div>
@@ -405,9 +419,9 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
                   ))}
                 </div>
                 <div className="flex gap-2">
-                  <Input 
+                  <Input
                     id="new-tag"
-                    placeholder="Type tag and press enter" 
+                    placeholder="Type tag and press enter"
                     className="h-9 text-sm"
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
@@ -531,7 +545,7 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
                     {/* Topic content (intro text before subtopics) */}
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <div 
+                        <div
                           className="flex items-center gap-1 cursor-pointer hover:bg-muted/30 p-1 rounded-md transition-colors"
                           onClick={() => setCollapsedIntro({ ...collapsedIntro, [ti]: !collapsedIntro[ti] })}
                         >
@@ -639,65 +653,65 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
                           {finalImageUrl ? (
                             <img src={finalImageUrl} alt={r.title} className="object-cover w-full h-full group-hover:scale-105 transition-all duration-300" />
                           ) : (
-                          <div className="text-muted-foreground/40 flex flex-col items-center gap-1.5">
-                            <ImageIcon className="h-10 w-10 stroke-[1.2]" />
-                            <span className="text-xs">No preview image</span>
+                            <div className="text-muted-foreground/40 flex flex-col items-center gap-1.5">
+                              <ImageIcon className="h-10 w-10 stroke-[1.2]" />
+                              <span className="text-xs">No preview image</span>
+                            </div>
+                          )}
+                          {/* Overlay to upload file */}
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-all duration-200 flex-col px-4 text-center">
+                            <label className="text-xs bg-white text-black font-semibold rounded-md px-2.5 py-1.5 cursor-pointer shadow-sm hover:bg-white/90 transition-colors">
+                              Upload Cover
+                              <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(ri, e.target.files?.[0])} />
+                            </label>
                           </div>
-                        )}
-                        {/* Overlay to upload file */}
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-all duration-200 flex-col px-4 text-center">
-                          <label className="text-xs bg-white text-black font-semibold rounded-md px-2.5 py-1.5 cursor-pointer shadow-sm hover:bg-white/90 transition-colors">
-                            Upload Cover
-                            <input type="file" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(ri, e.target.files?.[0])} />
-                          </label>
-                        </div>
-                        
-                        <button
-                          onClick={() => setForm({ ...form, resources: form.resources.filter((_, j) => j !== ri) })}
-                          className="absolute top-2 right-2 p-1.5 rounded-full bg-white text-destructive hover:bg-destructive hover:text-white transition-all duration-150 shadow-sm border border-border"
-                        >
-                          <X className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                      
-                      <div className="p-3 space-y-2.5">
-                        <Input
-                          value={r.title}
-                          onChange={e => { const nr = [...form.resources]; nr[ri].title = e.target.value; setForm({ ...form, resources: nr }); }}
-                          placeholder="Resource title"
-                          className="h-8 font-medium text-sm"
-                        />
-                        <Input
-                          value={r.url}
-                          onChange={e => { const nr = [...form.resources]; nr[ri].url = e.target.value; setForm({ ...form, resources: nr }); }}
-                          placeholder="URL (https://...)"
-                          className="h-7 text-xs font-mono"
-                        />
-                        <div className="grid grid-cols-[100px_1fr] gap-2">
-                          <select
-                            value={r.type}
-                            onChange={e => { const nr = [...form.resources]; nr[ri].type = e.target.value; setForm({ ...form, resources: nr }); }}
-                            className="h-7 rounded-md border border-input bg-background px-1 text-xs focus:ring-1 focus:ring-ring"
-                          >
-                            <option value="ARTICLE">Article</option>
-                            <option value="VIDEO">Video</option>
-                            <option value="PLAYLIST">Playlist</option>
 
-                            <option value="TOOL">Tool</option>
-                            <option value="NOTES">Notes</option>
-                          </select>
-                          <Input
-                            value={r.description || ""}
-                            onChange={e => { const nr = [...form.resources]; nr[ri].description = e.target.value; setForm({ ...form, resources: nr }); }}
-                            placeholder="Short description"
-                            className="h-7 text-xs"
-                          />
+                          <button
+                            onClick={() => setForm({ ...form, resources: form.resources.filter((_, j) => j !== ri) })}
+                            className="absolute top-2 right-2 p-1.5 rounded-full bg-white text-destructive hover:bg-destructive hover:text-white transition-all duration-150 shadow-sm border border-border"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                    );
-                  })}
+
+                        <div className="p-3 space-y-2.5">
+                          <Input
+                            value={r.title}
+                            onChange={e => { const nr = [...form.resources]; nr[ri].title = e.target.value; setForm({ ...form, resources: nr }); }}
+                            placeholder="Resource title"
+                            className="h-8 font-medium text-sm"
+                          />
+                          <Input
+                            value={r.url}
+                            onChange={e => { const nr = [...form.resources]; nr[ri].url = e.target.value; setForm({ ...form, resources: nr }); }}
+                            placeholder="URL (https://...)"
+                            className="h-7 text-xs font-mono"
+                          />
+                          <div className="grid grid-cols-[100px_1fr] gap-2">
+                            <select
+                              value={r.type}
+                              onChange={e => { const nr = [...form.resources]; nr[ri].type = e.target.value; setForm({ ...form, resources: nr }); }}
+                              className="h-7 rounded-md border border-input bg-background px-1 text-xs focus:ring-1 focus:ring-ring"
+                            >
+                              <option value="ARTICLE">Article</option>
+                              <option value="VIDEO">Video</option>
+                              <option value="PLAYLIST">Playlist</option>
+
+                              <option value="TOOL">Tool</option>
+                              <option value="NOTES">Notes</option>
+                            </select>
+                            <Input
+                              value={r.description || ""}
+                              onChange={e => { const nr = [...form.resources]; nr[ri].description = e.target.value; setForm({ ...form, resources: nr }); }}
+                              placeholder="Short description"
+                              className="h-7 text-xs"
+                            />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { marked } from "marked";
@@ -79,7 +79,34 @@ const resourceIcon = (type: string) => {
 // ── ASCII diagram detector ─────────────────────────────────────────────────
 
 function isAsciiDiagram(text: string): boolean {
-  return /\+[-=+]{2,}/.test(text) || /\|.+\|/.test(text);
+  const lines = text.split("\n").filter((l: string) => l.trim());
+  if (lines.length < 1) return false;
+
+  // Box-drawing: +----+ or |text|
+  if (/\+[-=+]{2,}/.test(text) || /\|.+\|/.test(text)) return true;
+
+  // Any unicode arrow or line-draw character (→ ← ↑ ↓ ↔ ⇒ ⇐ ⟶ ➜ ➡ ─ ═ └ ┌ ┐ ┘ ├ ┤ ┬ ┴ ┼)
+  const arrowCount = (text.match(/[→←↑↓↔↕⇒⇐⇔⟶⟵⟷➜➡➞➝─═└┘┌┐├┤┬┴┼]/g) || []).length;
+  if (arrowCount >= 1) return true;
+
+  // ASCII arrows: -> <-  --> <-- => <=  ==>
+  const asciiArrows = (text.match(/(-->|<--|->|<-|=>|<=|==>)/g) || []).length;
+  if (asciiArrows >= 1) return true;
+
+  // Step/numbered flow: lines starting with 1. 2. 3. style across multiple lines
+  const numberedLines = lines.filter((l: string) => /^\s*\d+[\.\)]\s+\S/.test(l)).length;
+  if (numberedLines >= 3) return true;
+
+  // Indented block with separator line (----, ====)
+  const hasSeparator = lines.some((l: string) => /^[-─═]{4,}$/.test(l.trim()));
+  const hasIndented = lines.filter((l: string) => /^\s{2,}\S/.test(l)).length >= 2;
+  if (hasSeparator && hasIndented) return true;
+
+  // Key: value table-like pattern (used in config/env diagrams)
+  const kvLines = lines.filter((l: string) => /^\s*\S+\s*[:=]\s*\S+/.test(l)).length;
+  if (kvLines >= 3 && lines.length >= 3) return true;
+
+  return false;
 }
 
 // ── Marked custom renderer ────────────────────────────────────────────────
@@ -88,43 +115,136 @@ function buildRenderer() {
   const renderer = new marked.Renderer();
 
   renderer.code = function ({ text, lang }: { text: string; lang?: string }) {
-    const trimmed = text.replace(/^\n+/, "").replace(/\n+$/, "");
-    const isPlain = !lang || !hljs.getLanguage(lang);
-    const validLang = isPlain ? "plaintext" : lang!;
-    const highlighted = hljs.highlight(trimmed, { language: validLang }).value;
+    const unescaped = text
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'");
+    const trimmed = unescaped.replace(/^\n+/, "").replace(/\n+$/, "");
+
+    // ── 1. Parse Filename & Highlights (e.g., js:app.js {2,4-6}) ──
+    let fileName = "";
+    let baseLang = lang || "";
+    let highlightedLines: number[] = [];
+
+    const highlightMatch = baseLang.match(/\{([\d,\-]+)\}/);
+    if (highlightMatch) {
+      const rangeStr = highlightMatch[1];
+      rangeStr.split(",").forEach(part => {
+        if (part.includes("-")) {
+          const [start, end] = part.split("-").map(Number);
+          for (let i = start; i <= end; i++) highlightedLines.push(i);
+        } else {
+          highlightedLines.push(Number(part));
+        }
+      });
+      baseLang = baseLang.replace(/\{([\d,\-]+)\}/, "").trim();
+    }
+
+    if (baseLang.includes(":")) {
+      const parts = baseLang.split(":");
+      baseLang = parts[0].trim();
+      fileName = parts[1].trim();
+    }
+
+    // ── 2. Auto language detection ──
+    let highlighted: string;
+    let validLang = baseLang;
+
+    if (baseLang && hljs.getLanguage(baseLang)) {
+      highlighted = hljs.highlight(trimmed, { language: baseLang }).value;
+    } else {
+      try {
+        const autoResult = hljs.highlightAuto(trimmed);
+        highlighted = autoResult.value;
+        validLang = autoResult.language || "plaintext";
+      } catch (_) {
+        highlighted = trimmed;
+        validLang = "plaintext";
+      }
+    }
+
+    const LANG_LABELS: Record<string, string> = {
+      js: "JavaScript", ts: "TypeScript", jsx: "React JSX", tsx: "React TSX",
+      py: "Python", sh: "Shell", bash: "Bash", sql: "SQL",
+      yaml: "YAML", yml: "YAML", json: "JSON", dockerfile: "Dockerfile",
+      go: "Go", rs: "Rust", css: "CSS", html: "HTML"
+    };
 
     let label: string;
-    let blockClass: string;
-    if (isPlain) {
-      label = isAsciiDiagram(trimmed) ? "◈ DIAGRAM" : "TEXT";
+    let blockClass = "devhub-code-block";
+
+    // ── Check condition based on 'un-tagged' blocks ──
+    const isDiag = (!baseLang || baseLang === "text") && isAsciiDiagram(trimmed);
+
+    if (isDiag) {
+      label = "◈ DIAGRAM";
       blockClass = "devhub-code-block devhub-code-block--terminal";
+      validLang = "plaintext";
     } else {
-      label = validLang.toUpperCase();
-      blockClass = "devhub-code-block";
+      label = LANG_LABELS[validLang] ?? validLang.toUpperCase();
     }
+
+    // ── 3. Line Numbers & Diff Highlighting ──
+    const lines = highlighted.split("\n");
+    const numberedLines = lines.map((lineContent, i) => {
+      const lineNum = i + 1;
+      let diffClass = "";
+      if (validLang === "diff" || baseLang === "diff") {
+        const rawLine = trimmed.split("\n")[i] || "";
+        if (rawLine.startsWith("+")) diffClass = " bg-emerald-500/10 text-emerald-400";
+        else if (rawLine.startsWith("-")) diffClass = " bg-red-500/10 text-red-400";
+      }
+      if (highlightedLines.includes(lineNum)) {
+        diffClass += " bg-amber-500/10 border-l-2 border-amber-500";
+      }
+      return `<div class="flex items-start px-4 hover:bg-muted/30${diffClass}"><span class="select-none text-muted-foreground/40 text-right pr-4 font-mono text-xs w-[35px] shrink-0 mt-[2px]">${lineNum}</span><span class="font-mono text-sm leading-relaxed flex-1">${lineContent || " "}</span></div>`;
+    }).join("");
 
     const encoded = encodeURIComponent(trimmed);
 
     return `
 <div class="${blockClass}" data-lang="${validLang}">
-  <div class="devhub-code-header">
-    <span class="devhub-lang-label">${label}</span>
-    <button class="devhub-copy-btn" data-code="${encoded}" type="button">
-      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-      <span>Copy</span>
-    </button>
+  <div class="devhub-code-header flex items-center justify-between px-4 py-2 bg-muted/50 border-b">
+    <div class="flex items-center gap-2">
+      <span class="devhub-lang-label text-xs font-bold text-primary tracking-wider uppercase">${label}</span>
+      ${fileName ? `<span class="text-[10px] font-mono text-muted-foreground/60 bg-muted px-1.5 py-0.5 rounded border border-border/50">${fileName}</span>` : ""}
+    </div>
+    <div class="flex items-center gap-3">
+      <!-- ── Word Wrap Toggle button ── -->
+      <button onclick="this.closest('.devhub-code-block').querySelector('pre').classList.toggle('!whitespace-pre-wrap'); this.classList.toggle('text-primary');" class="text-muted-foreground/60 hover:text-foreground transition-colors p-0.5 rounded" title="Toggle Word Wrap" type="button">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M3 12h15a3 3 0 1 1 0 6h-4m-2-2-2 2 2 2"/></svg>
+      </button>
+      <button class="devhub-copy-btn text-muted-foreground/60 hover:text-foreground transition-all p-0.5" data-code="${encoded}" type="button" title="Copy code">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+      </button>
+    </div>
   </div>
-  <pre class="devhub-pre"><code class="hljs language-${validLang}">${highlighted}</code></pre>
+  <div class="devhub-code-content py-3 overflow-x-auto bg-background/50">
+    <pre class="bg-transparent p-0 m-0"><code class="p-0 bg-transparent block w-full hljs language-${validLang}">${numberedLines}</code></pre>
+  </div>
 </div>`;
   };
 
   return renderer;
 }
 
-marked.use({ gfm: true, breaks: false, renderer: buildRenderer() });
+marked.use({
+  gfm: true,
+  breaks: false,
+  pedantic: false,
+  renderer: buildRenderer(),
+  hooks: {
+    preprocess(src: string) { return src; },
+  }
+});
 
 function parseMarkdown(content: string): string {
-  return marked.parse(content) as string;
+  const trimmed = (content || "").trim();
+  const isHTML = trimmed.startsWith("<") && trimmed.includes(">");
+  if (isHTML) return trimmed;
+  return marked.parse(trimmed) as string;
 }
 
 // ── Copy button wiring ────────────────────────────────────────────────────
@@ -163,6 +283,10 @@ const PROSE = [
   "prose-a:text-primary prose-a:no-underline prose-a:font-medium hover:prose-a:underline prose-a:underline-offset-4",
   "prose-blockquote:not-italic prose-blockquote:border-l-4 prose-blockquote:border-primary prose-blockquote:bg-primary/5 prose-blockquote:py-3 prose-blockquote:px-5 prose-blockquote:rounded-r-xl",
   "prose-img:rounded-2xl prose-img:border prose-img:shadow-xl",
+  "prose-th:border prose-th:border-border/40 prose-th:px-3.5 prose-th:py-2 prose-th:text-left prose-th:text-xs prose-th:uppercase prose-th:tracking-wider prose-th:bg-muted/40",
+  "prose-td:border prose-td:border-border/20 prose-td:px-3.5 prose-td:py-1.5 prose-td:text-sm prose-td:leading-normal",
+  "prose-table:border-collapse prose-table:w-full prose-table:my-4 prose-table:border prose-table:border-border/20 prose-table:rounded-xl prose-table:overflow-hidden",
+  "[&_table]:block [&_table]:overflow-x-auto",
   "[&_code]:before:content-none [&_code]:after:content-none",
   "[&_:not(pre)>code]:bg-muted [&_:not(pre)>code]:text-foreground [&_:not(pre)>code]:border",
   "[&_:not(pre)>code]:px-1.5 [&_:not(pre)>code]:py-0.5 [&_:not(pre)>code]:rounded",
@@ -204,6 +328,22 @@ export function StepViewer({
   roadmapSteps?: { id: string; title: string; icon: string; order: number }[];
   isStandalone?: boolean;
 }) {
+  const [urlStepId, setUrlStepId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const searchParams = new URLSearchParams(window.location.search);
+      setUrlStepId(searchParams.get("stepId"));
+    }
+  }, []);
+  // Stabilised with useMemo so the set reference doesn't change on every render
+  const allStepTopicIds = useMemo(
+    () => new Set<string>(step.topics.map((t) => t.id)),
+    // step.topics is stable (comes from props) — this only recalculates if the step changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [step.id]
+  );
+
   const getDefaultView = (): ActiveView => {
     const first = step.topics[0];
     if (!first) return { kind: "topic", topicId: "" };
@@ -215,11 +355,12 @@ export function StepViewer({
 
   const [activeView, setActiveView] = useState<ActiveView>(getDefaultView);
 
+  // Persist last active view per step
   useEffect(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem(`lastView_${step.id}`);
       if (saved) {
-        try { setActiveView(JSON.parse(saved)); } catch (e) {}
+        try { setActiveView(JSON.parse(saved)); } catch (e) { }
       }
     }
   }, [step.id]);
@@ -229,7 +370,23 @@ export function StepViewer({
       localStorage.setItem(`lastView_${step.id}`, JSON.stringify(activeView));
     }
   }, [activeView, step.id]);
+
+  // Persist view mode
   const [viewMode, setViewMode] = useState<"PAGINATED" | "CONTINUOUS">("PAGINATED");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(`viewMode_${step.id}`) as "PAGINATED" | "CONTINUOUS";
+      if (saved) setViewMode(saved);
+    }
+  }, [step.id]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(`viewMode_${step.id}`, viewMode);
+    }
+  }, [viewMode, step.id]);
+
   const [expandedTopics, setExpandedTopics] = useState<Set<string>>(() => {
     const s = new Set<string>();
     if (step.topics[0]) s.add(step.topics[0].id);
@@ -238,6 +395,8 @@ export function StepViewer({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [localSearch, setLocalSearch] = useState("");
   const [localSearchOpen, setLocalSearchOpen] = useState(false);
+
+  // FIX: completedItems stores only IDs belonging to THIS step
   const [completedItems, setCompletedItems] = useState<string[]>([]);
   const [bookmarkedItems, setBookmarkedItems] = useState<string[]>([]);
 
@@ -270,36 +429,72 @@ export function StepViewer({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ itemId: id, itemType })
       });
-    } catch (e) {}
+    } catch (e) { }
   };
 
-  // ── Sync Progress Sync Hooks ──────────────────────────────────────────
+  // ── Progress: server is the single source of truth ─────────────────────
+  // localStorage is only used as a write-through cache for optimistic updates
+  // (so the checkbox feels instant). On every load, DB always wins — this
+  // means any device/browser shows the correct progress after login.
   useEffect(() => {
-    const saved = localStorage.getItem(`completed_module_${step.id}`);
-    if (saved) setCompletedItems(JSON.parse(saved));
+    const lsKey = `completed_module_${step.id}`;
 
+    // Show localStorage instantly to avoid flash on same device (best-effort)
+    // A different device will have empty localStorage and show 0% briefly —
+    // that's fine, the fetch below corrects it within ~1 network round-trip.
+    const saved = localStorage.getItem(lsKey);
+    if (saved) {
+      try {
+        const parsed: string[] = JSON.parse(saved);
+        setCompletedItems(parsed.filter(id => allStepTopicIds.has(id)));
+      } catch (e) { }
+    }
+
+    // Always fetch from DB — authoritative source across all devices
     fetch('/api/progress')
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data)) {
-          const ids = data.map((d: any) => d.itemId);
-          setCompletedItems(ids);
-          localStorage.setItem(`completed_module_${step.id}`, JSON.stringify(ids));
-        }
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
       })
-      .catch(() => {});
+      .then(data => {
+        if (!Array.isArray(data)) return; // unexpected shape — keep localStorage state
+
+        const ids = data
+          .map((d: any) => d.itemId)
+          .filter((id: string) => allStepTopicIds.has(id));
+
+        // Trust the DB response (even empty array = zero progress is valid).
+        // Only a network/auth error (caught below) keeps localStorage state intact.
+        setCompletedItems(ids);
+        localStorage.setItem(lsKey, JSON.stringify(ids));
+      })
+      .catch(() => {
+        // Network or auth error — keep whatever localStorage had, don't wipe state
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step.id]);
 
-  const getTotalItemsCount = useCallback(() => {
-    return step.topics.length;
-  }, [step.topics]);
+  // ── Progress counts ─────────────────────────────────────────────────────
+  // Count completed topics (parent level only) for the progress bar
+  const completedTopicsCount = step.topics.filter(t => completedItems.includes(t.id)).length;
+  const totalTopicsCount = step.topics.length;
+  // FIX: guard against divide-by-zero
+  const completionPercentage = totalTopicsCount > 0
+    ? Math.round((completedTopicsCount / totalTopicsCount) * 100)
+    : 0;
 
-  const toggleComplete = async (itemId: string, itemType: string) => {
-    const isCompleted = completedItems.includes(itemId);
-    const newItems = isCompleted 
-      ? completedItems.filter(id => id !== itemId) 
-      : [...completedItems, itemId];
-      
+  // ── Toggle complete ─────────────────────────────────────────────────────
+  // Topic-only toggle: checking a topic marks it + ALL its subtopics complete.
+  // Subtopics have no individual checkboxes — they always follow the parent.
+  const toggleComplete = useCallback(async (topicId: string, topic: Topic) => {
+    const isCompleted = completedItems.includes(topicId);
+    const subtopicIds = topic.subtopics?.map(s => s.id) ?? [];
+
+    // completedItems tracks topic IDs only (subtopics stored in DB but not in local state)
+    const newItems = isCompleted
+      ? completedItems.filter(id => id !== topicId)
+      : [...completedItems, topicId];
+
     setCompletedItems(newItems);
     localStorage.setItem(`completed_module_${step.id}`, JSON.stringify(newItems));
 
@@ -307,20 +502,18 @@ export function StepViewer({
       await fetch('/api/progress', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ itemId, itemType, completed: !isCompleted })
+        body: JSON.stringify({ itemId: topicId, itemType: "TOPIC", completed: !isCompleted, subtopicIds }),
       });
-    } catch (e) {}
+    } catch (e) { }
 
-    const completedTopicsCount = step.topics.filter(t => newItems.includes(t.id)).length;
-    if (!isCompleted && completedTopicsCount === getTotalItemsCount()) {
-      import('canvas-confetti').then(confetti => confetti.default());
+    // Confetti only when marking complete and ALL topics now done
+    if (!isCompleted) {
+      const nowDone = step.topics.filter(t => t.id === topicId || newItems.includes(t.id)).length;
+      if (nowDone === totalTopicsCount && totalTopicsCount > 0) {
+        import('canvas-confetti').then(confetti => confetti.default());
+      }
     }
-  };
-
-  const completedTopicsCount = step.topics.filter(t => completedItems.includes(t.id)).length;
-  const completionPercentage = getTotalItemsCount() > 0 
-    ? Math.round((completedTopicsCount / getTotalItemsCount()) * 100) 
-    : 0;
+  }, [completedItems, step.id, step.topics, totalTopicsCount]);
 
   const getReadTime = (content: string | null) => {
     if (!content) return 1;
@@ -383,7 +576,6 @@ export function StepViewer({
     });
 
     if (viewMode === "CONTINUOUS" && view.kind === "subtopic") {
-      // Stay on current Topic node, simply jump jump offset offset.
       setTimeout(() => {
         const anchor = document.getElementById(`subtopic-${view.subtopicId}`);
         if (anchor) anchor.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -429,15 +621,20 @@ export function StepViewer({
   return (
     <div className="min-h-screen bg-background flex flex-col">
 
-      {/* Breadcrumb */}
-      <div className="sticky top-16 z-40 bg-background/95 backdrop-blur border-b shadow-sm">
-        
+      {/* ── Breadcrumb + Progress Bar ───────────────────────────────────────
+          FIX: progress bar is a SIBLING of the breadcrumb row (not a child),
+          using position:absolute relative to the sticky wrapper so it
+          sits flush at the very bottom edge of the nav strip, fully visible.
+      */}
+      <div className="sticky top-16 z-40 bg-background/95 backdrop-blur border-b shadow-sm" style={{ position: "sticky" }}>
+
         {completionPercentage === 100 && (
           <div className="bg-emerald-500/10 border-b border-emerald-500/20 text-emerald-500 text-xs font-bold py-1.5 px-4 text-center">
-             🎉 Awesome! You've mastered all topics in this step. Keep the momentum going!
+            🎉 Awesome! You've mastered all topics in this step. Keep the momentum going!
           </div>
         )}
-        <div className="absolute bottom-0 left-0 h-[6px] bg-emerald-500 transition-all duration-500 z-50" style={{ width: `${completionPercentage}%` }} />
+
+        {/* Breadcrumb row */}
         <div className="container mx-auto px-4 max-w-7xl flex items-center h-14 gap-2 overflow-x-auto whitespace-nowrap scrollbar-hide text-sm">
           <button className="md:hidden p-1.5 rounded-md hover:bg-muted shrink-0" onClick={() => setSidebarOpen(!sidebarOpen)}>
             {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -452,6 +649,14 @@ export function StepViewer({
               <Link href={`/roadmap/${roadmap.id}`} className="text-muted-foreground hover:text-foreground truncate max-w-[130px] md:max-w-xs transition-colors font-medium">
                 {roadmap.title}
               </Link>
+              {urlStepId && (
+                <>
+                  <span className="text-muted-foreground/40">/</span>
+                  <Link href={`/roadmap/${roadmap.id}/${urlStepId}`} className="text-muted-foreground hover:text-foreground transition-colors font-medium flex items-center gap-1">
+                    <ArrowLeft className="h-3.5 w-3.5" /> Back to Step
+                  </Link>
+                </>
+              )}
             </>
           ) : (
             <Link href="/modules" className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors shrink-0 font-medium">
@@ -478,11 +683,14 @@ export function StepViewer({
               <span className="text-foreground font-medium truncate">{activeSubtopic.title}</span>
             </>
           )}
-          
-          {/* Visual Glow Progress Bar sitting pinned layout framing Node */}
-          <div className="h-[2px] bg-muted w-full overflow-hidden absolute bottom-0 left-0">
-            <div className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-300 shadow-[0_0_8px_rgba(16,185,129,0.5)]" style={{ width: `${completionPercentage}%` }}></div>
-          </div>
+        </div>
+
+        {/* FIX: Progress bar — sibling of breadcrumb row, sits at bottom of sticky wrapper */}
+        <div className="relative h-[5px] w-full bg-muted/40">
+          <div
+            className="absolute inset-y-0 left-0 bg-emerald-500 transition-all duration-500"
+            style={{ width: `${completionPercentage}%` }}
+          />
         </div>
       </div>
 
@@ -499,6 +707,11 @@ export function StepViewer({
           ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
           shrink-0 px-4 py-8
         `}>
+          {urlStepId && (
+            <Link href={`/roadmap/${roadmap.id}/${urlStepId}`} className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors mb-5 border-b pb-4 w-full">
+              <ArrowLeft className="h-3.5 w-3.5" /> Back to Step: {step.title}
+            </Link>
+          )}
           <div className="mb-8 pb-6 border-b">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white text-lg font-bold shadow-sm shrink-0" style={{ backgroundColor: themeColor }}>{step.icon}</div>
@@ -517,7 +730,6 @@ export function StepViewer({
             <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
           </div>
 
-          {/* Unconditionally show Table of Contents (Topics list) */}
           <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground/60 mb-3 px-2">Table of Contents</p>
           <nav className="space-y-1">
             {step.topics.map((topic, i) => {
@@ -533,7 +745,11 @@ export function StepViewer({
                     <button onClick={() => { if (hasIntro) navigate({ kind: "topic", topicId: topic.id }); else if (hasSubtopics) { toggleTopicExpand(topic.id); if (!isTopicActive && topic.subtopics![0]) navigate({ kind: "subtopic", topicId: topic.id, subtopicId: topic.subtopics![0].id }); } else navigate({ kind: "topic", topicId: topic.id }); }}
                       className={`flex-1 flex items-start gap-3 px-3 py-2 text-sm text-left transition-all rounded-lg ${isActive ? "text-primary font-bold" : "text-muted-foreground hover:text-foreground"}`}
                     >
-                      <span className={`text-[10px] font-mono shrink-0 mt-0.5 ${isActive ? "text-primary/70" : "text-muted-foreground/40"}`}>{completedItems.includes(topic.id) ? <Check className="h-3 w-3 text-emerald-500 font-bold" /> : String(i + 1).padStart(2, "0")}</span>
+                      <span className={`text-[10px] font-mono shrink-0 mt-0.5 ${isActive ? "text-primary/70" : "text-muted-foreground/40"}`}>
+                        {completedItems.includes(topic.id)
+                          ? <Check className="h-3 w-3 text-emerald-500 font-bold" />
+                          : String(i + 1).padStart(2, "0")}
+                      </span>
                       <div className="flex-1 min-w-0 flex items-start justify-between gap-1">
                         <span className="leading-snug break-words">{topic.title}</span>
                         <span className="text-[9px] text-muted-foreground/60 font-medium shrink-0 mt-0.5">{getTopicReadTime(topic)}m</span>
@@ -545,7 +761,7 @@ export function StepViewer({
                       </button>
                     )}
                   </div>
-                  
+
                   {hasSubtopics && isExpanded && (
                     <div className="ml-4 pl-3 mt-0 mb-1 border-l-2 border-muted/50 flex flex-col gap-0.5">
                       {topic.subtopics!.map((sub) => {
@@ -585,27 +801,26 @@ export function StepViewer({
 
               <header className="mb-10 pb-8 border-b space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-4">
-                  
-                  {/* Local Search Area replacing Duplicate Badge framing Node triggers */}
+
+                  {/* Local search */}
                   <div className="flex items-center gap-2 flex-1 max-w-md relative">
                     <Search className="h-3.5 w-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/60" />
-                    <input 
-                      type="text" 
-                      placeholder="Search subtopics / content..." 
+                    <input
+                      type="text"
+                      placeholder="Search subtopics / content..."
                       value={localSearch || ""}
                       onChange={(e) => setLocalSearch(e.target.value)}
                       onFocus={() => setLocalSearchOpen(true)}
                       onBlur={() => setTimeout(() => setLocalSearchOpen(false), 200)}
                       className="pl-8 pr-3 py-1.5 rounded-lg bg-muted/50 border text-xs w-full focus:outline-none focus:ring-1 focus:ring-primary/40 focus:bg-background transition-all"
                     />
-                    
-                    {/* Floating Search Dropdown dialogue sync framing sequential triggers */}
+
                     {localSearchOpen && localSearch && (
                       <div className="absolute top-full left-0 right-0 mt-1 bg-popover/95 backdrop-blur-xl border rounded-xl shadow-2xl z-50 overflow-hidden max-h-60 overflow-y-auto">
                         <div className="p-1.5 space-y-0.5">
                           {activeTopic?.subtopics?.filter(s => s.title.toLowerCase().includes(localSearch.toLowerCase())).map((sub) => (
-                            <button 
-                              key={sub.id} 
+                            <button
+                              key={sub.id}
                               onClick={() => {
                                 setLocalSearch("");
                                 if (viewMode === "CONTINUOUS") {
@@ -622,22 +837,23 @@ export function StepViewer({
                             </button>
                           ))}
                           {(!activeTopic?.subtopics?.filter(s => s.title.toLowerCase().includes(localSearch.toLowerCase())).length) && (
-                            <p className="p-3 text-[11px] text-muted-foreground text-center">No matching headings found Node</p>
+                            <p className="p-3 text-[11px] text-muted-foreground text-center">No matching headings found</p>
                           )}
                         </div>
                       </div>
                     )}
                   </div>
 
+                  {/* View mode toggle */}
                   <div className="flex bg-muted p-1 rounded-lg w-fit gap-1 text-[11px] font-bold border">
-                    <button 
-                      onClick={() => setViewMode("PAGINATED")} 
+                    <button
+                      onClick={() => setViewMode("PAGINATED")}
                       className={`px-3 py-1.5 rounded-md transition-all ${viewMode === "PAGINATED" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
                     >
                       Step-by-Step
                     </button>
-                    <button 
-                      onClick={() => setViewMode("CONTINUOUS")} 
+                    <button
+                      onClick={() => setViewMode("CONTINUOUS")}
                       className={`px-3 py-1.5 rounded-md transition-all ${viewMode === "CONTINUOUS" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
                     >
                       Continuous
@@ -645,46 +861,66 @@ export function StepViewer({
                   </div>
                 </div>
 
+                {/* ── MARK READ row ─────────────────────────────────────────────────
+                    FIX: was using <Bookmark> icon — now correctly uses <Checkbox>.
+                    The checkbox toggles the current topic as complete/incomplete.
+                    Title text updates to reflect current state.
+                */}
                 <div className="flex items-center gap-3">
                   {activeTopic && (
-                    <div className="flex items-center gap-3">
-                       <button title="Add bookmark and see in saved content from profile dropdown anytime" onClick={() => toggleBookmark(activeTopic.id)} className={`p-1.5 rounded-lg border transition-all ${bookmarkedItems.includes(activeTopic.id) ? "bg-primary/10 text-primary border-primary/20" : "bg-muted/30 text-muted-foreground border-transparent hover:border-border"}`}>
-                         <Bookmark className="h-4 w-4" />
-                       </button>
-                        <span className="text-[10px] uppercase font-bold text-muted-foreground/60 tracking-wider hidden md:inline-block ml-1">Mark Read</span>
+                    <div className="flex items-center gap-2.5">
+                      <Checkbox
+                        id="mark-read-checkbox"
+                        checked={completedItems.includes(activeTopic.id)}
+                        onCheckedChange={() => toggleComplete(activeTopic.id, activeTopic)}
+                        title={completedItems.includes(activeTopic.id) ? "Mark as unread" : "Mark as read"}
+                        className="h-5 w-5 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500 border-muted-foreground/40 rounded-md transition-colors cursor-pointer"
+                      />
+                      <label
+                        htmlFor="mark-read-checkbox"
+                        className={`text-[10px] uppercase font-bold tracking-wider cursor-pointer select-none transition-colors ${completedItems.includes(activeTopic.id)
+                          ? "text-emerald-500"
+                          : "text-muted-foreground/60 hover:text-muted-foreground"
+                          }`}
+                      >
+                        {completedItems.includes(activeTopic.id) ? "Completed ✓" : "Mark Read"}
+                      </label>
+
+                      {/* Bookmark button kept separately, does not affect progress */}
+                      <button
+                        title="Bookmark this topic"
+                        onClick={() => toggleBookmark(activeTopic.id)}
+                        className={`ml-1 p-1.5 rounded-lg border transition-all ${bookmarkedItems.includes(activeTopic.id)
+                          ? "bg-primary/10 text-primary border-primary/20"
+                          : "bg-muted/30 text-muted-foreground border-transparent hover:border-border"
+                          }`}
+                      >
+                        <Bookmark className="h-4 w-4" />
+                      </button>
                     </div>
                   )}
-                  {activeView.kind === "subtopic" && activeSubtopic && viewMode === "PAGINATED" && (
-                     <button title="Add bookmark and see in saved content from profile dropdown anytime" onClick={() => toggleBookmark(activeSubtopic.id, "SUBTOPIC")} className={`p-1 rounded border border-transparent text-muted-foreground hover:bg-muted/10`}>
-                       <Bookmark className="h-3.5 w-3.5" />
-                     </button>
-                  )}
+
                   <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight leading-tight text-foreground/95">
-                    {activeView.kind === "subtopic" && activeSubtopic && viewMode === "PAGINATED" ? activeSubtopic.title : activeTopic?.title}
+                    {activeView.kind === "subtopic" && activeSubtopic && viewMode === "PAGINATED"
+                      ? activeSubtopic.title
+                      : activeTopic?.title}
                   </h1>
                 </div>
               </header>
 
               {viewMode === "CONTINUOUS" && activeTopic ? (
                 <div className="space-y-12">
-                   {activeTopic.content && <div className={PROSE} dangerouslySetInnerHTML={{ __html: parseMarkdown(activeTopic.content) }} />}
-                   {activeTopic.subtopics && activeTopic.subtopics.length > 0 && (
-                     <div className="space-y-12">
-                       {activeTopic.subtopics.map((sub) => (
-                          <div key={sub.id} id={`subtopic-${sub.id}`} className="space-y-4 pt-10 border-t border-border/10 first:pt-0 first:border-0">
-                            <div className="flex items-center gap-3">
-                              <Checkbox 
-                                checked={completedItems.includes(sub.id)} 
-                                onCheckedChange={() => toggleComplete(sub.id, "SUBTOPIC")} 
-                                title="Click to mark as read" className="h-5 w-5 data-[state=checked]:bg-emerald-500 border-muted-foreground/40 rounded-md transition-colors"
-                              />
-                              <h2 className="text-2xl font-extrabold tracking-tight text-foreground">{sub.title}</h2>
-                            </div>
-                            <div className={PROSE} dangerouslySetInnerHTML={{ __html: parseMarkdown(sub.content) }} />
-                          </div>
-                       ))}
-                     </div>
-                   )}
+                  {activeTopic.content && <div className={PROSE} dangerouslySetInnerHTML={{ __html: parseMarkdown(activeTopic.content) }} />}
+                  {activeTopic.subtopics && activeTopic.subtopics.length > 0 && (
+                    <div className="space-y-12">
+                      {activeTopic.subtopics.map((sub) => (
+                        <div key={sub.id} id={`subtopic-${sub.id}`} className="space-y-4 pt-10 border-t border-border/10 first:pt-0 first:border-0">
+                          <h2 className="text-2xl font-extrabold tracking-tight text-foreground">{sub.title}</h2>
+                          <div className={PROSE} dangerouslySetInnerHTML={{ __html: parseMarkdown(sub.content) }} />
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ) : activeView.kind === "subtopic" && activeSubtopic ? (
                 <div className={PROSE} dangerouslySetInnerHTML={{ __html: parseMarkdown(activeSubtopic.content) }} />
@@ -703,13 +939,6 @@ export function StepViewer({
                             </span>
                             <div className="flex-1 min-w-0">
                               <p className="font-semibold text-sm group-hover:text-primary transition-colors truncate">{sub.title}</p>
-                            </div>
-                            <div className="flex items-center gap-3 shrink-0" onClick={e => e.stopPropagation()}>
-                              <Checkbox 
-                                checked={completedItems.includes(sub.id)}
-                                onCheckedChange={() => toggleComplete(sub.id, "SUBTOPIC")}
-                                title="Click to mark as read" className="h-5 w-5 rounded-md data-[state=checked]:bg-emerald-500 border-muted-foreground/40"
-                              />
                             </div>
                           </button>
                         ))}
@@ -761,25 +990,25 @@ export function StepViewer({
               </div>
 
               <div className="flex flex-col sm:flex-row justify-between items-center bg-card/40 backdrop-blur-xl p-4 rounded-xl border border-border/10 gap-4 mt-8 shadow-sm">
-                 <Button onClick={handleLike} disabled={hasLiked} variant="outline" className="gap-2 font-semibold">
-                     <Heart className={`h-4 w-4 ${hasLiked ? "fill-red-500 text-red-500" : "text-muted-foreground"}`} /> {likes} Likes
-                 </Button>
+                <Button onClick={handleLike} disabled={hasLiked} variant="outline" className="gap-2 font-semibold">
+                  <Heart className={`h-4 w-4 ${hasLiked ? "fill-red-500 text-red-500" : "text-muted-foreground"}`} /> {likes} Likes
+                </Button>
 
-                 <div className="flex items-center gap-2">
-                     <span className="text-xs text-muted-foreground mr-1">Share</span>
-                     <a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(step.title)}`} target="_blank">
-                         <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/70"><Twitter className="h-4 w-4" /></Button>
-                     </a>
-                     <a href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`} target="_blank">
-                         <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/70"><Linkedin className="h-4 w-4" /></Button>
-                     </a>
-                     <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/70" onClick={handleCopy}>
-                         {copied ? <span className="text-[10px] text-emerald-500 font-bold">✓</span> : <Copy className="h-4 w-4" />}
-                     </Button>
-                 </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground mr-1">Share</span>
+                  <a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(step.title)}`} target="_blank">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/70"><Twitter className="h-4 w-4" /></Button>
+                  </a>
+                  <a href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`} target="_blank">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/70"><Linkedin className="h-4 w-4" /></Button>
+                  </a>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground/70" onClick={handleCopy}>
+                    {copied ? <span className="text-[10px] text-emerald-500 font-bold">✓</span> : <Copy className="h-4 w-4" />}
+                  </Button>
+                </div>
               </div>
 
-              {/* Resources — shown at the bottom of the module content */}
+              {/* Resources */}
               {step.resources.length > 0 && (
                 <div className="mt-20 pt-10 border-t space-y-6">
                   <div>

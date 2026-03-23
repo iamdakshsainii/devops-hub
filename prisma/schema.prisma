@@ -267,6 +267,23 @@ model RoadmapStep {
   resources   RoadmapResource[]
   bookmarks   Bookmark[]
   upvotes     Upvote[]
+
+  // ── Unified Module Extensions ──
+  introContent String? @db.Text
+  attachedModules RoadmapStepModule[] @relation("StepToModule")
+  moduleAttachments RoadmapStepModule[] @relation("ModuleToStep")
+}
+
+model RoadmapStepModule {
+  id       String @id @default(cuid())
+  stepId   String
+  moduleId String
+  order    Int    @default(0)
+
+  step     RoadmapStep @relation("StepToModule", fields: [stepId], references: [id], onDelete: Cascade)
+  module   RoadmapStep @relation("ModuleToStep", fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@unique([stepId, moduleId])
 }
 
 model RoadmapTopic {

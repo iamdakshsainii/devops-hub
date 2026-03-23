@@ -48,7 +48,7 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
     }
 
     const { id } = await context.params;
-    const { title, description, icon, status, tags, topics, resources } = await req.json();
+    const { title, description, icon, status, tags, topics, resources, introContent } = await req.json();
     const resourceList: any[] = resources || [];
 
     // ── Pre-fetch outside transaction ──────────────────────────────────────
@@ -115,27 +115,23 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
         // 2. Re-create topics + subtopics
         for (let idx = 0; idx < (topics || []).length; idx++) {
           const t = topics[idx];
-          const topic = await tx.roadmapTopic.create({
+          await tx.roadmapTopic.create({
             data: {
               stepId: id,
               title: t.title || "Untitled Topic",
               content: t.content || null,
               order: idx,
+              subtopics: {
+                create: (t.subtopics || [])
+                  .filter((s: any) => s.title)
+                  .map((s: any, si: number) => ({
+                    title: s.title,
+                    content: s.content || "",
+                    order: si,
+                  })),
+              },
             },
           });
-          for (let si = 0; si < (t.subtopics || []).length; si++) {
-            const s = t.subtopics[si];
-            if (s.title) {
-              await tx.roadmapSubTopic.create({
-                data: {
-                  topicId: topic.id,
-                  title: s.title,
-                  content: s.content || "",
-                  order: si,
-                },
-              });
-            }
-          }
         }
 
         // 3. Clean up global mirror rows for removed resources
@@ -220,6 +216,7 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
             icon: icon || "📦",
             status: status || "PENDING",
             tags: tags || "",
+            introContent: introContent !== undefined ? introContent : undefined,
           } as any,
         });
       },

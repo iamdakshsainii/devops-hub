@@ -115,11 +115,7 @@ export function ResourceCard({ resource }: ResourceCardProps) {
           {mainDesc}
         </CardDescription>
 
-        {fromSource && (
-          <div className="text-[10px] text-primary/80 font-bold mt-2 flex items-center gap-1 bg-primary/5 px-2 py-1 rounded-lg border border-primary/10 w-fit">
-             <span className="shrink-0">Linked:</span> <span className="underline truncate">{fromSource}</span>
-          </div>
-        )}
+
 
         {resource.tags && (
           <div className="flex flex-wrap gap-1 mt-3">

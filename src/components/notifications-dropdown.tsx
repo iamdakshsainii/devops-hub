@@ -40,7 +40,7 @@ export function NotificationsDropdown() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative rounded-full">
+        <Button variant="ghost" title="View Announcements & Notifications" size="icon" className="relative rounded-full hover:bg-muted/80 hover:text-foreground transition-all duration-300 hover:scale-110">
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
             <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-destructive flex items-center justify-center"></span>

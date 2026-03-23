@@ -1,0 +1,32 @@
+{
+  "count": 3,
+  "progress": [
+    {
+      "id": "cmn1liqwi00029v2rtnzl3txm",
+      "userId": "cmmx1x4id0000lrqwn7qsq0ry",
+      "itemType": "TOPIC",
+      "itemId": "cmn0v31ey00477tu420zmx9bo",
+      "completed": true,
+      "createdAt": "2026-03-22T10:10:16.626Z",
+      "updatedAt": "2026-03-22T10:10:16.626Z"
+    },
+    {
+      "id": "cmn1lkrvt000tuxpco7fg3see",
+      "userId": "cmmx1x4id0000lrqwn7qsq0ry",
+      "itemType": "TOPIC",
+      "itemId": "cmn0v3c5v00657tu414963qzl",
+      "completed": true,
+      "createdAt": "2026-03-22T10:11:51.209Z",
+      "updatedAt": "2026-03-22T10:11:51.209Z"
+    },
+    {
+      "id": "cmn1llm0d000wuxpc3pdm1j46",
+      "userId": "cmmx1x4id0000lrqwn7qsq0ry",
+      "itemType": "TOPIC",
+      "itemId": "cmn0v3cgp00677tu4u0h5oen1",
+      "completed": true,
+      "createdAt": "2026-03-22T10:12:30.253Z",
+      "updatedAt": "2026-03-22T10:12:30.253Z"
+    }
+  ]
+}

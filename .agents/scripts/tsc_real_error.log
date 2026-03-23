@@ -1,0 +1,6 @@
+Error: src/app/roadmap/[id]/page.tsx(41,5): error TS2657: JSX expressions must have one parent element.
+src/app/roadmap/[id]/page.tsx(190,7): error TS1005: ')' expected.
+src/app/roadmap/[id]/page.tsx(191,5): error TS1109: Expression expected.
+src/app/roadmap/[id]/page.tsx(192,3): error TS1109: Expression expected.
+
+Command failed: npx tsc --noEmit

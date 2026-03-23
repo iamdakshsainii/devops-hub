@@ -12,24 +12,18 @@ import {
 
 import { Editor } from "@/components/editor";
 
-interface TopicForm {
-  title: string;
-  content: string;
-}
 
-interface ResourceForm {
-  title: string;
-  url: string;
-  type: string;
-  description: string;
-}
+
+
 
 interface StepForm {
+  id?: string;
   title: string;
   description: string;
   icon: string;
-  topics: TopicForm[];
-  resources: ResourceForm[];
+  
+  
+  
   expanded: boolean;
 }
 
@@ -52,13 +46,142 @@ const emptyStep = (): StepForm => ({
   title: "",
   description: "",
   icon: "📦",
-  topics: [],
-  resources: [],
+  
+  
   expanded: true,
 });
 
-const emptyTopic = (): TopicForm => ({ title: "", content: "" });
-const emptyResource = (): ResourceForm => ({ title: "", url: "", type: "ARTICLE", description: "" });
+
+
+
+// --- Inline Sub-Component for Attached Modules ---
+function AttachedModulesSection({ stepId, roadmapId }: { stepId?: string; roadmapId: string }) {
+  const [attached, setAttached] = useState<any[]>([]);
+  const [search, setSearch] = useState("");
+  const [results, setResults] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const fetchAttached = async () => {
+    if (!stepId) return;
+    const res = await fetch(`/api/roadmaps/${roadmapId}/steps/${stepId}/modules`);
+    const data = await res.json();
+    setAttached(data);
+  };
+
+  useEffect(() => {
+    fetchAttached();
+  }, [stepId]);
+
+  const handleSearch = async (q: string) => {
+    setSearch(q);
+    if (!q.trim()) {
+      setResults([]);
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/modules?all=true&search=${q}`);
+      const data = await res.json();
+      setResults(data);
+    } catch { }
+    setLoading(false);
+  };
+
+  const attachModule = async (moduleId: string) => {
+    if (!stepId) return;
+    await fetch(`/api/roadmaps/${roadmapId}/steps/${stepId}/modules`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ moduleId, order: attached.length }),
+    });
+    setSearch("");
+    setResults([]);
+    fetchAttached();
+  };
+
+  const detachModule = async (moduleId: string) => {
+    if (!stepId) return;
+    await fetch(`/api/roadmaps/${roadmapId}/steps/${stepId}/modules`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ moduleId }),
+    });
+    fetchAttached();
+  };
+
+
+
+  if (!stepId) {
+    return (
+      <div className="text-xs text-muted-foreground italic bg-muted/20 p-3 rounded-md">
+        Save this step first to attach standalone modules.
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3 pt-4 border-t">
+      <h4 className="text-sm font-bold">🔗 Attached Modules</h4>
+
+      {/* Search Input and Dropdown */}
+      <div className="relative">
+        <label className="text-xs font-medium mb-1 block">Search modules to attach</label>
+        <div className="flex gap-2">
+          <Input 
+            placeholder="Type module title..." 
+            value={search}
+            onChange={(e) => handleSearch(e.target.value)}
+            className="flex-1 text-sm h-9"
+          />
+        </div>
+        
+        {loading && <div className="absolute right-3 top-9"><Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /></div>}
+
+        {results.length > 0 && (
+          <div className="absolute top-16 left-0 right-0 max-h-48 overflow-y-auto border rounded-xl bg-card shadow-lg z-50">
+            {results.map((m) => (
+              <div 
+                key={m.id} 
+                className="p-2.5 hover:bg-muted cursor-pointer flex items-center justify-between text-sm"
+                onClick={() => attachModule(m.id)}
+              >
+                <div>
+                  <span className="font-semibold">{m.icon} {m.title}</span>
+                  <p className="text-xs text-muted-foreground truncate max-w-xs">{m.description || "No description"}</p>
+                </div>
+                <Button size="sm" variant="ghost" className="h-7 px-2">Attach</Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* List Attached */}
+      {attached.length > 0 ? (
+        <div className="space-y-2">
+          {attached.map((am) => (
+            <div key={am.id} className="border rounded-lg p-2 flex items-center justify-between bg-muted/5">
+              <div className="flex gap-2 items-center">
+                <span className="text-lg bg-muted p-1 rounded">{am.module?.icon || "📦"}</span>
+                <div>
+                  <p className="text-xs font-semibold leading-none">{am.module?.title}</p>
+                  <span className="text-[10px] text-muted-foreground">Order: {am.order}</span>
+                </div>
+              </div>
+              <Button size="sm" variant="ghost" onClick={() => detachModule(am.moduleId)} className="p-1 hover:bg-destructive/10 rounded">
+                <X className="h-4 w-4 text-destructive" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="text-xs text-muted-foreground italic p-2 border border-dashed rounded-md text-center">
+          No modules attached yet
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function RoadmapEditorPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
@@ -98,9 +221,11 @@ export default function RoadmapEditorPage({ params }: { params: Promise<{ id: st
                 color: data.color || "#3B82F6",
                 status: data.status || "PUBLISHED",
                 steps: (data.steps || []).map((s: any) => ({
+                  id: s.id,
                   title: s.title,
                   description: s.description || "",
                   icon: s.icon || "📦",
+                  
                   topics: (s.topics || []).map((t: any) => ({
                     title: t.title,
                     content: t.content || "",
@@ -169,8 +294,8 @@ export default function RoadmapEditorPage({ params }: { params: Promise<{ id: st
             title: line.replace("# ", "").trim(),
             description: "",
             icon: "📦",
-            topics: [],
-            resources: [],
+            
+            
             expanded: false,
           };
           steps.push(currentStep);
@@ -212,10 +337,7 @@ export default function RoadmapEditorPage({ params }: { params: Promise<{ id: st
         title: s.title,
         description: s.description,
         icon: s.icon,
-        topics: s.topics.map((t) => ({ title: t.title, content: t.content })),
-        resources: s.resources.map((r) => ({
-          title: r.title, url: r.url, type: r.type, description: r.description
-        })),
+
       })),
     };
     setJsonInput(JSON.stringify(data, null, 2));
@@ -237,8 +359,7 @@ export default function RoadmapEditorPage({ params }: { params: Promise<{ id: st
           title: s.title,
           description: s.description,
           icon: s.icon,
-          topics: s.topics.filter((t) => t.title),
-          resources: s.resources.filter((r) => r.title && r.url),
+
         })).filter((s) => s.title),
       };
 
@@ -255,6 +376,8 @@ export default function RoadmapEditorPage({ params }: { params: Promise<{ id: st
         const data = await res.json();
         throw new Error(data.message || "Save failed");
       }
+
+
 
       router.push("/admin/roadmaps");
       router.refresh();
@@ -292,36 +415,6 @@ export default function RoadmapEditorPage({ params }: { params: Promise<{ id: st
     const newIdx = idx + dir;
     if (newIdx < 0 || newIdx >= steps.length) return;
     [steps[idx], steps[newIdx]] = [steps[newIdx], steps[idx]];
-    setForm({ ...form, steps });
-  };
-
-  // Topic operations
-  const updateTopic = (stepIdx: number, topicIdx: number, data: Partial<TopicForm>) => {
-    const steps = [...form.steps];
-    const topics = [...steps[stepIdx].topics];
-    topics[topicIdx] = { ...topics[topicIdx], ...data };
-    steps[stepIdx] = { ...steps[stepIdx], topics };
-    setForm({ ...form, steps });
-  };
-
-  const removeTopic = (stepIdx: number, topicIdx: number) => {
-    const steps = [...form.steps];
-    steps[stepIdx] = { ...steps[stepIdx], topics: steps[stepIdx].topics.filter((_, i) => i !== topicIdx) };
-    setForm({ ...form, steps });
-  };
-
-  // Resource operations
-  const updateResource = (stepIdx: number, resIdx: number, data: Partial<ResourceForm>) => {
-    const steps = [...form.steps];
-    const resources = [...steps[stepIdx].resources];
-    resources[resIdx] = { ...resources[resIdx], ...data };
-    steps[stepIdx] = { ...steps[stepIdx], resources };
-    setForm({ ...form, steps });
-  };
-
-  const removeResource = (stepIdx: number, resIdx: number) => {
-    const steps = [...form.steps];
-    steps[stepIdx] = { ...steps[stepIdx], resources: steps[stepIdx].resources.filter((_, i) => i !== resIdx) };
     setForm({ ...form, steps });
   };
 
@@ -506,9 +599,7 @@ export default function RoadmapEditorPage({ params }: { params: Promise<{ id: st
                   <span className="text-sm font-semibold flex-1 truncate">
                     {step.icon} {step.title || `Step ${si + 1} (untitled)`}
                   </span>
-                  <span className="text-xs text-muted-foreground hidden sm:inline">
-                    {step.topics.length} topics · {step.resources.length} resources
-                  </span>
+                  <span></span>
                   <div className="flex gap-1 items-center" onClick={(e) => e.stopPropagation()}>
                     <button type="button" className="p-1 hover:bg-muted rounded" onClick={() => moveStep(si, -1)} disabled={si === 0}>
                       <ArrowUp className="h-3.5 w-3.5 text-muted-foreground" />
@@ -555,84 +646,14 @@ export default function RoadmapEditorPage({ params }: { params: Promise<{ id: st
                       />
                     </div>
 
-                    {/* Topics */}
-                    <div className="space-y-3 pt-4 border-t">
-                      <div className="flex justify-between items-center">
-                        <h4 className="text-sm font-bold">📄 Topics ({step.topics.length})</h4>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => updateStep(si, { topics: [...step.topics, emptyTopic()] })}
-                        >
-                          <Plus className="h-3 w-3 mr-1" /> Add Topic
-                        </Button>
-                      </div>
 
-                      {step.topics.map((topic, ti) => (
-                        <div key={ti} className="border rounded-xl p-4 space-y-3 bg-muted/5">
-                          <div className="flex gap-2 items-start">
-                            <Input
-                              value={topic.title}
-                              onChange={(e) => updateTopic(si, ti, { title: e.target.value })}
-                              placeholder="Topic title"
-                              className="flex-1"
-                            />
-                            <button onClick={() => removeTopic(si, ti)} className="p-2 hover:bg-destructive/10 rounded">
-                              <X className="h-4 w-4 text-destructive" />
-                            </button>
-                          </div>
-                          <Editor 
-                            content={topic.content} 
-                            onChange={(html) => updateTopic(si, ti, { content: html })} 
-                          />
-                        </div>
-                      ))}
-                    </div>
 
-                    {/* Resources */}
-                    <div className="space-y-3 pt-4 border-t">
-                      <div className="flex justify-between items-center">
-                        <h4 className="text-sm font-bold">📚 Resources ({step.resources.length})</h4>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => updateStep(si, { resources: [...step.resources, emptyResource()] })}
-                        >
-                          <Plus className="h-3 w-3 mr-1" /> Add Resource
-                        </Button>
-                      </div>
 
-                      {step.resources.map((res, ri) => (
-                        <div key={ri} className="border rounded-lg p-3 flex flex-wrap gap-2 items-start bg-muted/5">
-                          <Input
-                            value={res.title}
-                            onChange={(e) => updateResource(si, ri, { title: e.target.value })}
-                            placeholder="Resource title"
-                            className="flex-1 min-w-[150px] h-9 text-sm"
-                          />
-                          <Input
-                            value={res.url}
-                            onChange={(e) => updateResource(si, ri, { url: e.target.value })}
-                            placeholder="https://..."
-                            className="flex-1 min-w-[180px] h-9 text-sm"
-                          />
-                          <select
-                            value={res.type}
-                            onChange={(e) => updateResource(si, ri, { type: e.target.value })}
-                            className="h-9 rounded-md border border-input bg-background px-2 text-sm w-24"
-                          >
-                            <option value="ARTICLE">Article</option>
-                            <option value="VIDEO">Video</option>
-                            <option value="PDF">PDF</option>
-                            <option value="TOOL">Tool</option>
-                            <option value="NOTES">Notes</option>
-                          </select>
-                          <button onClick={() => removeResource(si, ri)} className="p-2 hover:bg-destructive/10 rounded">
-                            <X className="h-4 w-4 text-destructive" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
+
+
+
+                    {/* Attached Modules */}
+                    <AttachedModulesSection stepId={step.id} roadmapId={roadmapId} />
                   </CardContent>
                 )}
               </Card>
