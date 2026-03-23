@@ -26,9 +26,8 @@ export default async function BookmarksPage({
     orderBy: { createdAt: "desc" },
   });
 
-  const fs = require('fs');
-fs.writeFileSync('c:/my-stuff/devops-hub/.agents/scripts/bookmark_page_trace.log', JSON.stringify({ rawBookmarksTotal: rawBookmarks.length, rawBookmarks }) + '\n');
-// Separate by type
+  // Separate by type
+
   const moduleBookmarkRows = rawBookmarks.filter((b) => b.itemType === "MODULE" && b.stepId);
   const topicBookmarkRows = rawBookmarks.filter((b) => b.itemType === "TOPIC" && b.topicId);
   const subtopicBookmarkRows = rawBookmarks.filter((b) => b.itemType === "SUBTOPIC" && b.subtopicId);

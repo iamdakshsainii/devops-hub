@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+
 import { marked } from "marked";
 import hljs from "highlight.js";
 import {
@@ -328,7 +330,9 @@ export function StepViewer({
   roadmapSteps?: { id: string; title: string; icon: string; order: number }[];
   isStandalone?: boolean;
 }) {
+  const router = useRouter();
   const [urlStepId, setUrlStepId] = useState<string | null>(null);
+
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -639,6 +643,12 @@ export function StepViewer({
           <button className="md:hidden p-1.5 rounded-md hover:bg-muted shrink-0" onClick={() => setSidebarOpen(!sidebarOpen)}>
             {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
+
+          <Button variant="ghost" size="sm" onClick={() => router.back()} className="text-muted-foreground hover:text-foreground gap-1.5 p-1.5 h-8 font-medium">
+            <ArrowLeft className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Back</span>
+          </Button>
+          <span className="text-muted-foreground/30 ml-1 hidden sm:inline">|</span>
+
 
           {!isStandalone ? (
             <>

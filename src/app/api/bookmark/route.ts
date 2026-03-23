@@ -27,9 +27,7 @@ export async function POST(req: Request) {
                     { resourceId: itemId }),
     };
 
-    const fs = require('fs');
-fs.appendFileSync('c:/my-stuff/devops-hub/.agents/scripts/bookmark_route_trace.log', JSON.stringify({ timestamp: new Date().toISOString(), itemId, itemType, whereClause }) + '\n');
-const existing = await prisma.bookmark.findFirst({ where: whereClause });
+    const existing = await prisma.bookmark.findFirst({ where: whereClause });
 
     // --- Remind Me toggle on existing bookmark ---
     if (existing && remindMe !== undefined) {
@@ -40,7 +38,7 @@ const existing = await prisma.bookmark.findFirst({ where: whereClause });
       return NextResponse.json({ message: "Reminder updated", status: "updated", remindMe: updated.remindMe });
     }
 
-    // --- Save toggle (no remindMe flag sent) ---
+    // --- Save toggle on existing bookmark ---
     if (existing && remindMe === undefined) {
       await prisma.bookmark.delete({ where: { id: existing.id } });
       return NextResponse.json({ message: "Bookmark removed", status: "removed" });
@@ -68,9 +66,7 @@ const existing = await prisma.bookmark.findFirst({ where: whereClause });
       status: "added",
       remindMe: created.remindMe,
     });
-  } catch (error: any) {
-
-    try { require('fs').appendFileSync('c:/my-stuff/devops-hub/.agents/scripts/bookmark_route_trace.log', 'API Error: ' + JSON.stringify(error, Object.getOwnPropertyNames(error)) + '\n'); } catch(e) {}
+  } catch (error) {
     console.error("Bookmark error:", error);
     return NextResponse.json({ message: "Error processing bookmark" }, { status: 500 });
   }
@@ -98,7 +94,9 @@ export async function GET(req: Request) {
             itemType === "EVENT" ? { eventId: itemId } :
               itemType === "TOOL" ? { toolId: itemId } :
                 itemType === "CERT" ? { certId: itemId } :
-                  { resourceId: itemId }),
+                  itemType === "TOPIC" ? { topicId: itemId } :
+                    itemType === "SUBTOPIC" ? { subtopicId: itemId } :
+                      { resourceId: itemId }),
       },
     });
 

@@ -21,10 +21,12 @@ interface ModuleForm {
   description: string;
   icon: string;
   status?: string;
+  difficulty?: string;
   tags?: string;
   topics: TopicForm[];
   resources: ResourceForm[];
 }
+
 
 const emptySubtopic = (): SubtopicForm => ({ title: "", content: "" });
 const emptyTopic = (): TopicForm => ({ title: "", content: "", subtopics: [], expanded: true });
@@ -104,6 +106,7 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
             description: data.description || "",
             icon: data.icon || "📦",
             status: data.status || "PENDING",
+            difficulty: data.difficulty || "BEGINNER",
             tags: data.tags || "",
             topics: (data.topics || []).map((t: any) => {
               const tc = (t.content || "").trim();
@@ -392,6 +395,19 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
                   <label className="text-sm font-medium">Icon</label>
                   <Input value={form.icon} onChange={e => setForm({ ...form, icon: e.target.value })} placeholder="📦" className="text-center text-lg" />
                 </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Difficulty</label>
+                  <select 
+                    value={(form as any).difficulty || "BEGINNER"} 
+                    onChange={e => setForm({ ...form, difficulty: e.target.value } as any)} 
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus:ring-1 focus:ring-ring"
+                  >
+                    <option value="BEGINNER">🟢 Beginner</option>
+                    <option value="INTERMEDIATE">🟡 Intermediate</option>
+                    <option value="ADVANCED">🔴 Advanced</option>
+                  </select>
+                </div>
+
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Description</label>
