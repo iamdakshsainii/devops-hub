@@ -42,11 +42,15 @@ export function DashboardClient({ user, currentRoadmap, allStats, progress }: an
 
   // Create absolute activity tracking map
   const activityMap: { [key: string]: number } = {};
-  progress.forEach((p: any) => {
-     const date = new Date(p.createdAt);
-     const key = date.toISOString().split("T")[0];
-     activityMap[key] = (activityMap[key] || 0) + 1;
-  });
+  if (Array.isArray(progress)) {
+      progress.forEach((p: any) => {
+         if (!p.createdAt) return;
+         const date = new Date(p.createdAt);
+         if (isNaN(date.getTime())) return; // Safeguard invalid date RangeError crashes
+         const key = date.toISOString().split("T")[0];
+         activityMap[key] = (activityMap[key] || 0) + 1;
+      });
+  }
 
   const getIntensityColor = (count: number) => {
      if (count === 0) return "bg-muted/10 border-border/10 text-muted-foreground/20";
