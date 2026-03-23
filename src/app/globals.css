@@ -73,6 +73,10 @@
     --ring: 224.3 76.3% 48%;
   }
 
+  html {
+    overflow-y: auto;
+  }
+
   * {
     @apply border-border;
   }

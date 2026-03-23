@@ -136,11 +136,11 @@ export default function AdminResourcesList({ resources }: { resources: any[] }) 
           {filteredResources.map((res) => {
             const TypeIcon = TYPE_ICON_MAP[res.type] ?? FileText;
             const youtubeId = res.url?.match(
-              /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/
+              /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts|live)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/
             )?.[1];
             const finalImageUrl =
               res.imageUrl ||
-              (youtubeId ? `https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg` : null);
+              (youtubeId ? `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg` : null);
 
             return (
               <Card
@@ -170,8 +170,8 @@ export default function AdminResourcesList({ resources }: { resources: any[] }) 
                       {res.status === "PUBLISHED" ? "LIVE" : res.status === "DELETED" ? "DELETED" : "PENDING"}
                     </span>
                   </div>
-                  <CardTitle className="text-lg mt-2 line-clamp-1">{res.title}</CardTitle>
-                  <CardDescription className="line-clamp-2 text-xs h-8">{res.description}</CardDescription>
+                  <CardTitle className="text-lg mt-2 line-clamp-2">{res.title}</CardTitle>
+                  <CardDescription className="line-clamp-2 text-xs">{res.description}</CardDescription>
                   {res.tags && (
                     <div className="flex flex-wrap gap-1 mt-2">
                       {res.tags.split(",").filter(Boolean).map((t: string) => (
@@ -186,19 +186,21 @@ export default function AdminResourcesList({ resources }: { resources: any[] }) 
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span>By {res.author?.fullName || "Admin"}</span>
                   </div>
-                  <div className="flex gap-1 w-full border-t pt-3 border-muted/50">
+                  <div className="flex flex-wrap gap-1 w-full border-t pt-3 border-muted/50">
                     <a href={res.url} target="_blank" rel="noopener noreferrer">
                       <Button variant="outline" size="sm" className="h-8 w-8 px-1">
                         <ExternalLink className="h-4 w-4" />
                       </Button>
                     </a>
-                    {res.isRoadmapResource ? (
+                    {res.isRoadmapResource && (
                       <Link href={`/admin/modules/${res.stepId}`} className="flex-1">
                         <Button variant="secondary" size="sm" className="w-full h-8 text-xs font-medium">
-                          <Edit className="h-3 w-3 mr-1" /> Edit in Module
+                          <Edit className="h-3 w-3 mr-1" /> Edit Module
                         </Button>
                       </Link>
-                    ) : res.isNote ? (
+                    )}
+
+                    {res.isNote ? (
                       <Link href={`/notes/${res.id}`} className="flex-1">
                         <Button variant="secondary" size="sm" className="w-full h-8 text-xs font-medium">
                           <Edit className="h-3 w-3 mr-1" /> View Note
@@ -207,10 +209,11 @@ export default function AdminResourcesList({ resources }: { resources: any[] }) 
                     ) : (
                       <>
                         <Link href={`/admin/resources/${res.id}`} className="flex-1">
-                          <Button variant="secondary" size="sm" className="w-full h-8 text-xs font-medium">
+                          <Button variant={res.isRoadmapResource ? "outline" : "secondary"} size="sm" className="w-full h-8 text-xs font-medium">
                             <Edit className="h-3 w-3 mr-1" /> Edit
                           </Button>
                         </Link>
+
                         <Button
                           variant="outline"
                           size="sm"

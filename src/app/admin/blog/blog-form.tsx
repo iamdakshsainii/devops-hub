@@ -5,9 +5,12 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Save, FileText } from "lucide-react";
+import { Save, FileText, ChevronDown, ChevronRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+
 import { ContentImageManager } from "@/components/content-image-manager";
+import { Editor } from "@/components/editor";
+
 
 const CATEGORIES = ["Docker", "Kubernetes", "Terraform", "Linux", "Security", "CI/CD", "MLOps", "AIOps", "SecOps", "Career", "General"];
 
@@ -18,13 +21,29 @@ export function BlogForm({ initialData }: { initialData?: any }) {
   const [excerpt, setExcerpt] = useState(initialData?.excerpt || "");
   const [content, setContent] = useState(initialData?.content || "");
   const [category, setCategory] = useState(initialData?.category || "General");
-  const [readTime, setReadTime] = useState(initialData?.readTime || 5);
+  const [readAmount, setReadAmount] = useState<number>(
+    initialData?.readTime ? (
+      initialData.readTime >= 43200 ? Math.floor(initialData.readTime / 43200) :
+      initialData.readTime >= 1440 ? Math.floor(initialData.readTime / 1440) :
+      initialData.readTime >= 60 ? Math.floor(initialData.readTime / 60) : initialData.readTime
+    ) : 5
+  );
+  const [readUnit, setReadUnit] = useState<string>(
+    initialData?.readTime ? (
+      initialData.readTime >= 43200 ? "month" :
+      initialData.readTime >= 1440 ? "days" :
+      initialData.readTime >= 60 ? "hours" : "min"
+    ) : "min"
+  );
   const [coverImage, setCoverImage] = useState(initialData?.coverImage || "");
+
   const [tags, setTags] = useState(initialData?.tags || "");
   const [status, setStatus] = useState(initialData?.status || "DRAFT");
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<"FORM" | "MARKDOWN">("FORM");
   const [markdownInput, setMarkdownInput] = useState("");
+  const [collapsedContent, setCollapsedContent] = useState(false);
+
 
   const handleTitleChange = (val: string) => {
     setTitle(val);
@@ -34,31 +53,66 @@ export function BlogForm({ initialData }: { initialData?: any }) {
 
   const handleMarkdownParse = () => {
     try {
-      const lines = markdownInput.split("\n");
-      let tFound = ""; let contentFound = "";
-      for (const line of lines) {
-         if (line.startsWith("Tags: ")) { setTags(line.replace("Tags: ", "").trim()); continue; }
-         if (line.startsWith("Category: ")) { setCategory(line.replace("Category: ", "").trim()); continue; }
-         if (line.startsWith("Cover: ")) { setCoverImage(line.replace("Cover: ", "").trim()); continue; }
-         if (line.startsWith("Excerpt: ")) { setExcerpt(line.replace("Excerpt: ", "").trim()); continue; }
+      const trimmedInput = markdownInput.trim();
+      let contentFound = trimmedInput;
+      let tFound = "";
 
-         if (line.startsWith("# ") && !tFound) {
-             tFound = line.replace("# ", "").trim();
-         }
-         contentFound += line + "\n";
+      // 1. Detect Standard YAML Frontmatter between ---
+      const matchYaml = trimmedInput.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/);
+
+      if (matchYaml) {
+         const yaml = matchYaml[1];
+         contentFound = matchYaml[2];
+
+         yaml.split("\n").forEach(line => {
+             const idx = line.indexOf(":");
+             if (idx === -1) return;
+             const key = line.slice(0, idx).trim().toLowerCase();
+             const val = line.slice(idx + 1).trim();
+
+             if (key === "tags") setTags(val);
+             if (key === "category") setCategory(val);
+             if (key === "cover" || key === "coverimage") setCoverImage(val);
+             if (key === "excerpt") setExcerpt(val);
+             if (key === "title") tFound = val;
+         });
+      } else {
+         // 2. Fallback prefix-matching parser node
+         contentFound = "";
+         markdownInput.split("\n").forEach(line => {
+             if (line.startsWith("Tags: ")) { setTags(line.replace("Tags: ", "").trim()); return; }
+             if (line.startsWith("Category: ")) { setCategory(line.replace("Category: ", "").trim()); return; }
+             if (line.startsWith("Cover: ")) { setCoverImage(line.replace("Cover: ", "").trim()); return; }
+             if (line.startsWith("Excerpt: ")) { setExcerpt(line.replace("Excerpt: ", "").trim()); return; }
+
+             if (line.startsWith("# ") && !tFound) {
+                 tFound = line.replace("# ", "").trim();
+             }
+             contentFound += line + "\n";
+         });
       }
+
+      const h1Match = contentFound.match(/^# (.*?)$/m);
+      if (h1Match && !tFound) {
+          tFound = h1Match[1].trim();
+      }
+
       if (tFound) handleTitleChange(tFound);
-      setContent(contentFound); setMode("FORM");
-    } catch {}
+      setContent(contentFound.trim()); 
+      setMode("FORM");
+    } catch (e) { console.error(e); }
   };
+
 
   const handleSubmit = async (submitStatus: string) => {
     setLoading(true);
     const payload = {
       title, slug, excerpt, content, category,
-      readTime: Number(readTime), coverImage, tags,
+      readTime: Number(readAmount) * (readUnit === "month" ? 43200 : readUnit === "days" ? 1440 : readUnit === "hours" ? 60 : 1),
+      coverImage, tags,
       status: submitStatus
     };
+
 
     try {
       const url = initialData ? `/api/admin/blog/${initialData.id}` : "/api/admin/blog";
@@ -130,9 +184,17 @@ export function BlogForm({ initialData }: { initialData?: any }) {
                  ))}
               </select>
             </div>
-            <div>
-              <label className="text-sm font-semibold text-foreground">Read Time (min)</label>
-              <Input type="number" value={readTime} onChange={e => setReadTime(e.target.value)} />
+            <div className="space-y-1">
+              <label className="text-sm font-semibold text-foreground">Read Time</label>
+              <div className="flex gap-1">
+                <Input type="number" value={readAmount} onChange={e => setReadAmount(Number(e.target.value))} className="h-9 w-16" />
+                <select value={readUnit} onChange={e => setReadUnit(e.target.value)} className="h-9 px-1 border rounded-md bg-background text-sm">
+                  <option value="min">min</option>
+                  <option value="hours">hr</option>
+                  <option value="days">days</option>
+                  <option value="month">mon</option>
+                </select>
+              </div>
             </div>
             <div className="col-span-2">
               <label className="text-sm font-semibold text-foreground">Tags</label>
@@ -161,12 +223,18 @@ export function BlogForm({ initialData }: { initialData?: any }) {
               <Textarea 
                 value={content} 
                 onChange={e => setContent(e.target.value)} 
-                placeholder="# Introduction\nYour markdown content supports natively triggers highlights setups accurately..." 
-                className="font-mono text-xs"
-                rows={16} 
+                placeholder="# Introduction\nYour markdown content..." 
+                className="font-mono text-sm leading-relaxed"
+                rows={20} 
               />
-              <ContentImageManager content={content} onChange={setContent} />
+              <div className="mt-2">
+                <ContentImageManager content={content} onChange={setContent} />
+              </div>
           </div>
+
+
+
+
         </CardContent>
       </Card>)}
 

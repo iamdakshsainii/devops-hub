@@ -30,7 +30,7 @@ export async function PUT(
     }
 
     const { id } = await context.params;
-    const { title, description, type, url, tags, imageUrl, status } = await req.json();
+    const { title, description, type, url, tags, imageUrl, status, linkedStepId, linkedToolId } = await req.json();
 
     // Update the global Resource row
     const resource = await prisma.resource.update({
@@ -45,6 +45,29 @@ export async function PUT(
         status: status || "PUBLISHED",
       },
     });
+
+    if (linkedStepId) {
+      const existing = await prisma.roadmapResource.findFirst({
+        where: { globalResourceId: id, stepId: linkedStepId }
+      });
+      if (!existing) {
+        await prisma.roadmapResource.create({
+          data: {
+            stepId: linkedStepId,
+            globalResourceId: id,
+            title, url, type, description: description || null, imageUrl: imageUrl || null
+          }
+        });
+      }
+    }
+
+    if (linkedToolId) {
+      await prisma.tool.update({
+        where: { id: linkedToolId },
+        data: { resourceUrl: `/resources/${id}` }
+      });
+    }
+
 
     // Sync the edit back to the linked RoadmapResource row (if any).
     // This keeps the module viewer in sync with admin edits.

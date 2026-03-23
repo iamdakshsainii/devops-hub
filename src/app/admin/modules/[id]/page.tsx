@@ -9,8 +9,11 @@ import {
   Save, Plus, Code2, Type, FileText,
   Loader2, X, Trash2, ChevronDown, ChevronRight, Image as ImageIcon
 } from "lucide-react";
+import { toast } from "sonner";
 import { Editor } from "@/components/editor";
+
 import { marked } from "marked";
+
 
 interface SubtopicForm { title: string; content: string; }
 interface TopicForm { title: string; content: string; subtopics: SubtopicForm[]; expanded: boolean; }
@@ -52,6 +55,15 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
   const [topicMarkdownInput, setTopicMarkdownInput] = useState("");
   const [topicParseMode, setTopicParseMode] = useState<Record<number, "CONTINUOUS" | "STEPWISE">>({});
   const [collapsedIntro, setCollapsedIntro] = useState<Record<number, boolean>>({});
+  const [globalResources, setGlobalResources] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch('/api/admin/resources')
+      .then(res => res.json())
+      .then(data => setGlobalResources(data || []))
+      .catch(() => {});
+  }, []);
+
 
   const handleTopicMarkdownParse = (ti: number) => {
     try {
@@ -240,7 +252,9 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
         body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error("Save failed");
+      toast.success("Module saved successfully!");
       router.push("/admin/modules"); router.refresh();
+
     } catch (err: any) { setError(err.message); setSaving(false); }
   };
 
@@ -647,12 +661,28 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
 
           {/* Resources */}
           <Card>
-            <CardHeader className="pb-4 flex flex-row items-center justify-between">
+            <CardHeader className="pb-4 flex flex-row items-center justify-between gap-4 flex-wrap">
               <CardTitle className="text-base">📚 Resources ({form.resources.length})</CardTitle>
-              <Button size="sm" variant="outline" onClick={() => setForm({ ...form, resources: [...form.resources, emptyResource()] })}>
-                <Plus className="h-3 w-3 mr-1" /> Add Resource
-              </Button>
+              <div className="flex items-center gap-2">
+                {globalResources.length > 0 && (
+                  <select 
+                    onChange={e => {
+                      const r = globalResources.find(g => g.id === e.target.value);
+                      if (r) setForm({ ...form, resources: [...form.resources, { title: r.title, url: r.url, type: r.type, description: r.description || "", imageUrl: r.imageUrl || "" }] });
+                      e.target.value = ""; // reset
+                    }}
+                    className="h-8 px-2 border rounded-md bg-background text-xs text-muted-foreground w-40"
+                  >
+                    <option value="">+ Add Existing Material</option>
+                    {globalResources.filter(g => !form.resources.some(fr => fr.url === g.url)).map(g => <option key={g.id} value={g.id}>{g.title}</option>)}
+                  </select>
+                )}
+                <Button size="sm" variant="outline" onClick={() => setForm({ ...form, resources: [...form.resources, emptyResource()] })} className="h-8 text-xs">
+                  <Plus className="h-3 w-3 mr-1" /> Add New
+                </Button>
+              </div>
             </CardHeader>
+
             <CardContent className="space-y-4">
               {form.resources.length === 0 && (
                 <p className="text-sm text-muted-foreground text-center py-4 bg-muted/20 border border-dashed rounded-lg">No resources items yet.</p>

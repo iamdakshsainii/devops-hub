@@ -37,8 +37,9 @@ export default async function AdminResourcesPage() {
     ...globalResources.map((r) => ({
       ...r,
       isNote: false,
-      isRoadmapResource: r.tags === "Module",
+      isRoadmapResource: globalIdToStepId.has(r.id),
       stepId: globalIdToStepId.get(r.id) ?? null,
+
     })),
 
     // Notes — normalised to same shape

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,48 @@ export default function NewResourceAdminPage() {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [form, setForm] = useState({ title: "", description: "", type: "ARTICLE", url: "", tags: "", imageUrl: "" });
+  const [form, setForm] = useState({ title: "", description: "", type: "ARTICLE", url: "", tags: "", imageUrl: "", linkedStepId: "", linkedToolId: "" });
+
+  const [mode, setMode] = useState<"FORM" | "JSON">("FORM");
+  const [jsonInput, setJsonInput] = useState("");
+
+  const [modules, setModules] = useState<any[]>([]);
+  const [tools, setTools] = useState<any[]>([]);
+
+  const handleJsonParse = () => {
+    try {
+      const p = JSON.parse(jsonInput);
+      setForm({
+        title: p.title || form.title,
+        description: p.description || form.description,
+        type: p.type || form.type,
+        url: p.url || form.url,
+        tags: p.tags || form.tags,
+        imageUrl: p.imageUrl || form.imageUrl,
+        linkedStepId: p.linkedStepId || form.linkedStepId,
+        linkedToolId: p.linkedToolId || form.linkedToolId,
+      });
+      setMode("FORM");
+      setError("");
+    } catch {
+      setError("Invalid JSON format");
+    }
+  };
+
+
+  useEffect(() => {
+    fetch('/api/modules?all=true')
+      .then(res => res.json())
+      .then(data => setModules(data || []))
+      .catch(() => {});
+
+    fetch('/api/tools')
+      .then(res => res.json())
+      .then(data => setTools(data || []))
+      .catch(() => {});
+
+  }, []);
+
 
   const handleImageUpload = async (file: File | undefined) => {
     if (!file) return;
@@ -42,9 +83,31 @@ export default function NewResourceAdminPage() {
          <p className="text-muted-foreground mt-1 text-sm">Add shared documentation, videos, or tools.</p>
       </div>
 
+      {/* Mode toggle */}
+      <div className="flex bg-muted p-1 rounded-lg w-fit gap-1 text-xs border">
+        <Button variant={mode === "FORM" ? "secondary" : "ghost"} size="sm" onClick={() => { setMode("FORM"); }} className="h-8"> Form Builder </Button>
+        <Button variant={mode === "JSON" ? "secondary" : "ghost"} size="sm" onClick={() => { setJsonInput(JSON.stringify(form, null, 2)); setMode("JSON"); }} className="h-8"> JSON Import </Button>
+      </div>
+
+
       {error && <div className="p-3 bg-destructive/15 text-destructive border border-destructive/20 rounded-md text-sm">{error}</div>}
 
-      <Card>
+      {mode === "JSON" && (
+        <Card>
+          <CardContent className="pt-6 space-y-4">
+            <p className="text-xs text-muted-foreground">Paste full JSON fields or connect structures to satisfy creation form builders.</p>
+            <textarea
+              value={jsonInput}
+              onChange={(e) => setJsonInput(e.target.value)}
+              className="w-full h-64 rounded-md border border-input bg-background px-3 py-2 text-xs font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
+            <Button onClick={handleJsonParse}>Apply JSON to Form</Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {mode === "FORM" && (
+        <Card>
          <CardContent className="pt-6 space-y-4">
             <div className="space-y-1.5">
                <label className="text-sm font-medium">Title</label>
@@ -62,10 +125,28 @@ export default function NewResourceAdminPage() {
                </div>
             </div>
 
+            <div className="grid grid-cols-2 gap-4">
+               <div className="space-y-1.5">
+                  <label className="text-sm font-medium">Link to Module (Optional)</label>
+                  <select value={(form as any).linkedStepId || ""} onChange={e => setForm({...form, linkedStepId: e.target.value})} className="border h-10 px-2 rounded-md w-full bg-background">
+                     <option value="">-- None --</option>
+                     {modules.map(opt => <option key={opt.id} value={opt.id}>{opt.title}</option>)}
+                  </select>
+               </div>
+               <div className="space-y-1.5">
+                  <label className="text-sm font-medium">Link to Tool (Optional)</label>
+                  <select value={(form as any).linkedToolId || ""} onChange={e => setForm({...form, linkedToolId: e.target.value})} className="border h-10 px-2 rounded-md w-full bg-background">
+                     <option value="">-- None --</option>
+                     {tools.map(opt => <option key={opt.id} value={opt.id}>{opt.name}</option>)}
+                  </select>
+               </div>
+            </div>
+
             <div className="space-y-1.5">
                <label className="text-sm font-medium">URL</label>
                <Input value={form.url} onChange={e => setForm({...form, url: e.target.value})} placeholder="https://..." />
             </div>
+
 
             <div className="space-y-1.5">
                <label className="text-sm font-medium">Cover Image</label>
@@ -95,6 +176,8 @@ export default function NewResourceAdminPage() {
             </Button>
          </CardContent>
       </Card>
+      )}
     </div>
+
   );
 }

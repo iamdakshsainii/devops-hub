@@ -65,19 +65,19 @@ export function BlogList({ initialData }: { initialData: any[] }) {
       </div>
 
       <div className="bg-card rounded-2xl border border-border/40 overflow-hidden shadow-sm">
-        <div className="hidden md:grid grid-cols-8 gap-4 p-4 font-bold text-xs text-muted-foreground border-b border-border/30 bg-muted/10">
+        <div className="hidden md:grid grid-cols-9 gap-4 p-4 font-bold text-xs text-muted-foreground border-b border-border/30 bg-muted/10">
           <div className="col-span-2">Title</div>
           <div>Category</div>
           <div>Status</div>
           <div>Views</div>
           <div>Likes</div>
           <div>Comments</div>
-          <div className="text-right">Actions</div>
+          <div className="col-span-2 text-right">Actions</div>
         </div>
 
         {filtered.length > 0 ? (
           filtered.map((item) => (
-            <div key={item.id} className="grid grid-cols-1 md:grid-cols-8 gap-4 p-4 border-b border-border/10 items-center text-sm last:border-0 hover:bg-muted/5 transition-colors">
+            <div key={item.id} className="grid grid-cols-1 md:grid-cols-9 gap-4 p-4 border-b border-border/10 items-center text-sm last:border-0 hover:bg-muted/5 transition-colors">
               <div className="col-span-2 font-semibold">
                 {item.title}
                 <div className="md:hidden text-xs text-muted-foreground mt-1">Category: {item.category}</div>
@@ -103,12 +103,19 @@ export function BlogList({ initialData }: { initialData: any[] }) {
               <div className="hidden md:block text-xs text-muted-foreground">
                 <span className="flex items-center gap-1"><MessageSquare className="h-3.5 w-3.5 text-blue-500/80" /> {item._count.comments}</span>
               </div>
-              <div className="flex gap-2 justify-end">
+              <div className="col-span-2 flex gap-1 justify-end items-center">
+
+                <a href={`/blog/${item.slug}`} target="_blank" rel="noopener noreferrer">
+                  <Button variant="ghost" size="sm" className="h-8 px-2 text-xs font-medium gap-1 text-muted-foreground hover:text-foreground">
+                    <Eye className="h-3.5 w-3.5" /> Preview
+                  </Button>
+                </a>
                 <Link href={`/admin/blog/${item.id}`}>
                   <Button variant="secondary" size="sm" className="h-8 text-xs font-medium">
                     <Edit className="h-3.5 w-3.5 mr-1" /> Edit
                   </Button>
                 </Link>
+
                 <Button
                   variant="outline"
                   size="sm"

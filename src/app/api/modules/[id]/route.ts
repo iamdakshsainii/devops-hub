@@ -237,8 +237,26 @@ export async function DELETE(req: Request, context: { params: Promise<{ id: stri
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
     const { id } = await context.params;
+
+    // cleanup floating resources for this module before soft-deleting
+    const roadmapResources = await prisma.roadmapResource.findMany({
+      where: { stepId: id },
+      select: { globalResourceId: true }
+    });
+
     await prisma.roadmapStep.update({ where: { id }, data: { status: "DELETED" } });
+
+    const globalIds = roadmapResources.map(r => r.globalResourceId).filter(Boolean) as string[];
+    if (globalIds.length > 0) {
+      // Hard delete global mirrored rows mapped only to this module or soft delete them
+      await prisma.resource.updateMany({
+        where: { id: { in: globalIds }, tags: "Module" },
+        data: { status: "DELETED" }
+      });
+    }
+
     return NextResponse.json({ message: "Soft Deleted" });
+
   } catch (err) {
     return NextResponse.json({ message: "Failed to delete" }, { status: 500 });
   }

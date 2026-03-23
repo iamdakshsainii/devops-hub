@@ -9,33 +9,8 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 
-function buildRenderer() {
-  const renderer = new marked.Renderer();
-  renderer.code = function ({ text, lang }: { text: string; lang?: string }) {
-    const trimmed = text.replace(/^\n+/, "").replace(/\n+$/, "");
-    const isPlain = !lang || !hljs.getLanguage(lang);
-    const validLang = isPlain ? "plaintext" : lang!;
-    const highlighted = hljs.highlight(trimmed, { language: validLang }).value;
+import { parseMarkdown } from "@/lib/markdown";
 
-    const encoded = encodeURIComponent(trimmed);
-    const label = validLang.toUpperCase();
-
-    return `
-<div class="devhub-code-block" data-lang="${validLang}">
-  <div class="devhub-code-header">
-    <span class="devhub-lang-label">${label}</span>
-    <button class="devhub-copy-btn" data-code="${encoded}" type="button">
-      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-      <span>Copy</span>
-    </button>
-  </div>
-  <pre class="devhub-pre"><code class="hljs language-${validLang}">${highlighted}</code></pre>
-</div>`;
-  };
-  return renderer;
-}
-
-marked.use({ gfm: true, breaks: false, renderer: buildRenderer() });
 
 function wireCopyButtons() {
   document.querySelectorAll<HTMLButtonElement>(".devhub-copy-btn").forEach((btn) => {
@@ -55,6 +30,8 @@ function wireCopyButtons() {
   });
 }
 
+import { StepViewer } from "@/components/step-viewer";
+
 export function BlogContent({ post, initialComments }: { post: any; initialComments: any[] }) {
   const { data: session } = useSession();
   const [likes, setLikes] = useState(post.likeCount);
@@ -62,12 +39,47 @@ export function BlogContent({ post, initialComments }: { post: any; initialComme
   const [comments, setComments] = useState(initialComments);
   const [commentText, setCommentText] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [viewMode, setViewMode] = useState<"continuous" | "stepwise">("continuous");
+
+  const parseBlogToStep = (p: any) => {
+     const sections = p.content.split(/\n##\s+/);
+     const intro = sections[0];
+     const rest = sections.slice(1);
+
+     const topics = rest.map((sec: string, idx: number) => {
+         const lines = sec.split("\n");
+         const title = lines[0].replace(/^##\s+/, "").trim() || `Section ${idx + 1}`;
+         const content = lines.slice(1).join("\n").trim();
+         return { id: `topic-${idx}`, title, content: content || "...", order: idx + 1, subtopics: [] };
+     });
+
+     if (topics.length === 0) {
+         topics.push({ id: "topic-0", title: "Article", content: p.content, order: 1, subtopics: [] });
+     }
+
+     return {
+         id: p.id,
+         title: "Overview",
+         description: p.title,
+         icon: "📖",
+         order: 1,
+         topics,
+         resources: [],
+         author: p.author
+     };
+  };
+
+
+
 
   useEffect(() => {
      wireCopyButtons();
-  }, [post.content]);
+     // Increment viewCount safely from Client without pre-fetch triggers
+     fetch(`/api/blog/${post.slug}/view`, { method: "POST" }).catch(() => {});
+  }, [post.content, post.slug]);
 
   const handleLike = async () => {
+
      if (hasLiked) return;
      setLikes(likes + 1);
      setHasLiked(true);
@@ -99,13 +111,46 @@ export function BlogContent({ post, initialComments }: { post: any; initialComme
   const [shareUrl, setShareUrl] = useState("");
   useEffect(() => { setShareUrl(window.location.href); }, []);
 
+  const mockStep = parseBlogToStep(post);
+  const mockRoadmap = { id: "blog-post", title: "Blog", description: "", icon: "BookOpen", color: "primary" };
+
+  if (viewMode === "stepwise") {
+       return (
+           <div className="fixed inset-0 z-50 bg-background overflow-hidden">
+               <div className="absolute top-3 right-4 z-[60]">
+                   <Button variant="secondary" size="sm" className="text-xs font-bold gap-1 bg-background/80 backdrop-blur-md border border-border/20 shadow-md hover:bg-background/95" onClick={() => setViewMode("continuous")}>
+                        👓 Continuous View
+                   </Button>
+               </div>
+               <div className="h-full w-full overflow-auto">
+                   <StepViewer step={mockStep as any} roadmap={mockRoadmap} isStandalone={true} isBlog={true} />
+               </div>
+Ref of Continuous view button absolute layout flawlessly trigger
+
+
+           </div>
+       );
+  }
+
+
+
   return (
     <div className="space-y-12">
+      <div className="flex justify-center p-4 bg-muted/20 border border-border/10 rounded-xl">
+          <Button variant="default" size="sm" className="text-xs font-bold gap-1 bg-primary text-primary-foreground hover:bg-primary/90" onClick={() => setViewMode("stepwise")}>
+               🧭 Switch to Step-wise View
+          </Button>
+      </div>
+
       {/* Content */}
       <div 
-         className="devhub-prose prose prose-invert max-w-none text-muted-foreground leading-relaxed text-sm md:text-base"
-         dangerouslySetInnerHTML={{ __html: marked.parse(post.content) as string }}
+         className="devhub-prose prose prose-base dark:prose-invert max-w-none text-muted-foreground leading-relaxed text-sm md:text-base"
+         dangerouslySetInnerHTML={{ __html: parseMarkdown(post.content) }}
       />
+
+
+
+
 
       <div className="flex flex-col sm:flex-row justify-between items-center bg-card/60 backdrop-blur-md p-4 rounded-xl border border-border/20 gap-4">
          <Button onClick={handleLike} disabled={hasLiked} variant="outline" className="gap-2 font-semibold">
@@ -152,7 +197,7 @@ export function BlogContent({ post, initialComments }: { post: any; initialComme
                      <div className="flex-1 space-y-1">
                           <div className="flex items-center justify-between">
                               <span className="text-xs font-bold text-foreground">{c.author?.fullName || "Contributor"}</span>
-                              <span className="text-[10px] text-muted-foreground/60">{new Date(c.createdAt).toLocaleDateString()}</span>
+                              <span className="text-[10px] text-muted-foreground/60" suppressHydrationWarning>{new Date(c.createdAt).toLocaleDateString()}</span>
                           </div>
                           <p className="text-sm text-muted-foreground/90">{c.content}</p>
                      </div>

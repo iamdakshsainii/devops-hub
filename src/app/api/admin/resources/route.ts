@@ -10,26 +10,53 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const { title, description, type, url, tags, imageUrl } = await req.json();
+    const { title, description, type, url, tags, imageUrl, linkedStepId, linkedToolId } = await req.json();
 
-    if (!title || !description || !type || !url) {
+    if (!title || !type || !url) {
       return NextResponse.json({ message: "Missing required fields" }, { status: 400 });
     }
 
-    const resource = await prisma.resource.create({
-      data: {
-        title,
-        description,
-        type,
-        url,
-        tags: tags || "General",
-        imageUrl: imageUrl || null,
-        authorId: session.user.id,
-        status: "PUBLISHED", // Admin creators always live
-      },
+
+    const resource = await prisma.$transaction(async (tx) => {
+      const r = await tx.resource.create({
+        data: {
+          title,
+          description,
+          type,
+          url,
+          tags: tags || "General",
+          imageUrl: imageUrl || null,
+          authorId: session.user.id,
+          status: "PUBLISHED",
+        },
+      });
+
+      if (linkedStepId) {
+        await tx.roadmapResource.create({
+          data: {
+            stepId: linkedStepId,
+            title: title || "Module Resource",
+            url: url || "",
+            type: type || "ARTICLE",
+            description: description || "",
+            imageUrl: imageUrl || null,
+            globalResourceId: r.id,
+          }
+        });
+      }
+
+      if (linkedToolId) {
+        await tx.tool.update({
+          where: { id: linkedToolId },
+          data: { resourceUrl: `/resources/${r.id}` }
+        });
+      }
+
+      return r;
     });
 
     return NextResponse.json({ message: "Created", resource }, { status: 201 });
+
   } catch (error) {
     return NextResponse.json({ message: "Failed to create" }, { status: 500 });
   }

@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
-import { PlusCircle, Edit, Search, Trash2, Eye, EyeOff, Loader2 } from "lucide-react";
+import { PlusCircle, Edit, Search, Trash2, Eye, EyeOff, Loader2, X } from "lucide-react";
+import { StepViewer } from "@/components/step-viewer";
 
 export default function AdminModulesList({ modules, roadmaps = [] }: { modules: any[], roadmaps?: any[] }) {
   const [search, setSearch] = useState("");
@@ -15,6 +16,22 @@ export default function AdminModulesList({ modules, roadmaps = [] }: { modules: 
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<string>("DEFAULT");
+
+  const [previewStep, setPreviewStep] = useState<any>(null);
+  const [previewLoadingId, setPreviewLoadingId] = useState<string | null>(null);
+
+  const handlePreview = async (id: string) => {
+      setPreviewLoadingId(id);
+      try {
+          const res = await fetch(`/api/modules/${id}`);
+          if (res.ok) {
+              const data = await res.json();
+              setPreviewStep(data);
+          }
+      } catch (err) { console.error(err); }
+      setPreviewLoadingId(null);
+  };
+
 
   const handleAssignRoadmap = async (id: string, roadmapId: string) => {
     setLoadingId(id);
@@ -281,9 +298,20 @@ export default function AdminModulesList({ modules, roadmaps = [] }: { modules: 
                                  {loadingId === mod.id ? <Loader2 className="h-3 w-3 animate-spin"/> : mod.status === "PUBLISHED" ? <><EyeOff className="h-3 w-3 mr-1"/> Delist</> : <><Eye className="h-3 w-3 mr-1"/> Publish</>}
                               </Button>
 
-                              <Link href={`/admin/modules/${mod.id}`}>
-                                 <Button variant="secondary" size="sm" className="h-8 text-xs font-medium"><Edit className="h-3 w-3 mr-1" /> Edit</Button>
-                              </Link>
+                              <Button 
+                                  variant="secondary" 
+                                  size="sm" 
+                                  onClick={() => handlePreview(mod.id)} 
+                                  disabled={previewLoadingId === mod.id}
+                                  className="h-8 text-xs font-medium"
+                               >
+                                  {previewLoadingId === mod.id ? <Loader2 className="h-3 w-3 animate-spin"/> : <><Eye className="h-3 w-3 mr-1"/> Preview</>}
+                               </Button>
+
+                               <Link href={`/admin/modules/${mod.id}`}>
+                                  <Button variant="outline" size="sm" className="h-8 text-xs font-medium"><Edit className="h-3 w-3 mr-1" /> Edit</Button>
+                               </Link>
+
 
                               <Button 
                                  variant="outline" 
@@ -310,6 +338,22 @@ export default function AdminModulesList({ modules, roadmaps = [] }: { modules: 
           <p className="text-muted-foreground max-w-sm mx-auto">Try resetting or modifying your search filters.</p>
         </div>
       )}
+
+      {previewStep && (
+
+         <div className="fixed inset-0 z-50 bg-background flex flex-col overflow-hidden">
+             <div className="absolute top-3 right-4 z-[60]">
+                 <Button variant="outline" size="sm" className="text-xs font-bold gap-1 bg-background/80 backdrop-blur-md border border-border/20 shadow-md" onClick={() => setPreviewStep(null)}>
+                     <X className="h-3.5 w-3.5" /> Close Preview
+                 </Button>
+             </div>
+             <div className="h-full w-full overflow-auto">
+                 <StepViewer step={previewStep} roadmap={previewStep.roadmap || { color: "#3B82F6" }} isStandalone={true} />
+             </div>
+         </div>
+      )}
+
     </div>
   );
 }
+

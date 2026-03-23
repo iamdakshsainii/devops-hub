@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Clock, BarChart, Eye, Heart, MessageSquare, Twitter, Linkedin, Facebook, Copy } from "lucide-react";
+import { ArrowLeft, Clock, Eye, Heart, MessageSquare, Bookmark, Reply, Tag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BlogContent } from "../blog-content";
@@ -18,14 +18,15 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function BlogDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
 
-  const post = await prisma.blogPost.update({
+  const post = await prisma.blogPost.findUnique({
     where: { slug },
-    data: { viewCount: { increment: 1 } },
     include: {
       author: { select: { fullName: true, avatarUrl: true, bio: true, role: true, createdAt: true } },
       _count: { select: { comments: true } }
     }
   }).catch(() => null);
+
+
 
   if (!post || post.status === "DELETED") {
     return notFound();
@@ -49,8 +50,47 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
       year: "numeric", month: "short"
   });
 
+  const formatReadTime = (mins: number) => {
+    if (mins >= 43200) return `${Math.floor(mins / 43200)} mon`;
+    if (mins >= 1440) return `${Math.floor(mins / 1440)} days`;
+    if (mins >= 60) return `${Math.floor(mins / 60)} hr`;
+    return `${mins} min`;
+  };
+
+  const tagList = post.tags ? post.tags.split(",").map((t: string) => t.trim()).filter(Boolean) : [];
+
+  const relatedResources = tagList.length > 0 ? await prisma.resource.findMany({
+    where: { status: "PUBLISHED", OR: tagList.map(tag => ({ tags: { contains: tag } })) },
+    take: 3
+  }) : [];
+
+  const relatedModules = tagList.length > 0 ? await prisma.roadmapStep.findMany({
+    where: { OR: tagList.map(tag => ({ tags: { contains: tag } })) },
+    take: 2
+  }) : [];
+
+  const relatedTools = tagList.length > 0 ? await prisma.tool.findMany({
+    where: { status: "PUBLISHED", OR: tagList.map(tag => ({ tags: { contains: tag } })) },
+    take: 1
+  }) : [];
+
+  const relatedCheatsheets = tagList.length > 0 ? await prisma.cheatsheet.findMany({
+    where: { status: "PUBLISHED", OR: tagList.map(tag => ({ tags: { contains: tag } })) },
+    take: 1
+  }) : [];
+
+  const relatedContent = [
+     ...relatedModules.map(m => ({ id: m.id, title: m.title, type: "Module", url: `/roadmap?stepId=${m.id}` })),
+     ...relatedTools.map((t: any) => ({ id: t.id, title: t.name, type: "Tool", url: `/tools/${t.slug}` })),
+     ...relatedCheatsheets.map((c: any) => ({ id: c.id, title: c.title, type: "Cheatsheet", url: `/cheatsheets/${c.slug}` }))
+  ];
+
+
+
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl space-y-6">
+
       <Link href="/blog" className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors mb-2">
          <ArrowLeft className="h-4 w-4" /> Back to Blog
       </Link>
@@ -80,7 +120,7 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
          <div className="flex items-center justify-center gap-4 text-xs font-semibold text-muted-foreground border-t border-border/10 pt-4 mt-2">
              <span>{formattedDate}</span>
              <span className="h-1 w-1 rounded-full bg-muted-foreground/40" />
-             <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {post.readTime} min</span>
+             <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {formatReadTime(post.readTime)}</span>
              <span className="h-1 w-1 rounded-full bg-muted-foreground/40" />
              <span className="flex items-center gap-1"><Eye className="h-3.5 w-3.5" /> {post.viewCount} views</span>
          </div>
@@ -90,16 +130,18 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
          {/* Main Content (7/10) */}
          <div className="lg:col-span-7">
               {post.coverImage && (
-                  <div className="w-full h-64 md:h-80 relative overflow-hidden rounded-2xl border border-border/20 mb-8 bg-muted shadow-sm">
-                      <img src={post.coverImage} className="object-cover w-full h-full" alt={post.title} />
+                  <div className="w-full relative overflow-hidden rounded-2xl border border-border/20 mb-8 bg-card/60 shadow-sm flex items-center justify-center">
+                      <img src={post.coverImage} className="object-contain w-full h-auto max-h-[480px]" alt={post.title} />
                   </div>
               )}
+
+
               <BlogContent post={post} initialComments={comments} />
          </div>
 
          {/* Sidebar (3/10) */}
-         <div className="lg:col-span-3 space-y-6">
-              <Card className="bg-gradient-to-br from-primary/5 via-card/40 to-background/10 backdrop-blur-xl rounded-2xl border border-primary/10 shadow-[0_0_50px_-12px_rgba(0,0,0,0.3)] shadow-primary/5 sticky top-24">
+         <div className="lg:col-span-3 space-y-6 sticky top-24 self-start">
+              <Card className="bg-gradient-to-br from-primary/5 via-card/40 to-background/10 backdrop-blur-xl rounded-2xl border border-primary/10 shadow-[0_0_50px_-12px_rgba(0,0,0,0.3)] shadow-primary/5">
                   <CardHeader className="pb-3 border-b border-border/10">
                       <CardTitle className="text-xs font-bold flex items-center gap-1.5"><Eye className="h-3.5 w-3.5 text-primary" /> Article Stats</CardTitle>
                   </CardHeader>
@@ -121,14 +163,14 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
                       </div>
                       <div className="p-2 border border-border/10 bg-background/30 rounded-xl flex flex-col items-center justify-center">
                           <Clock className="h-4 w-4 text-emerald-500/80" />
-                          <span className="text-xs font-bold mt-1">{post.readTime}m</span>
+                          <span className="text-xs font-bold mt-1">{formatReadTime(post.readTime)}</span>
                           <span className="text-[10px] text-muted-foreground">Read</span>
                       </div>
                   </CardContent>
               </Card>
 
               {post.author && (
-              <Card className="bg-gradient-to-br from-background/20 via-card/40 to-primary/5 backdrop-blur-xl rounded-2xl border border-border/10 shadow-[0_0_50px_-12px_rgba(0,0,0,0.3)] shadow-primary/5 sticky top-[18.5rem]">
+              <Card className="bg-gradient-to-br from-background/20 via-card/40 to-primary/5 backdrop-blur-xl rounded-2xl border border-border/10 shadow-[0_0_50px_-12px_rgba(0,0,0,0.3)] shadow-primary/5">
                   <CardHeader className="pb-3 border-b border-border/10">
                       <CardTitle className="text-sm font-bold">About Author</CardTitle>
                   </CardHeader>
@@ -146,8 +188,60 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
                   </CardContent>
               </Card>
               )}
+
+              {/* Catchy Tags Cloud */}
+              {tagList.length > 0 && (
+              <Card className="bg-card/40 backdrop-blur-md rounded-2xl border border-border/10">
+                  <CardHeader className="p-3 border-b border-border/10 flex items-center gap-1.5"><CardTitle className="text-xs font-bold flex items-center gap-1"><Tag className="h-3.5 w-3.5 text-primary" /> Topics Covered</CardTitle></CardHeader>
+                  <CardContent className="p-3 flex flex-wrap gap-1.5">
+                     {tagList.map(t => (
+                         <Badge key={t} variant="secondary" className="px-2 py-0.5 text-[10px] font-bold bg-primary/5 text-primary border border-primary/20 hover:bg-primary/20 hover:scale-105 transition-all rounded-full cursor-pointer shadow-sm">
+                              # {t}
+                         </Badge>
+                     ))}
+                  </CardContent>
+              </Card>
+              )}
+
+              {/* Related Resources */}
+              <Card className="bg-card/40 backdrop-blur-md rounded-2xl border border-border/10">
+                  <CardHeader className="p-3 border-b border-border/10 flex items-center gap-1.5"><CardTitle className="text-xs font-bold">Related Resources</CardTitle></CardHeader>
+                  <CardContent className="p-3 space-y-2">
+                     {relatedResources.length > 0 ? relatedResources.map(r => (
+                         <a key={r.id} href={r.url} target="_blank" className="block p-2 rounded-lg hover:bg-muted/50 transition-colors border-l-2 border-blue-400 pl-3">
+                             <p className="text-xs font-bold text-foreground line-clamp-1">{r.title}</p>
+                             <p className="text-[10px] text-muted-foreground mt-0.5 capitalize">{r.type.toLowerCase()}</p>
+                         </a>
+                     )) : (
+                         <div className="p-3 text-center text-[10px] text-muted-foreground/60 border border-dashed border-border/10 rounded-xl">
+                              No related resources yet.
+                         </div>
+                     )}
+                  </CardContent>
+              </Card>
+
+
+
+              {/* Related Content (Roadmap, Tool, Cheatsheet) */}
+              <Card className="bg-card/40 backdrop-blur-md rounded-2xl border border-border/10">
+                  <CardHeader className="p-3 border-b border-border/10 flex items-center gap-1.5"><CardTitle className="text-xs font-bold">Related Content</CardTitle></CardHeader>
+                  <CardContent className="p-3 space-y-2">
+                     {relatedContent.length > 0 ? relatedContent.map(r => (
+                         <Link key={r.id} href={r.url} className="block p-2 rounded-lg hover:bg-muted/50 transition-colors border-l-2 border-emerald-400 pl-3">
+                             <p className="text-xs font-bold text-foreground line-clamp-1">{r.title}</p>
+                             <p className="text-[10px] text-muted-foreground mt-0.5">{r.type}</p>
+                         </Link>
+                     )) : (
+                         <div className="p-3 text-center text-[10px] text-muted-foreground/60 border border-dashed border-border/10 rounded-xl">
+                              No related modules or tools.
+                         </div>
+                     )}
+                  </CardContent>
+              </Card>
+
          </div>
       </div>
     </div>
   );
 }
+

@@ -64,6 +64,14 @@ export function BlogClient({ initialData }: { initialData: any[] }) {
                   month: "short", day: "numeric"
               });
 
+              const formatReadTime = (mins: number) => {
+                if (mins >= 43200) return `${Math.floor(mins / 43200)} mon`;
+                if (mins >= 1440) return `${Math.floor(mins / 1440)} days`;
+                if (mins >= 60) return `${Math.floor(mins / 60)} hr`;
+                return `${mins} min`;
+              };
+
+
               return (
               <Card key={item.id} className="group flex flex-col hover:border-primary/50 transition-all duration-300 overflow-hidden bg-card/70 backdrop-blur-sm h-full relative">
                  <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full blur-3xl opacity-0 group-hover:opacity-10 transition-opacity duration-500 pointer-events-none bg-primary" />
@@ -103,7 +111,7 @@ export function BlogClient({ initialData }: { initialData: any[] }) {
 
                      <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground mt-4 pt-3 border-t border-border/10">
                          <span className="flex items-center gap-1">
-                             <Clock className="h-3 w-3" /> {item.readTime} min
+                              <Clock className="h-3 w-3" /> {formatReadTime(item.readTime)}
                          </span>
                          <div className="flex items-center gap-3">
                              <span className="flex items-center gap-1">

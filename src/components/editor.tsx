@@ -248,9 +248,14 @@ export function Editor({ content, onChange }: EditorProps) {
     const current = editor.getHTML();
     if (content === current) return;
     const trimmed = (content || "").trim();
-    const isHTML = trimmed.startsWith("<") && trimmed.includes(">");
-    if (!isHTML) return;
+    const isHTML = trimmed.startsWith("<") && (trimmed.startsWith("<p>") || trimmed.startsWith("<h1>") || trimmed.startsWith("<h2>") || trimmed.startsWith("<h3>") || trimmed.startsWith("<ul") || trimmed.startsWith("<ol") || trimmed.startsWith("<div") || trimmed.startsWith("<blockquote"));
+    if (!isHTML && (trimmed.includes("# ") || trimmed.includes("**") || trimmed.includes("\n"))) {
+      editor.commands.setContent(marked.parse(content) as string);
+      return;
+    }
     if (content !== current) editor.commands.setContent(content);
+
+
   }, [content, editor]);
 
   // ── Image upload ──────────────────────────────────────────────────────────
