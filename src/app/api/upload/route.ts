@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
-import { existsSync } from "fs";
+import { uploadToCloudinary } from "@/lib/cloudinary";
 
 export async function POST(req: Request) {
   try {
@@ -22,23 +20,12 @@ export async function POST(req: Request) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Create unique filename
-    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    const extension = file.name.split('.').pop() || 'tmp';
-    const filename = `${uniqueSuffix}.${extension}`;
-
-    // Ensure uploads directory exists
-    const uploadDir = join(process.cwd(), "public", "uploads");
-    if (!existsSync(uploadDir)) {
-      await mkdir(uploadDir, { recursive: true });
-    }
-
-    const path = join(uploadDir, filename);
-    await writeFile(path, buffer);
+    // Upload to Cloudinary instead of FS
+    const uploadResult = (await uploadToCloudinary(buffer, "uploads")) as any;
 
     return NextResponse.json({ 
       message: "Uploaded successfully",
-      url: `/uploads/${filename}`
+      url: uploadResult.secure_url // Cloudinary CDN link
     });
 
   } catch (error) {
@@ -46,3 +33,4 @@ export async function POST(req: Request) {
     return NextResponse.json({ message: "Server error during upload" }, { status: 500 });
   }
 }
+
