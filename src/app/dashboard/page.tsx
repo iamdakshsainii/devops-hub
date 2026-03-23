@@ -30,7 +30,11 @@ export default async function DashboardPage() {
     take: 2,
     include: {
       author: { select: { fullName: true } },
-      _count: { select: { upvotes: true } }
+      _count: { select: { upvotes: true } },
+      upvotes: {
+        where: { userId: session.user.id },
+        select: { id: true }
+      }
     }
   });
 

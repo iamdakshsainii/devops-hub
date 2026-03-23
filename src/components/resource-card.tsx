@@ -25,7 +25,7 @@ interface ResourceCardProps {
 
 export function ResourceCard({ resource }: ResourceCardProps) {
   const [upvotes, setUpvotes] = useState(resource._count?.upvotes || 0);
-  const [hasUpvoted, setHasUpvoted] = useState(false);
+  const [hasUpvoted, setHasUpvoted] = useState((resource as any).upvotes?.length > 0);
   const [loadingUpvote, setLoadingUpvote] = useState(false);
 
   const descParts = resource.description.split("· From:");
