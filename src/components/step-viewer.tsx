@@ -999,13 +999,16 @@ export function StepViewer({
                     }))
                   ];
 
-                  // De-duplicate resources by ID
+                  // De-duplicate resources by Title/URL to catch duplicate records too
                   const dedupedResources: any[] = [];
-                  const seenIds = new Set();
+                  const seenKeys = new Set();
                   for (const r of allResources) {
-                    if (r && r.id && !seenIds.has(r.id)) {
-                      seenIds.add(r.id);
-                      dedupedResources.push(r);
+                    if (r) {
+                      const key = r.url || r.title || r.id;
+                      if (key && !seenKeys.has(key)) {
+                        seenKeys.add(key);
+                        dedupedResources.push(r);
+                      }
                     }
                   }
 
