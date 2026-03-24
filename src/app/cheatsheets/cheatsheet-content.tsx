@@ -48,7 +48,11 @@ function buildRenderer() {
 marked.use({ gfm: true, breaks: false, renderer: buildRenderer() });
 
 function parseMarkdown(content: string): string {
-  return marked.parse(content) as string;
+  const html = marked.parse(content) as string;
+  // Wrap all tables in scroll containers to avoid display:block distortion hacks.
+  return html
+    .replace(/<table/g, '<div class="w-full overflow-x-auto my-5 border border-border/20 rounded-xl shadow-sm"><table class="w-full border-collapse"')
+    .replace(/<\/table>/g, '</table></div>');
 }
 
 function wireCopyButtons(containerId: string) {
@@ -85,7 +89,7 @@ const PROSE = [
   "prose-a:text-primary prose-a:no-underline prose-a:font-medium hover:prose-a:underline prose-a:underline-offset-4",
   "prose-blockquote:not-italic prose-blockquote:border-l-4 prose-blockquote:border-primary prose-blockquote:bg-primary/5 prose-blockquote:py-3 prose-blockquote:px-5 prose-blockquote:rounded-r-xl",
   "prose-img:rounded-2xl prose-img:border prose-img:shadow-xl",
-  "prose-th:border prose-th:border-border/40 prose-th:px-3.5 prose-th:py-2 prose-th:text-left prose-th:text-xs prose-th:uppercase prose-th:tracking-wider prose-th:bg-muted/40",
+  "prose-th:border prose-th:border-border/40 prose-th:px-3.5 prose-th:py-2 prose-th:text-left prose-th:text-xs prose-th:tracking-wider prose-th:bg-muted/40",
   "prose-td:border prose-td:border-border/20 prose-td:px-3.5 prose-td:py-1.5 prose-td:text-sm prose-td:leading-normal",
   "[&_code]:before:content-none [&_code]:after:content-none",
   "[&_:not(pre)>code]:bg-muted [&_:not(pre)>code]:text-foreground [&_:not(pre)>code]:border",

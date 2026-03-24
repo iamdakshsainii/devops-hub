@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Clock, BarChart, Eye, LayoutGrid } from "lucide-react";
+import { ArrowLeft, Clock, BarChart, Eye, LayoutGrid, Library } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,7 @@ export default async function CheatsheetDetailPage({ params }: { params: Promise
     where: { slug },
     include: {
       author: { select: { fullName: true } },
+      resources: { orderBy: { order: "asc" } },
       sections: {
         orderBy: { order: "asc" },
         include: { subsections: { orderBy: { order: "asc" } } }
@@ -49,6 +50,28 @@ export default async function CheatsheetDetailPage({ params }: { params: Promise
     take: 3,
     orderBy: { createdAt: "desc" }
   });
+
+  const tagList = cheatsheet.tags ? cheatsheet.tags.split(",").map((t: string) => t.trim()).filter(Boolean) : [];
+
+  const dynamicResources = tagList.length > 0 ? await prisma.resource.findMany({
+    where: { status: "PUBLISHED", OR: tagList.map(tag => ({ tags: { contains: tag } })) },
+    take: 3
+  }) : [];
+
+  const dynamicModules = tagList.length > 0 ? await prisma.roadmapStep.findMany({
+    where: { OR: tagList.map(tag => ({ tags: { contains: tag } })) },
+    take: 2
+  }) : [];
+
+  const dynamicCheatsheets = tagList.length > 0 ? await prisma.cheatsheet.findMany({
+    where: { status: "PUBLISHED", OR: tagList.map(tag => ({ tags: { contains: tag } })), id: { not: cheatsheet.id } },
+    take: 2
+  }) : [];
+
+  const relatedContent = [
+     ...dynamicModules.map(m => ({ id: m.id, title: m.title, type: "Module", url: `/roadmap?stepId=${m.id}` })),
+     ...dynamicCheatsheets.map((c: any) => ({ id: c.id, title: c.title, type: "Cheatsheet", url: `/cheatsheets/${c.slug}` }))
+  ];
 
   const formattedDate = new Date(cheatsheet.createdAt).toLocaleDateString(undefined, {
     month: "short",

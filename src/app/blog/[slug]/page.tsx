@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Clock, Eye, Heart, MessageSquare, Bookmark, Reply, Tag } from "lucide-react";
+import { ArrowLeft, Clock, Eye, Heart, MessageSquare, Bookmark, Reply, Tag, Library } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BlogContent, SwitchViewButton } from "../blog-content";
@@ -22,6 +22,7 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
     where: { slug },
     include: {
       author: { select: { fullName: true, avatarUrl: true, bio: true, role: true, createdAt: true } },
+      resources: { orderBy: { order: "asc" } },
       _count: { select: { comments: true } }
     }
   }).catch(() => null);
@@ -209,38 +210,54 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
               )}
 
               {/* Related Resources */}
-              <Card className="bg-card/40 backdrop-blur-md rounded-2xl border border-border/10">
-                  <CardHeader className="p-3 border-b border-border/10 flex items-center gap-1.5"><CardTitle className="text-xs font-bold">Related Resources</CardTitle></CardHeader>
+              <Card className="bg-card/20 backdrop-blur-xl rounded-2xl border border-border/10 shadow-sm">
+                  <CardHeader className="p-4 border-b border-border/10 flex items-center gap-1.5"><CardTitle className="text-xs font-black uppercase tracking-wider text-muted-foreground/80 flex items-center gap-1.5"><Library className="h-3.5 w-3.5 text-blue-400" /> Related Resources</CardTitle></CardHeader>
                   <CardContent className="p-3 space-y-2">
-                     {relatedResources.length > 0 ? relatedResources.map(r => (
-                         <a key={r.id} href={r.url} target="_blank" className="block p-2 rounded-lg hover:bg-muted/50 transition-colors border-l-2 border-blue-400 pl-3">
-                             <p className="text-xs font-bold text-foreground line-clamp-1">{r.title}</p>
-                             <p className="text-[10px] text-muted-foreground mt-0.5 capitalize">{r.type.toLowerCase()}</p>
-                         </a>
-                     )) : (
-                         <div className="p-3 text-center text-[10px] text-muted-foreground/60 border border-dashed border-border/10 rounded-xl">
-                              No related resources yet.
-                         </div>
-                     )}
+                     {relatedResources.length > 0 ? relatedResources.map(r => {
+                         const isVideo = r.type.toLowerCase() === "video";
+                         const isNotes = r.type.toLowerCase() === "notes";
+                         return (
+                          <a key={r.id} href={r.url} target="_blank" className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/40 transition-all border border-transparent hover:border-border/10 hover:shadow-sm group">
+                              <div className={`p-2 rounded-xl bg-blue-500/10 text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-all`}>
+                                   {isVideo ? <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> : <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a4 4 0 0 0-4-4H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a4 4 0 0 1 4-4h6z"/></svg>}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                  <p className="text-xs font-bold text-foreground line-clamp-1 group-hover:text-blue-400 transition-colors">{r.title}</p>
+                                  <span className="text-[9px] font-bold text-blue-400/80 bg-blue-400/5 px-1.5 py-0.5 rounded-full mt-1.5 inline-block capitalize border border-blue-400/10">{r.type.toLowerCase()}</span>
+                              </div>
+                          </a>
+                        )}) : (
+                          <div className="p-4 text-center text-xs text-muted-foreground/50 border border-dashed border-border/10 rounded-xl">
+                               No related resources yet.
+                          </div>
+                      )}
                   </CardContent>
               </Card>
 
 
 
               {/* Related Content (Roadmap, Tool, Cheatsheet) */}
-              <Card className="bg-card/40 backdrop-blur-md rounded-2xl border border-border/10">
-                  <CardHeader className="p-3 border-b border-border/10 flex items-center gap-1.5"><CardTitle className="text-xs font-bold">Related Content</CardTitle></CardHeader>
+              <Card className="bg-card/20 backdrop-blur-xl rounded-2xl border border-border/10 shadow-sm">
+                  <CardHeader className="p-4 border-b border-border/10 flex items-center gap-1.5"><CardTitle className="text-xs font-black uppercase tracking-wider text-muted-foreground/80 flex items-center gap-1.5"><MessageSquare className="h-3.5 w-3.5 text-emerald-400" /> Related Content</CardTitle></CardHeader>
                   <CardContent className="p-3 space-y-2">
-                     {relatedContent.length > 0 ? relatedContent.map(r => (
-                         <Link key={r.id} href={r.url} className="block p-2 rounded-lg hover:bg-muted/50 transition-colors border-l-2 border-emerald-400 pl-3">
-                             <p className="text-xs font-bold text-foreground line-clamp-1">{r.title}</p>
-                             <p className="text-[10px] text-muted-foreground mt-0.5">{r.type}</p>
-                         </Link>
-                     )) : (
-                         <div className="p-3 text-center text-[10px] text-muted-foreground/60 border border-dashed border-border/10 rounded-xl">
-                              No related modules or tools.
-                         </div>
-                     )}
+                     {relatedContent.length > 0 ? relatedContent.map(r => {
+                          const isModule = r.type === "Module";
+                          const isCheatsheet = r.type === "Cheatsheet";
+                          return (
+                          <Link key={r.id} href={r.url} className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/40 transition-all border border-transparent hover:border-border/10 hover:shadow-sm group">
+                              <div className={`p-2 rounded-xl bg-emerald-500/10 text-emerald-400 group-hover:bg-emerald-500 group-hover:text-white transition-all`}>
+                                   {isModule ? <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg> : <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><line x1="3" x2="21" y1="9" y2="9"/><line x1="9" x2="9" y1="21" y2="9"/></svg>}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                  <p className="text-xs font-bold text-foreground line-clamp-1 group-hover:text-emerald-400 transition-colors">{r.title}</p>
+                                  <span className="text-[9px] font-bold text-emerald-400/80 bg-emerald-400/5 px-1.5 py-0.5 rounded-full mt-1.5 inline-block capitalize border border-emerald-400/10">{r.type}</span>
+                              </div>
+                          </Link>
+                        )}) : (
+                          <div className="p-4 text-center text-xs text-muted-foreground/50 border border-dashed border-border/10 rounded-xl">
+                               No related modules or tools.
+                          </div>
+                      )}
                   </CardContent>
               </Card>
 

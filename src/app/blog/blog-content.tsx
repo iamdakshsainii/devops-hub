@@ -70,7 +70,7 @@ export function BlogContent({ post, initialComments }: { post: any; initialComme
          icon: "📖",
          order: 1,
          topics,
-         resources: [],
+         resources: p.resources || [],
          author: p.author
      };
   };

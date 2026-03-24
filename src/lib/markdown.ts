@@ -177,7 +177,8 @@ export function parseMarkdown(content: string): string {
   const isHTML = trimmed.startsWith("<") && trimmed.includes(">");
   if (isHTML) return trimmed;
 
-  // Clone marked parsing to support isolated renderer calls if needed
-  // Since we use marked.use globally in other files, we should avoid conflicts!
-  return marked.parse(trimmed, { renderer: buildRenderer(), gfm: true, breaks: false }) as string;
+  const html = marked.parse(trimmed, { renderer: buildRenderer(), gfm: true, breaks: false }) as string;
+  return html
+    .replace(/<table/g, '<div class="w-full overflow-x-auto my-6 border border-border/40 rounded-xl shadow-lg bg-card/40 backdrop-blur-xl [&_tr:nth-child(even)]:bg-muted/15 [&_tr:hover]:bg-primary/5 [&_tr]:transition-colors"><table class="w-full border-collapse"')
+    .replace(/<\/table>/g, '</table></div>');
 }

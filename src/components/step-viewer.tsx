@@ -132,10 +132,8 @@ const PROSE = [
   "prose-a:text-primary prose-a:no-underline prose-a:font-medium hover:prose-a:underline prose-a:underline-offset-4",
   "prose-blockquote:not-italic prose-blockquote:border-l-4 prose-blockquote:border-primary prose-blockquote:bg-primary/5 prose-blockquote:py-3 prose-blockquote:px-5 prose-blockquote:rounded-r-xl",
   "prose-img:rounded-2xl prose-img:border prose-img:shadow-xl",
-  "prose-th:border prose-th:border-border/40 prose-th:px-3.5 prose-th:py-2 prose-th:text-left prose-th:text-xs prose-th:uppercase prose-th:tracking-wider prose-th:bg-muted/40",
+  "prose-th:border prose-th:border-border/40 prose-th:px-3.5 prose-th:py-2 prose-th:text-left prose-th:text-xs prose-th:tracking-wider prose-th:bg-muted/40",
   "prose-td:border prose-td:border-border/20 prose-td:px-3.5 prose-td:py-1.5 prose-td:text-sm prose-td:leading-normal",
-  "prose-table:border-collapse prose-table:w-full prose-table:my-4 prose-table:border prose-table:border-border/20 prose-table:rounded-xl prose-table:overflow-hidden",
-  "[&_table]:block [&_table]:overflow-x-auto",
   "[&_code]:before:content-none [&_code]:after:content-none",
   "[&_:not(pre)>code]:bg-muted [&_:not(pre)>code]:text-foreground [&_:not(pre)>code]:border",
   "[&_:not(pre)>code]:px-1.5 [&_:not(pre)>code]:py-0.5 [&_:not(pre)>code]:rounded",
@@ -696,34 +694,7 @@ export function StepViewer({
                 </div>
               );
             })}
-            {isAdmin && (
-              <div className="mt-4 pt-4 border-t border-dashed">
-                <Link href={`/admin/modules?search=${encodeURIComponent(step.title)}`} className="w-full" target="_blank">
-                   <Button className="w-full gap-2 font-bold text-xs h-9 bg-amber-500 hover:bg-amber-600 text-black">
-                       <Edit className="h-3.5 w-3.5" /> Edit Module
-                   </Button>
-                </Link>
-              </div>
-            )}
-
-            {step.resources.length > 0 && (
-              <div className="mt-4 pt-4 border-t border-dashed">
-                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground/60 mb-2 px-2 flex items-center gap-1.5"><Library className="h-3.5 w-3.5" /> Recommendations</p>
-                {step.resources.map((res: any, idx: number) => (
-                  <a 
-                    key={res.id || idx}
-                    href={res.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-start gap-2.5 px-3 py-2 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-all"
-                  >
-                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 shrink-0" />
-                    <span className="leading-snug truncate">{res.title}</span>
-                  </a>
-                ))}
-              </div>
-            )}
-          </nav>
+            </nav>
           </div>
         </aside>
 
@@ -813,7 +784,7 @@ export function StepViewer({
                   </div>
 
                   {/* View mode toggle */}
-                  <div className="flex items-center">
+                  <div className="flex items-center gap-2">
                     {!isBlog && (
                       <div className="flex bg-muted p-1 rounded-lg w-fit gap-1 text-[11px] font-bold border shadow-sm h-[32px] items-center">
                         <button
@@ -829,6 +800,14 @@ export function StepViewer({
                           Continuous
                         </button>
                       </div>
+                    )}
+
+                    {isAdmin && (
+                      <Link href={`/admin/modules?search=${encodeURIComponent(step.title)}`} target="_blank">
+                        <Button variant="outline" size="sm" className="h-[32px] gap-1.5 border-amber-500/20 text-amber-500 font-bold text-xs hover:bg-amber-500/5 hover:text-amber-600 rounded-lg">
+                           <Edit className="h-3.5 w-3.5" /> Edit Module
+                        </Button>
+                      </Link>
                     )}
                   </div>
                 </div>

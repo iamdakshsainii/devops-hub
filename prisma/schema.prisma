@@ -351,6 +351,7 @@ model Cheatsheet {
   authorId    String
   author      User                @relation(fields: [authorId], references: [id])
   sections    CheatsheetSection[]
+  resources   CheatsheetResource[]
   createdAt   DateTime            @default(now())
   updatedAt   DateTime            @updatedAt
 }
@@ -373,6 +374,21 @@ model CheatsheetSubsection {
   order     Int               @default(0)
 }
 
+model CheatsheetResource {
+  id           String   @id @default(cuid())
+  title        String
+  url          String
+  type         String   @default("LINK")
+  description  String?
+  order        Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  cheatsheetId String
+  cheatsheet   Cheatsheet @relation(fields: [cheatsheetId], references: [id], onDelete: Cascade)
+
+  @@index([cheatsheetId])
+}
+
 model BlogPost {
   id         String        @id @default(cuid())
   title      String
@@ -389,6 +405,7 @@ model BlogPost {
   authorId   String
   author     User          @relation(fields: [authorId], references: [id])
   comments   BlogComment[]
+  resources  BlogResource[]
   createdAt  DateTime      @default(now())
   updatedAt  DateTime      @updatedAt
 }
@@ -402,6 +419,20 @@ model BlogComment {
   content   String
   status    String   @default("PUBLISHED")
   createdAt DateTime @default(now())
+}
+
+model BlogResource {
+  id        String   @id @default(cuid())
+  title     String
+  url       String
+  type      String   @default("LINK")
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  postId    String
+  post      BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
 }
 
 model Tool {
