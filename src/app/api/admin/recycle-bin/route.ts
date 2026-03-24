@@ -55,9 +55,7 @@ export async function POST(req: Request) {
         case "BLOG":
           await prisma.blogPost.update({ where: { id }, data: { status: "PUBLISHED" } });
           break;
-        case "TOOL":
-          await prisma.tool.update({ where: { id }, data: { status: "PUBLISHED" } });
-          break;
+        // case "TOOL" removed - decommissioned
 
         default:
           return NextResponse.json({ message: "Unknown type" }, { status: 400 });
@@ -96,9 +94,7 @@ export async function POST(req: Request) {
         case "BLOG":
           await prisma.blogPost.delete({ where: { id } });
           break;
-        case "TOOL":
-          await prisma.tool.delete({ where: { id } });
-          break;
+        // case "TOOL" removed - decommissioned
 
         default:
           return NextResponse.json({ message: "Unknown type" }, { status: 400 });

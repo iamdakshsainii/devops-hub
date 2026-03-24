@@ -33,11 +33,7 @@ export default async function RecycleBinPage() {
     select: { id: true, title: true, category: true, updatedAt: true }
   });
 
-  const deletedTools = await prisma.tool.findMany({
-    where: { status: "DELETED" },
-    orderBy: { updatedAt: "desc" },
-    select: { id: true, name: true, category: true, updatedAt: true }
-  });
+  const deletedTools: any[] = [];
 
   return (
     <div className="p-6">

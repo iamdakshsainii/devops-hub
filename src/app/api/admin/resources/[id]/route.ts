@@ -61,12 +61,7 @@ export async function PUT(
       }
     }
 
-    if (linkedToolId) {
-      await prisma.tool.update({
-        where: { id: linkedToolId },
-        data: { resourceUrl: `/resources/${id}` }
-      });
-    }
+    // linkedToolId block removed - decommissioned
 
 
     // Sync the edit back to the linked RoadmapResource row (if any).

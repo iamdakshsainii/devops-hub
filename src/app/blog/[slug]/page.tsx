@@ -70,10 +70,7 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
     take: 3
   }) : [];
 
-  const relatedTools = tagList.length > 0 ? await prisma.tool.findMany({
-    where: { status: "PUBLISHED", OR: tagList.map(tag => ({ tags: { contains: tag, mode: 'insensitive' } })) },
-    take: 3
-  }) : [];
+  // relatedTools removed - decommissioned
 
   const relatedCheatsheets = tagList.length > 0 ? await prisma.cheatsheet.findMany({
     where: { status: "PUBLISHED", OR: tagList.map(tag => ({ tags: { contains: tag, mode: 'insensitive' } })) },
@@ -84,7 +81,6 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
     { title: "Resources", items: relatedResources.map((r: any) => ({ ...r, categoryType: "Resource", url: `/resources/${r.id}` })) },
     { title: "Modules", items: relatedModules.map((m: any) => ({ id: m.id, title: m.title, description: "Master step workflow", type: "Module", categoryType: "Module", url: `/roadmap?stepId=${m.id}` })) },
     { title: "Cheatsheets", items: relatedCheatsheets.map((c: any) => ({ ...c, categoryType: "Cheatsheet", url: `/cheatsheets/${c.slug}` })) },
-    { title: "Tools", items: relatedTools.map((t: any) => ({ id: t.id, title: t.name, description: t.description, type: "Tool", categoryType: "Tool", url: `/tools/${t.slug}` })) }
   ].filter(group => group.items.length > 0);
 
 
