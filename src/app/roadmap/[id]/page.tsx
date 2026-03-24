@@ -3,11 +3,13 @@ import { authOptions } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { ArrowRight, BookOpen, ChevronLeft, Library, Map } from "lucide-react";
+import { ArrowRight, BookOpen, ChevronLeft, Library, Map, Edit } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export const dynamic = "force-dynamic";
 
 export default async function RoadmapDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  try {
   const { id } = await params;
 
   const session = await getServerSession(authOptions);
@@ -38,11 +40,12 @@ export default async function RoadmapDetailPage({ params }: { params: Promise<{ 
   ]);
 
   const completedItemIds = new Set(progress.map((p: any) => p.itemId));
+  const isAdmin = !!(session?.user && ["ADMIN", "SUPER_ADMIN"].includes((session.user as any).role));
 
   if (!roadmap || roadmap.status !== "PUBLISHED") notFound();
 
   // 1. Calculate global stats with mutual exclusivity (Track Steps Checked)
-  const stepsCompleted = roadmap.steps.reduce((acc, step) => {
+  const stepsCompleted = (roadmap.steps || []).reduce((acc: number, step: any) => {
     const hasModules = (step as any).attachedModules?.length > 0;
     let trackingTotal = 0;
     let trackingCompleted = 0;
@@ -59,7 +62,7 @@ export default async function RoadmapDetailPage({ params }: { params: Promise<{ 
     return acc + (isCompleted ? 1 : 0);
   }, 0);
 
-  const totalTopics = roadmap.steps.reduce((acc, step) => {
+  const totalTopics = (roadmap.steps || []).reduce((acc: number, step: any) => {
     const hasModules = (step as any).attachedModules?.length > 0;
     if (hasModules) {
       const moduleTopics = (step as any).attachedModules.reduce(
@@ -143,7 +146,7 @@ export default async function RoadmapDetailPage({ params }: { params: Promise<{ 
           </div>
 
         <div className="space-y-6 relative">
-          {roadmap.steps.map((step, i) => {
+          {roadmap.steps.map((step: any, i: number) => {
             const hasModules = (step as any).attachedModules?.length > 0;
             let trackingTotal = 0;
             let trackingCompleted = 0;
@@ -161,11 +164,23 @@ export default async function RoadmapDetailPage({ params }: { params: Promise<{ 
             const isCompleted = trackingTotal > 0 && trackingCompleted === trackingTotal;
 
             return (
-            <Link
-              key={step.id}
-              href={`/roadmap/${roadmap.id}/${step.id}`}
-              className="block relative z-10 group"
-            >
+            <div key={step.id} className="relative group">
+              {isAdmin && (
+                <a 
+                   href={`/admin/modules?search=${encodeURIComponent(step.title)}`} 
+                   target="_blank" 
+                   rel="noreferrer"
+                   className="absolute top-6 right-12 z-30 flex items-center gap-1.5"
+                >
+                  <Button variant="outline" size="sm" className="h-7 text-[10px] items-center font-bold px-2.5 gap-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 border-amber-500/20 shadow-sm rounded-full">
+                    <Edit className="h-3 w-3" /> Edit
+                  </Button>
+                </a>
+              )}
+              <Link
+                href={`/roadmap/${roadmap.id}/${step.id}`}
+                className="block relative z-10"
+              >
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 sm:gap-8 relative">
                   {i < roadmap.steps.length - 1 && (
                      <div 
@@ -223,10 +238,16 @@ export default async function RoadmapDetailPage({ params }: { params: Promise<{ 
                 </div>
               </div>
             </Link>
+          </div>
           );
           })}
         </div>
       </div>
     </div>
   );
+  } catch (error: any) {
+    const fs = require("fs");
+    fs.writeFileSync("c:\\my-stuff\\devops-hub\\tmp\\page_500.txt", `Roadmap Page error: ${error.message || error}\n${error.stack || ""}`);
+    return <div>Absolute layout error crashed diagnostics.</div>;
+  }
 }

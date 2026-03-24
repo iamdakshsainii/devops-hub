@@ -15,10 +15,12 @@ import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
+import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Edit } from "lucide-react";
 
 export default function ModulesPageClient({ data }: { data: any[] }) {
+  const router = useRouter();
   const { data: session } = useSession();
   const isAdmin = !!(session?.user && ["ADMIN", "SUPER_ADMIN"].includes(session.user.role));
 
@@ -297,14 +299,12 @@ export default function ModulesPageClient({ data }: { data: any[] }) {
                   mod.trackingTotal > 0 &&
                   mod.trackingCompleted === mod.trackingTotal;
                 return (
-                  <Link
+                  <div
                     key={mod.id}
-                    href={
-                      mod.isStandalone
-                        ? `/modules/${mod.id}`
-                        : `/roadmap/${mod.roadmapId}/${mod.id}`
-                    }
-                    className="group block h-full"
+                    onClick={() => {
+                        router.push(mod.isStandalone ? `/modules/${mod.id}` : `/roadmap/${mod.roadmapId}/${mod.id}`);
+                    }}
+                    className="group block h-full cursor-pointer"
                   >
                     <Card
                       className={`h-full transition-all duration-500 relative overflow-hidden flex flex-col items-start border border-border/10 hover:border-primary/30 backdrop-blur-xl bg-card/60 shadow-lg hover:shadow-[0_20px_50px_rgba(0,0,0,0.15)] hover:-translate-y-1.5 group select-none ${
@@ -437,7 +437,7 @@ export default function ModulesPageClient({ data }: { data: any[] }) {
                         </div>
                       </CardContent>
                     </Card>
-                  </Link>
+                  </div>
                 );
               })
             ) : (

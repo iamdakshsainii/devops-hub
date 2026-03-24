@@ -163,18 +163,33 @@ export function StepViewer({
   roadmapSteps = [],
   isStandalone = false,
   isBlog = false,
+  dynamicResources = [],
 }: {
   roadmap: any;
   step: Step;
   roadmapSteps?: any[];
   isStandalone?: boolean;
   isBlog?: boolean;
+  dynamicResources?: any[];
 }) {
   const router = useRouter();
   const [urlStepId, setUrlStepId] = useState<string | null>(null);
   
   const { data: session } = useSession();
   const isAdmin = session?.user && ["ADMIN", "SUPER_ADMIN"].includes((session.user as any).role);
+
+  // De-duplicate dynamic resources at the source to prevent tag math triggers duplication
+  const dedupedDynamicResources = useMemo(() => {
+    const list: any[] = [];
+    const seen = new Set();
+    for (const r of (dynamicResources || [])) {
+      if (r && r.id && !seen.has(r.id)) {
+        seen.add(r.id);
+        list.push(r);
+      }
+    }
+    return list;
+  }, [dynamicResources]);
 
 
   useEffect(() => {
@@ -955,55 +970,93 @@ export function StepViewer({
                 </div>
               </div>
 
+              {dynamicResources && dynamicResources.length > 0 && (
+                 <div className="mt-16 pt-8 border-t">
+                    <h3 className="text-lg font-bold tracking-tight mb-4 flex items-center gap-2">
+                       <BookOpen className="h-4 w-4 text-primary" /> Recommended Resources
+                    </h3>
+                    <div className="grid sm:grid-cols-2 gap-4">
+                        {dedupedDynamicResources.map((r: any) => (
+                           <ResourceCard key={r.id} resource={r} />
+                        ))}
+                    </div>
+                 </div>
+              )}
+              
               </div> {/* closes inner .flex-1 content area row for Center text */}
 
               {/* Right Sidebar - inline with content Heading triggers */}
               <div className="hidden lg:block w-72 lg:w-80 shrink-0 sticky top-28 h-fit animate-in fade-in-50 duration-300 space-y-5 lg:pt-[142px]">
-                {step.resources.length > 0 && (
-                  <div className="space-y-3">
-                    <div className="mb-4">
-                      <button 
-                        onClick={() => setIsResourcesExpanded(!isResourcesExpanded)}
-                        className="flex w-full items-center justify-between text-sm font-black uppercase tracking-wider text-muted-foreground/80 px-2 hover:text-foreground transition-colors group cursor-pointer"
-                      >
-                        <div className="flex items-center gap-2">
-                          <BookOpen className="h-4 w-4 text-primary group-hover:scale-110 transition-transform" /> Recommended
-                        </div>
-                        <ChevronDown className={`h-4 w-4 text-muted-foreground/50 transition-transform duration-200 ${isResourcesExpanded ? "rotate-0" : "-rotate-90"}`} />
-                      </button>
-                      <p className="text-[11px] text-muted-foreground/60 mt-1 px-2 font-medium tracking-wide">Handpicked videos, docs & articles.</p>
-                    </div>
+                {(() => {
+                  const allResources = [
+                    ...step.resources,
+                    ...(dynamicResources || []).map((r: any) => ({
+                      id: r.id,
+                      title: r.title,
+                      url: r.url,
+                      type: r.type,
+                      description: r.description
+                    }))
+                  ];
 
-                    {isResourcesExpanded && (
-                      <div className="space-y-2.5 animate-in fade-in-30 slide-in-from-top-1 duration-200">
-                        {step.resources.map((resource) => (
-                          <a 
-                            key={resource.id} 
-                            href={resource.url} 
-                            target="_blank" 
-                            rel="noreferrer" 
-                            className="flex flex-col gap-2 p-3.5 border border-border/10 rounded-2xl hover:bg-primary/5 hover:border-primary/20 bg-card/10 backdrop-blur-md transition-all group shadow-[0_4px_16px_-4px_rgba(0,0,0,0.1)] hover:shadow-primary/5"
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="p-2.5 rounded-xl bg-primary/10 text-primary transition-transform group-hover:scale-105 shrink-0">
-                                {resourceIcon(resource.type)}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-bold text-foreground line-clamp-2 leading-snug group-hover:text-primary transition-colors">{resource.title}</p>
-                                <p className="text-[10px] text-muted-foreground mt-0.5 capitalize font-semibold">{resource.type.toLowerCase()}</p>
-                              </div>
-                            </div>
-                            {resource.description && (
-                              <p className="text-[11px] text-muted-foreground/80 leading-relaxed line-clamp-2 pt-1 border-t border-border/5">
-                                {resource.description}
-                              </p>
-                            )}
-                          </a>
-                        ))}
+                  // De-duplicate resources by ID
+                  const dedupedResources: any[] = [];
+                  const seenIds = new Set();
+                  for (const r of allResources) {
+                    if (r && r.id && !seenIds.has(r.id)) {
+                      seenIds.add(r.id);
+                      dedupedResources.push(r);
+                    }
+                  }
+
+                  if (dedupedResources.length === 0) return null;
+
+                  return (
+                    <div className="space-y-3">
+                      <div className="mb-4">
+                        <button 
+                          onClick={() => setIsResourcesExpanded(!isResourcesExpanded)}
+                          className="flex w-full items-center justify-between text-sm font-black uppercase tracking-wider text-muted-foreground/80 px-2 hover:text-foreground transition-colors group cursor-pointer"
+                        >
+                          <div className="flex items-center gap-2">
+                            <BookOpen className="h-4 w-4 text-primary group-hover:scale-110 transition-transform" /> Recommended
+                          </div>
+                          <ChevronDown className={`h-4 w-4 text-muted-foreground/50 transition-transform duration-200 ${isResourcesExpanded ? "rotate-0" : "-rotate-90"}`} />
+                        </button>
+                        <p className="text-[11px] text-muted-foreground/60 mt-1 px-2 font-medium tracking-wide">Handpicked videos, docs & articles.</p>
                       </div>
-                    )}
-                  </div>
-                )}
+
+                      {isResourcesExpanded && (
+                        <div className="space-y-2.5 animate-in fade-in-30 slide-in-from-top-1 duration-200">
+                          {dedupedResources.map((resource: any) => (
+                            <a 
+                              key={resource.id} 
+                              href={resource.url || "#"} 
+                              target="_blank" 
+                              rel="noreferrer" 
+                              className="flex flex-col gap-2 p-3.5 border border-border/10 rounded-2xl hover:bg-primary/5 hover:border-primary/20 bg-card/10 backdrop-blur-md transition-all group shadow-[0_4px_16px_-4px_rgba(0,0,0,0.1)] hover:shadow-primary/5"
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="p-2.5 rounded-xl bg-primary/10 text-primary transition-transform group-hover:scale-105 shrink-0">
+                                  {resourceIcon(resource.type || "LINK")}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-bold text-foreground line-clamp-2 leading-snug group-hover:text-primary transition-colors">{resource.title}</p>
+                                  <p className="text-[10px] text-muted-foreground mt-0.5 capitalize font-semibold">{(resource.type || "link").toLowerCase()}</p>
+                                </div>
+                              </div>
+                              {resource.description && (
+                                <p className="text-[11px] text-muted-foreground/80 leading-relaxed line-clamp-2 pt-1 border-t border-border/5">
+                                  {resource.description}
+                                </p>
+                              )}
+                            </a>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {/* Disclaimer / Updates Note explicitly ALWAYS on the Right Side */}
                 <div className="p-5 bg-amber-500/5 rounded-2xl border border-dashed border-amber-500/10 text-xs text-muted-foreground leading-relaxed flex items-start gap-3.5 shadow-sm">

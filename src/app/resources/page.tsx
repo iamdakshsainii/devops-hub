@@ -118,7 +118,7 @@ export default async function ResourcesPage({
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {resources.length > 0 ? (
           resources.map((resource) => (
-            <ResourceCard key={resource.id} resource={resource} />
+            <ResourceCard key={resource.id} resource={resource} isAdmin={isAdmin} />
           ))
         ) : (
           <div className="col-span-full flex flex-col items-center justify-center p-12 text-center border rounded-xl border-dashed bg-muted/10">

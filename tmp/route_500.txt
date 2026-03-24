@@ -1,0 +1,2 @@
+GET Resolved params: {"id":"devops-arch-001"}
+GET Success roadmap: DevOps Roadmap (Beginner -> Job Ready)

@@ -4,9 +4,12 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 // GET single roadmap with full nested data (public)
-export async function GET(req: Request, context: { params: Promise<{ id: string }> }) {
+export async function GET(req: Request, context: any) {
+  const fs = require("fs");
   try {
-    const { id } = await context.params;
+    const resolvedParams = await context.params;
+    fs.writeFileSync("c:\\my-stuff\\devops-hub\\tmp\\route_500.txt", `GET Resolved params: ${JSON.stringify(resolvedParams || {})}`);
+    const id = resolvedParams.id;
 
     const roadmap = await prisma.roadmap.findUnique({
       where: { id },
@@ -23,8 +26,12 @@ export async function GET(req: Request, context: { params: Promise<{ id: string 
     });
 
     if (!roadmap) return NextResponse.json({ message: "Not found" }, { status: 404 });
+    fs.appendFileSync("c:\\my-stuff\\devops-hub\\tmp\\route_500.txt", `\nGET Success roadmap: ${roadmap.title}`);
     return NextResponse.json(roadmap);
-  } catch {
+  } catch (error: any) {
+    const fs = require("fs");
+    fs.appendFileSync("c:\\my-stuff\\devops-hub\\tmp\\route_500.txt", `\nRoadmap GET error: ${error.message || error}\n${error.stack || ""}`);
+    console.error("Roadmap GET error:", error);
     return NextResponse.json({ message: "Server error" }, { status: 500 });
   }
 }
@@ -45,40 +52,57 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
 
     const result = await prisma.$transaction(async (tx) => {
       // 1. Update Roadmap Metadata
-      const roadmap = await tx.roadmap.update({
-        where: { id },
-        data: {
-          ...(title !== undefined && { title }),
-          ...(description !== undefined && { description }),
-          ...(icon !== undefined && { icon }),
-          ...(color !== undefined && { color }),
-          ...(status !== undefined && { status }),
-          ...(order !== undefined && { order }),
-        },
-      });
+      let roadmap;
+      try {
+        roadmap = await tx.roadmap.update({
+          where: { id },
+          data: {
+            ...(title !== undefined && { title }),
+            ...(description !== undefined && { description }),
+            ...(icon !== undefined && { icon }),
+            ...(color !== undefined && { color }),
+            ...(status !== undefined && { status }),
+            ...(order !== undefined && { order }),
+          },
+        });
+      } catch (err: any) {
+        const fs = require("fs");
+        fs.appendFileSync("c:\\my-stuff\\devops-hub\\tmp\\route_put_500.txt", `\nRoadmap Metadata Update Error for [${id}]: ${err.message || err}\n${err.stack || ""}`);
+        throw err;
+      }
 
       // 2. Update Outer Step Metadata (without destroying topics/resources)
       if (steps && Array.isArray(steps)) {
         for (const s of steps) {
           if (s.id) {
-            await tx.roadmapStep.update({
-              where: { id: s.id },
-              data: {
-                ...(s.title !== undefined && { title: s.title }),
-                ...(s.description !== undefined && { description: s.description }),
-                ...(s.icon !== undefined && { icon: s.icon }),
-                ...(s.status !== undefined && { status: s.status }),
-              },
-            });
+            try {
+              await tx.roadmapStep.update({
+                where: { id: s.id },
+                data: {
+                  ...(s.title !== undefined && { title: s.title }),
+                  ...(s.description !== undefined && { description: s.description }),
+                  ...(s.icon !== undefined && { icon: s.icon }),
+                  ...(s.status !== undefined && { status: s.status }),
+                },
+              });
+            } catch (err: any) {
+              const fs = require("fs");
+              fs.appendFileSync("c:\\my-stuff\\devops-hub\\tmp\\route_put_500.txt", `\nStep Update Error for ID [${s.id}]: ${err.message || err}`);
+              throw err; // rethrow to abort transaction correctly
+            }
           }
         }
       }
 
       return roadmap;
+    }, {
+      timeout: 20000 // 20 seconds
     });
 
     return NextResponse.json({ message: "Roadmap updated", roadmap: result });
-  } catch (error) {
+  } catch (error: any) {
+    const fs = require("fs");
+    fs.appendFileSync("c:\\my-stuff\\devops-hub\\tmp\\route_put_500.txt", `Roadmap Update Error: ${error.message || error}\n${error.stack || ""}`);
     console.error("Roadmap update error:", error);
     return NextResponse.json({ message: "Failed to update roadmap" }, { status: 500 });
   }

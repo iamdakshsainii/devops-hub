@@ -28,6 +28,17 @@ export default async function ModuleDetailPage({
 
     if (!step || step.status !== "PUBLISHED") notFound();
 
+    // Fetch dynamic resources matching tags for recommendations
+    const tagList = step.tags ? step.tags.split(",").map((t: string) => t.trim()) : [];
+    const dynamicResources = tagList.length > 0 ? await prisma.resource.findMany({
+        where: {
+            tags: { contains: tagList[0], mode: "insensitive" },
+            status: "PUBLISHED"
+        },
+        take: 4,
+        include: { author: { select: { fullName: true } } }
+    }) : [];
+
     let roadmap = null;
     let roadmapSteps: { id: string; title: string; icon: string; order: number }[] = [];
 
@@ -59,6 +70,7 @@ export default async function ModuleDetailPage({
             step={JSON.parse(JSON.stringify(step))}
             roadmapSteps={JSON.parse(JSON.stringify(roadmapSteps))}
             isStandalone={!roadmapId || !roadmap}
+            dynamicResources={JSON.parse(JSON.stringify(dynamicResources))}
         />
     );
 }

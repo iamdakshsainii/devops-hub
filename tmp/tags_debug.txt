@@ -1,0 +1,8 @@
+STEP: Terraform | TAGS: iac, terraform, infrastructure as code | tagList: [iac, terraform, infrastructure as code]
+Found 3 dynamic resources
+STEP: Terraform | TAGS: iac, terraform, infrastructure as code | tagList: [iac, terraform, infrastructure as code]
+Found 3 dynamic resources
+STEP: Terraform | TAGS: iac, terraform, infrastructure as code | tagList: [iac, terraform, infrastructure as code]
+Found 3 dynamic resources
+STEP: Terraform | TAGS: iac, terraform, infrastructure as code | tagList: [iac, terraform, infrastructure as code]
+Found 3 dynamic resources

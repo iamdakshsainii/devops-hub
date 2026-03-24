@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Youtube, FileText, Link as LinkIcon, Image as ImageIcon, Heart } from "lucide-react";
+import { Youtube, FileText, Link as LinkIcon, Image as ImageIcon, Heart, Wrench } from "lucide-react";
 import { extractYouTubeId, isYouTubeType } from "@/lib/utils";
 
 interface ResourceCardProps {
@@ -19,11 +19,10 @@ interface ResourceCardProps {
     author?: { fullName: string | null } | null;
     _count?: { upvotes: number };
   };
+  isAdmin?: boolean;
 }
 
-
-
-export function ResourceCard({ resource }: ResourceCardProps) {
+export function ResourceCard({ resource, isAdmin }: ResourceCardProps) {
   const [upvotes, setUpvotes] = useState(resource._count?.upvotes || 0);
   const [hasUpvoted, setHasUpvoted] = useState((resource as any).upvotes?.length > 0);
   const [loadingUpvote, setLoadingUpvote] = useState(false);
@@ -83,6 +82,15 @@ export function ResourceCard({ resource }: ResourceCardProps) {
     <Card className="flex flex-col bg-background/30 backdrop-blur-lg border border-border/30 rounded-2xl overflow-hidden group h-full transition-all duration-500 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-primary/5 hover:border-primary/30 relative">
       {/* Dynamic Background Hover Glow */}
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+
+      {/* Admin Quick Edit Button */}
+      {isAdmin && (
+         <Link href={`/admin/resources/${resource.id}`} className="absolute top-2 right-2 z-30">
+              <Button type="button" size="icon" className="h-7 w-7 rounded-full bg-background/80 hover:bg-amber-500 hover:text-black border border-border/20 shadow-md backdrop-blur-md transition-all">
+                  <Wrench className="h-3 w-3.5" />
+              </Button>
+         </Link>
+      )}
 
       {finalImageUrl ? (
         <div className="w-full aspect-video bg-muted overflow-hidden border-b border-border/20 relative">

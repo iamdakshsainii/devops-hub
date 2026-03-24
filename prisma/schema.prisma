@@ -39,8 +39,6 @@ model User {
   cheatsheets      Cheatsheet[]
   blogPosts        BlogPost[]
   blogComments     BlogComment[]
-  tools            Tool[]
-  toolComparisons  ToolComparison[]
   progress         UserProgress[]
 }
 
@@ -125,23 +123,7 @@ model Notification {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-model ToolComparison {
-  id        String   @id @default(cuid())
-  slug      String   @unique
-  toolAId   String
-  toolBId   String
-  toolA     Tool     @relation("ToolA", fields: [toolAId], references: [id])
-  toolB     Tool     @relation("ToolB", fields: [toolBId], references: [id])
-  criteria  String   @db.Text
-  summary   String?  @db.Text
-  status    String   @default("PUBLISHED")
-  authorId  String
-  author    User     @relation(fields: [authorId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 
-  bookmarks Bookmark[]
-}
 
 model CertGuide {
   id          String   @id @default(cuid())
@@ -178,7 +160,6 @@ model Bookmark {
   user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   note       Note?           @relation(fields: [noteId], references: [id], onDelete: Cascade)
   resource   Resource?       @relation(fields: [resourceId], references: [id], onDelete: Cascade)
-  tool       ToolComparison? @relation(fields: [toolId], references: [id], onDelete: Cascade)
   cert       CertGuide?      @relation(fields: [certId], references: [id], onDelete: Cascade)
   step       RoadmapStep?    @relation(fields: [stepId], references: [id], onDelete: Cascade)
   event      Event?          @relation(fields: [eventId], references: [id], onDelete: Cascade)
@@ -435,32 +416,7 @@ model BlogResource {
   @@index([postId])
 }
 
-model Tool {
-  id           String           @id @default(cuid())
-  name         String
-  slug         String           @unique
-  description  String
-  category     String
-  icon         String?
-  logoUrl      String?
-  docsUrl      String?
-  githubUrl    String?
-  difficulty   String           @default("INTERMEDIATE")
-  license      String?
-  tags         String?
-  moduleUrl    String?
-  resourceUrl  String?
-  pros         String?          @db.Text
-  cons         String?          @db.Text
-  useCases     String?          @db.Text
-  status       String           @default("PUBLISHED")
-  authorId     String
-  author       User             @relation(fields: [authorId], references: [id])
-  comparisonsA ToolComparison[] @relation("ToolA")
-  comparisonsB ToolComparison[] @relation("ToolB")
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
-}
+
 
 model UserProgress {
   id        String   @id @default(cuid())

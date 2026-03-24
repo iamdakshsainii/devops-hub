@@ -1,0 +1,142 @@
+Roadmap Update Error: 
+Invalid `tx.roadmapStep.update()` invocation in
+C:\my-stuff\devops-hub\.next\dev\server\chunks\[root-of-the-server]__0dsczcu._.js:336:46
+
+  333 if (steps && Array.isArray(steps)) {
+  334     for (const s of steps){
+  335         if (s.id) {
+→ 336             await tx.roadmapStep.update(
+Transaction API error: Transaction not found. Transaction ID is invalid, refers to an old closed transaction Prisma doesn't have information about anymore, or was obtained before disconnecting.
+PrismaClientKnownRequestError: 
+Invalid `tx.roadmapStep.update()` invocation in
+C:\my-stuff\devops-hub\.next\dev\server\chunks\[root-of-the-server]__0dsczcu._.js:336:46
+
+  333 if (steps && Array.isArray(steps)) {
+  334     for (const s of steps){
+  335         if (s.id) {
+→ 336             await tx.roadmapStep.update(
+Transaction API error: Transaction not found. Transaction ID is invalid, refers to an old closed transaction Prisma doesn't have information about anymore, or was obtained before disconnecting.
+    at $n.handleRequestError (C:\my-stuff\devops-hub\node_modules\@prisma\client\runtime\library.js:121:7315)
+    at $n.handleAndLogRequestError (C:\my-stuff\devops-hub\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (C:\my-stuff\devops-hub\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (C:\my-stuff\devops-hub\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async C:\my-stuff\devops-hub\.next\dev\server\chunks\[root-of-the-server]__0dsczcu._.js:336:25
+    at async Proxy._transactionWithCallback (C:\my-stuff\devops-hub\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async PUT (C:\my-stuff\devops-hub\.next\dev\server\chunks\[root-of-the-server]__0dsczcu._.js:305:24)
+    at async AppRouteRouteModule.do (C:\my-stuff\devops-hub\node_modules\next\dist\compiled\next-server\app-route-turbo.runtime.dev.js:5:40732)
+    at async AppRouteRouteModule.handle (C:\my-stuff\devops-hub\node_modules\next\dist\compiled\next-server\app-route-turbo.runtime.dev.js:5:47861)
+    at async responseGenerator (C:\my-stuff\devops-hub\.next\dev\server\chunks\node_modules_next_007pt49._.js:17676:38)
+    at async AppRouteRouteModule.handleResponse (C:\my-stuff\devops-hub\node_modules\next\dist\compiled\next-server\app-route-turbo.runtime.dev.js:1:227216)
+    at async handleResponse (C:\my-stuff\devops-hub\.next\dev\server\chunks\node_modules_next_007pt49._.js:17739:32)
+    at async Module.handler (C:\my-stuff\devops-hub\.next\dev\server\chunks\node_modules_next_007pt49._.js:17793:13)
+    at async DevServer.renderToResponseWithComponentsImpl (C:\my-stuff\devops-hub\node_modules\next\dist\server\base-server.js:1454:9)
+    at async DevServer.renderPageComponent (C:\my-stuff\devops-hub\node_modules\next\dist\server\base-server.js:1506:24)
+    at async DevServer.renderToResponseImpl (C:\my-stuff\devops-hub\node_modules\next\dist\server\base-server.js:1556:32)
+    at async DevServer.pipeImpl (C:\my-stuff\devops-hub\node_modules\next\dist\server\base-server.js:1043:25)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\my-stuff\devops-hub\node_modules\next\dist\server\next-server.js:338:17)
+    at async DevServer.handleRequestImpl (C:\my-stuff\devops-hub\node_modules\next\dist\server\base-server.js:934:17)
+    at async C:\my-stuff\devops-hub\node_modules\next\dist\server\dev\next-dev-server.js:394:20
+    at async Span.traceAsyncFn (C:\my-stuff\devops-hub\node_modules\next\dist\trace\trace.js:164:20)
+    at async DevServer.handleRequest (C:\my-stuff\devops-hub\node_modules\next\dist\server\dev\next-dev-server.js:390:24)
+    at async invokeRender (C:\my-stuff\devops-hub\node_modules\next\dist\server\lib\router-server.js:253:21)
+    at async handleRequest (C:\my-stuff\devops-hub\node_modules\next\dist\server\lib\router-server.js:452:24)
+    at async requestHandlerImpl (C:\my-stuff\devops-hub\node_modules\next\dist\server\lib\router-server.js:501:13)
+    at async Server.requestListener (C:\my-stuff\devops-hub\node_modules\next\dist\server\lib\start-server.js:225:13)Roadmap Update Error: Transaction API error: Transaction not found. Transaction ID is invalid, refers to an old closed transaction Prisma doesn't have information about anymore, or was obtained before disconnecting.
+PrismaClientKnownRequestError: Transaction API error: Transaction not found. Transaction ID is invalid, refers to an old closed transaction Prisma doesn't have information about anymore, or was obtained before disconnecting.
+    at _r.transaction (C:\my-stuff\devops-hub\node_modules\@prisma\client\runtime\library.js:111:12319)
+    at async Proxy._transactionWithCallback (C:\my-stuff\devops-hub\node_modules\@prisma\client\runtime\library.js:130:8034)
+    at async PUT (C:\my-stuff\devops-hub\.next\dev\server\chunks\[root-of-the-server]__0dsczcu._.js:305:24)
+    at async AppRouteRouteModule.do (C:\my-stuff\devops-hub\node_modules\next\dist\compiled\next-server\app-route-turbo.runtime.dev.js:5:40732)
+    at async AppRouteRouteModule.handle (C:\my-stuff\devops-hub\node_modules\next\dist\compiled\next-server\app-route-turbo.runtime.dev.js:5:47861)
+    at async responseGenerator (C:\my-stuff\devops-hub\.next\dev\server\chunks\node_modules_next_007pt49._.js:17676:38)
+    at async AppRouteRouteModule.handleResponse (C:\my-stuff\devops-hub\node_modules\next\dist\compiled\next-server\app-route-turbo.runtime.dev.js:1:227216)
+    at async handleResponse (C:\my-stuff\devops-hub\.next\dev\server\chunks\node_modules_next_007pt49._.js:17739:32)
+    at async Module.handler (C:\my-stuff\devops-hub\.next\dev\server\chunks\node_modules_next_007pt49._.js:17793:13)
+    at async DevServer.renderToResponseWithComponentsImpl (C:\my-stuff\devops-hub\node_modules\next\dist\server\base-server.js:1454:9)
+    at async DevServer.renderPageComponent (C:\my-stuff\devops-hub\node_modules\next\dist\server\base-server.js:1506:24)
+    at async DevServer.renderToResponseImpl (C:\my-stuff\devops-hub\node_modules\next\dist\server\base-server.js:1556:32)
+    at async DevServer.pipeImpl (C:\my-stuff\devops-hub\node_modules\next\dist\server\base-server.js:1043:25)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\my-stuff\devops-hub\node_modules\next\dist\server\next-server.js:338:17)
+    at async DevServer.handleRequestImpl (C:\my-stuff\devops-hub\node_modules\next\dist\server\base-server.js:934:17)
+    at async C:\my-stuff\devops-hub\node_modules\next\dist\server\dev\next-dev-server.js:394:20
+    at async Span.traceAsyncFn (C:\my-stuff\devops-hub\node_modules\next\dist\trace\trace.js:164:20)
+    at async DevServer.handleRequest (C:\my-stuff\devops-hub\node_modules\next\dist\server\dev\next-dev-server.js:390:24)
+    at async invokeRender (C:\my-stuff\devops-hub\node_modules\next\dist\server\lib\router-server.js:253:21)
+    at async handleRequest (C:\my-stuff\devops-hub\node_modules\next\dist\server\lib\router-server.js:452:24)
+    at async requestHandlerImpl (C:\my-stuff\devops-hub\node_modules\next\dist\server\lib\router-server.js:501:13)
+    at async Server.requestListener (C:\my-stuff\devops-hub\node_modules\next\dist\server\lib\start-server.js:225:13)Roadmap Update Error: Transaction API error: Transaction not found. Transaction ID is invalid, refers to an old closed transaction Prisma doesn't have information about anymore, or was obtained before disconnecting.
+PrismaClientKnownRequestError: Transaction API error: Transaction not found. Transaction ID is invalid, refers to an old closed transaction Prisma doesn't have information about anymore, or was obtained before disconnecting.
+    at _r.transaction (C:\my-stuff\devops-hub\node_modules\@prisma\client\runtime\library.js:111:12319)
+    at async Proxy._transactionWithCallback (C:\my-stuff\devops-hub\node_modules\@prisma\client\runtime\library.js:130:8034)
+    at async PUT (C:\my-stuff\devops-hub\.next\dev\server\chunks\[root-of-the-server]__0dsczcu._.js:305:24)
+    at async AppRouteRouteModule.do (C:\my-stuff\devops-hub\node_modules\next\dist\compiled\next-server\app-route-turbo.runtime.dev.js:5:40732)
+    at async AppRouteRouteModule.handle (C:\my-stuff\devops-hub\node_modules\next\dist\compiled\next-server\app-route-turbo.runtime.dev.js:5:47861)
+    at async responseGenerator (C:\my-stuff\devops-hub\.next\dev\server\chunks\node_modules_next_007pt49._.js:17676:38)
+    at async AppRouteRouteModule.handleResponse (C:\my-stuff\devops-hub\node_modules\next\dist\compiled\next-server\app-route-turbo.runtime.dev.js:1:227216)
+    at async handleResponse (C:\my-stuff\devops-hub\.next\dev\server\chunks\node_modules_next_007pt49._.js:17739:32)
+    at async Module.handler (C:\my-stuff\devops-hub\.next\dev\server\chunks\node_modules_next_007pt49._.js:17793:13)
+    at async DevServer.renderToResponseWithComponentsImpl (C:\my-stuff\devops-hub\node_modules\next\dist\server\base-server.js:1454:9)
+    at async DevServer.renderPageComponent (C:\my-stuff\devops-hub\node_modules\next\dist\server\base-server.js:1506:24)
+    at async DevServer.renderToResponseImpl (C:\my-stuff\devops-hub\node_modules\next\dist\server\base-server.js:1556:32)
+    at async DevServer.pipeImpl (C:\my-stuff\devops-hub\node_modules\next\dist\server\base-server.js:1043:25)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\my-stuff\devops-hub\node_modules\next\dist\server\next-server.js:338:17)
+    at async DevServer.handleRequestImpl (C:\my-stuff\devops-hub\node_modules\next\dist\server\base-server.js:934:17)
+    at async C:\my-stuff\devops-hub\node_modules\next\dist\server\dev\next-dev-server.js:394:20
+    at async Span.traceAsyncFn (C:\my-stuff\devops-hub\node_modules\next\dist\trace\trace.js:164:20)
+    at async DevServer.handleRequest (C:\my-stuff\devops-hub\node_modules\next\dist\server\dev\next-dev-server.js:390:24)
+    at async invokeRender (C:\my-stuff\devops-hub\node_modules\next\dist\server\lib\router-server.js:253:21)
+    at async handleRequest (C:\my-stuff\devops-hub\node_modules\next\dist\server\lib\router-server.js:452:24)
+    at async requestHandlerImpl (C:\my-stuff\devops-hub\node_modules\next\dist\server\lib\router-server.js:501:13)
+    at async Server.requestListener (C:\my-stuff\devops-hub\node_modules\next\dist\server\lib\start-server.js:225:13)
+Step Update Error for ID [cmmyhn01b000o12sl2tnjb64l]: 
+Invalid `tx.roadmapStep.update()` invocation in
+C:\my-stuff\devops-hub\.next\dev\server\chunks\[root-of-the-server]__0dsczcu._.js:344:50
+
+  341 for (const s of steps){
+  342     if (s.id) {
+  343         try {
+→ 344             await tx.roadmapStep.update(
+Transaction API error: Transaction not found. Transaction ID is invalid, refers to an old closed transaction Prisma doesn't have information about anymore, or was obtained before disconnecting.Roadmap Update Error: 
+Invalid `tx.roadmapStep.update()` invocation in
+C:\my-stuff\devops-hub\.next\dev\server\chunks\[root-of-the-server]__0dsczcu._.js:344:50
+
+  341 for (const s of steps){
+  342     if (s.id) {
+  343         try {
+→ 344             await tx.roadmapStep.update(
+Transaction API error: Transaction not found. Transaction ID is invalid, refers to an old closed transaction Prisma doesn't have information about anymore, or was obtained before disconnecting.
+PrismaClientKnownRequestError: 
+Invalid `tx.roadmapStep.update()` invocation in
+C:\my-stuff\devops-hub\.next\dev\server\chunks\[root-of-the-server]__0dsczcu._.js:344:50
+
+  341 for (const s of steps){
+  342     if (s.id) {
+  343         try {
+→ 344             await tx.roadmapStep.update(
+Transaction API error: Transaction not found. Transaction ID is invalid, refers to an old closed transaction Prisma doesn't have information about anymore, or was obtained before disconnecting.
+    at $n.handleRequestError (C:\my-stuff\devops-hub\node_modules\@prisma\client\runtime\library.js:121:7315)
+    at $n.handleAndLogRequestError (C:\my-stuff\devops-hub\node_modules\@prisma\client\runtime\library.js:121:6623)
+    at $n.request (C:\my-stuff\devops-hub\node_modules\@prisma\client\runtime\library.js:121:6307)
+    at async l (C:\my-stuff\devops-hub\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async C:\my-stuff\devops-hub\.next\dev\server\chunks\[root-of-the-server]__0dsczcu._.js:344:29
+    at async Proxy._transactionWithCallback (C:\my-stuff\devops-hub\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async PUT (C:\my-stuff\devops-hub\.next\dev\server\chunks\[root-of-the-server]__0dsczcu._.js:305:24)
+    at async AppRouteRouteModule.do (C:\my-stuff\devops-hub\node_modules\next\dist\compiled\next-server\app-route-turbo.runtime.dev.js:5:40732)
+    at async AppRouteRouteModule.handle (C:\my-stuff\devops-hub\node_modules\next\dist\compiled\next-server\app-route-turbo.runtime.dev.js:5:47861)
+    at async responseGenerator (C:\my-stuff\devops-hub\.next\dev\server\chunks\node_modules_next_007pt49._.js:17676:38)
+    at async AppRouteRouteModule.handleResponse (C:\my-stuff\devops-hub\node_modules\next\dist\compiled\next-server\app-route-turbo.runtime.dev.js:1:227216)
+    at async handleResponse (C:\my-stuff\devops-hub\.next\dev\server\chunks\node_modules_next_007pt49._.js:17739:32)
+    at async Module.handler (C:\my-stuff\devops-hub\.next\dev\server\chunks\node_modules_next_007pt49._.js:17793:13)
+    at async DevServer.renderToResponseWithComponentsImpl (C:\my-stuff\devops-hub\node_modules\next\dist\server\base-server.js:1454:9)
+    at async DevServer.renderPageComponent (C:\my-stuff\devops-hub\node_modules\next\dist\server\base-server.js:1506:24)
+    at async DevServer.renderToResponseImpl (C:\my-stuff\devops-hub\node_modules\next\dist\server\base-server.js:1556:32)
+    at async DevServer.pipeImpl (C:\my-stuff\devops-hub\node_modules\next\dist\server\base-server.js:1043:25)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\my-stuff\devops-hub\node_modules\next\dist\server\next-server.js:338:17)
+    at async DevServer.handleRequestImpl (C:\my-stuff\devops-hub\node_modules\next\dist\server\base-server.js:934:17)
+    at async C:\my-stuff\devops-hub\node_modules\next\dist\server\dev\next-dev-server.js:394:20
+    at async Span.traceAsyncFn (C:\my-stuff\devops-hub\node_modules\next\dist\trace\trace.js:164:20)
+    at async DevServer.handleRequest (C:\my-stuff\devops-hub\node_modules\next\dist\server\dev\next-dev-server.js:390:24)
+    at async invokeRender (C:\my-stuff\devops-hub\node_modules\next\dist\server\lib\router-server.js:253:21)
+    at async handleRequest (C:\my-stuff\devops-hub\node_modules\next\dist\server\lib\router-server.js:452:24)
+    at async requestHandlerImpl (C:\my-stuff\devops-hub\node_modules\next\dist\server\lib\router-server.js:501:13)
+    at async Server.requestListener (C:\my-stuff\devops-hub\node_modules\next\dist\server\lib\start-server.js:225:13)

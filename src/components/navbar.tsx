@@ -25,7 +25,7 @@ export function Navbar() {
   }
   const [searchQuery, setSearchQuery] = useState("")
   const [cmdkOpen, setCmdkOpen] = useState(false)
-  const [searchResults, setSearchResults] = useState<any>({ blogs: [], cheatsheets: [], modules: [], tools: [], roadmaps: [], events: [], resources: [] })
+  const [searchResults, setSearchResults] = useState<any>({ blogs: [], cheatsheets: [], modules: [], roadmaps: [], events: [], resources: [] })
   const [searching, setSearching] = useState(false)
   const reminderChecked = useRef(false)
 
@@ -42,7 +42,7 @@ export function Navbar() {
 
   useEffect(() => {
     if (searchQuery.length < 2) {
-      setSearchResults({ blogs: [], cheatsheets: [], modules: [], tools: [], roadmaps: [], events: [], resources: [] });
+      setSearchResults({ blogs: [], cheatsheets: [], modules: [], roadmaps: [], events: [], resources: [] });
       return;
     }
     const t = setTimeout(async () => {
@@ -95,23 +95,7 @@ export function Navbar() {
           <nav className="flex items-center space-x-5 text-sm font-medium">
             <Link href="/" className={getLinkClass("/")} title="Homepage">Home</Link>
             
-            <DropdownMenu>
-              <DropdownMenuTrigger className={getLinkClass("/modules") + " flex items-center gap-1 cursor-pointer outline-none"} title="Modules & Tools">
-                Learn <PlusCircle className="h-3 w-3 opacity-60 ml-0.5" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-44 bg-background/95 backdrop-blur-md rounded-xl border border-border/40 shadow-lg">
-                <DropdownMenuItem asChild>
-                  <Link href="/modules" className="flex items-center gap-2 cursor-pointer w-full text-xs font-semibold" title="Detailed Learning modules">
-                     <FileText className="h-3.5 w-3.5 text-primary" /> Detailed Modules
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/tools" className="flex items-center gap-2 cursor-pointer w-full text-xs font-semibold" title="Examine Trending Tools">
-                     <Terminal className="h-3.5 w-3.5 text-amber-500" /> Trending Tools
-                  </Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Link href="/modules" className={getLinkClass("/modules")} title="Detailed Learning Modules">Learn</Link>
 
             <Link href="/cheatsheets" className={getLinkClass("/cheatsheets")} title="Quick Commands Lookup">Cheatsheet</Link>
             <Link href="/roadmap" className={getLinkClass("/roadmap")} title="Visual Learning Path">Roadmap</Link>
@@ -212,16 +196,8 @@ export function Navbar() {
                         ))}
                       </div>
                     )}
-                    {/* Tools */}
-                    {searchResults.tools?.length > 0 && (
-                      <div>
-                        <p className="text-[10px] font-bold text-muted-foreground/60 uppercase px-2 mb-1">Tools</p>
-                        {searchResults.tools.map((t: any) => (
-                          <Link key={t.id} href={`/tools`} onClick={() => setCmdkOpen(false)} className="flex items-center text-xs font-semibold p-2 hover:bg-muted/80 rounded-md transition-colors"><Wrench className="h-3.5 w-3.5 mr-2 text-orange-500" /> {t.name}</Link>
-                        ))}
-                      </div>
-                    )}
                     {/* Events */}
+
                     {searchResults.events?.length > 0 && (
                       <div>
                         <p className="text-[10px] font-bold text-muted-foreground/60 uppercase px-2 mb-1">Events</p>

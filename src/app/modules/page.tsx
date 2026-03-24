@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export default async function ModulesPage() {
   const session = await getServerSession(authOptions);
   
-  const [steps, progress] = await Promise.all([
+  const [steps, progress, allPublishedResources] = await Promise.all([
     prisma.roadmapStep.findMany({
       where: { status: "PUBLISHED" },
       orderBy: { createdAt: "desc" },
@@ -36,10 +36,23 @@ export default async function ModulesPage() {
     }),
     session?.user?.id 
       ? prisma.userProgress.findMany({ where: { userId: session.user.id } })
-      : []
+      : [],
+    prisma.resource.findMany({
+      where: { status: "PUBLISHED" },
+      select: { tags: true }
+    })
   ]);
 
   const completedItemIds = new Set(progress.map((p: any) => p.itemId));
+
+  const getDynamicResourceCount = (tagsStr: string) => {
+      const splitTags = tagsStr.split(",").map(t => t.trim().toLowerCase()).filter(Boolean);
+      if (splitTags.length === 0) return 0;
+      const firstTag = splitTags[0];
+      return allPublishedResources.filter(r => 
+          r.tags && r.tags.toLowerCase().includes(firstTag)
+      ).length;
+  };
 
   const moduleMap = new Map<string, any>();
 
@@ -77,7 +90,10 @@ export default async function ModulesPage() {
             tags: mod.tags || "",
             trackingTotal,
             trackingCompleted,
-            _count: mod._count,
+            _count: {
+               topics: mod._count.topics,
+               resources: mod._count.resources + getDynamicResourceCount(mod.tags || "")
+            },
             steps: [{ id: step.id, title: step.title }]
           });
         }
@@ -109,8 +125,11 @@ export default async function ModulesPage() {
            tags: step.tags || "",
            trackingTotal,
            trackingCompleted,
-           _count: step._count,
-           steps: [] as { id: string; title: string }[]
+            _count: {
+               topics: step._count.topics,
+               resources: step._count.resources + getDynamicResourceCount(step.tags || "")
+            },
+            steps: [] as { id: string; title: string }[]
          });
       }
     }
