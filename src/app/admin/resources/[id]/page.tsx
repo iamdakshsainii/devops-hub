@@ -13,18 +13,16 @@ export default function EditResourceAdminPage({ params }: { params: Promise<{ id
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [resourceId, setResourceId] = useState("");
-  const [form, setForm] = useState({ title: "", description: "", type: "ARTICLE", url: "", tags: "", imageUrl: "", status: "PUBLISHED", linkedStepId: "", linkedToolId: "" });
+  const [form, setForm] = useState({ title: "", description: "", type: "ARTICLE", url: "", tags: "", imageUrl: "", status: "PUBLISHED", linkedStepId: "" });
 
   const [mode, setMode] = useState<"FORM" | "JSON">("FORM");
   const [jsonInput, setJsonInput] = useState("");
   const [modules, setModules] = useState<any[]>([]);
-  const [tools, setTools] = useState<any[]>([]);
 
   const handleJsonParse = () => {
     try {
       const p = JSON.parse(jsonInput);
       setForm({
-        ...form,
         title: p.title || form.title,
         description: p.description || form.description,
         type: p.type || form.type,
@@ -32,7 +30,7 @@ export default function EditResourceAdminPage({ params }: { params: Promise<{ id
         tags: p.tags || form.tags,
         imageUrl: p.imageUrl || form.imageUrl,
         linkedStepId: p.linkedStepId || form.linkedStepId,
-        linkedToolId: p.linkedToolId || form.linkedToolId,
+        status: form.status,
       });
       setMode("FORM");
       setError("");
@@ -56,7 +54,6 @@ export default function EditResourceAdminPage({ params }: { params: Promise<{ id
             imageUrl: data.imageUrl || "",
             status: data.status || "PUBLISHED",
             linkedStepId: "",
-            linkedToolId: "",
           });
           setLoading(false);
         })
@@ -66,11 +63,6 @@ export default function EditResourceAdminPage({ params }: { params: Promise<{ id
     fetch('/api/modules?all=true')
       .then(res => res.json())
       .then(data => setModules(data || []))
-      .catch(() => {});
-
-    fetch('/api/tools')
-      .then(res => res.json())
-      .then(data => setTools(data || []))
       .catch(() => {});
   }, [params]);
 
@@ -162,21 +154,12 @@ export default function EditResourceAdminPage({ params }: { params: Promise<{ id
                </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-               <div className="space-y-1.5">
-                  <label className="text-sm font-medium">Link to Module (Optional)</label>
-                  <select value={(form as any).linkedStepId || ""} onChange={e => setForm({...form, linkedStepId: e.target.value})} className="border h-10 px-2 rounded-md w-full bg-background">
-                     <option value="">-- None --</option>
-                     {modules.map(opt => <option key={opt.id} value={opt.id}>{opt.title}</option>)}
-                  </select>
-               </div>
-               <div className="space-y-1.5">
-                  <label className="text-sm font-medium">Link to Tool (Optional)</label>
-                  <select value={(form as any).linkedToolId || ""} onChange={e => setForm({...form, linkedToolId: e.target.value})} className="border h-10 px-2 rounded-md w-full bg-background">
-                     <option value="">-- None --</option>
-                     {tools.map(opt => <option key={opt.id} value={opt.id}>{opt.name}</option>)}
-                  </select>
-               </div>
+            <div className="space-y-1.5">
+               <label className="text-sm font-medium">Link to Module (Optional)</label>
+               <select value={(form as any).linkedStepId || ""} onChange={e => setForm({...form, linkedStepId: e.target.value})} className="border h-10 px-2 rounded-md w-full bg-background">
+                  <option value="">-- None --</option>
+                  {modules.map(opt => <option key={opt.id} value={opt.id}>{opt.title}</option>)}
+               </select>
             </div>
 
             <div className="space-y-1.5">

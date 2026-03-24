@@ -11,7 +11,7 @@ export default function NewResourceAdminPage() {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [form, setForm] = useState({ title: "", description: "", type: "ARTICLE", url: "", tags: "", imageUrl: "", linkedStepId: "", linkedToolId: "" });
+  const [form, setForm] = useState({ title: "", description: "", type: "ARTICLE", url: "", tags: "", imageUrl: "", linkedStepId: "" });
 
   const [mode, setMode] = useState<"FORM" | "JSON">("FORM");
   const [jsonInput, setJsonInput] = useState("");
@@ -29,7 +29,6 @@ export default function NewResourceAdminPage() {
         tags: p.tags || form.tags,
         imageUrl: p.imageUrl || form.imageUrl,
         linkedStepId: p.linkedStepId || form.linkedStepId,
-        linkedToolId: p.linkedToolId || form.linkedToolId,
       });
       setMode("FORM");
       setError("");
