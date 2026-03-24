@@ -7,7 +7,7 @@ export async function GET(req: Request) {
     const query = searchParams.get("q");
 
     if (!query || query.length < 2) {
-      return NextResponse.json({ blogs: [], cheatsheets: [], modules: [], tools: [], roadmaps: [], events: [], resources: [] });
+      return NextResponse.json({ blogs: [], cheatsheets: [], modules: [], roadmaps: [], events: [], resources: [] });
     }
 
     const orQuery = [
@@ -15,7 +15,7 @@ export async function GET(req: Request) {
        { tags: { contains: query, mode: "insensitive" } as any }
     ];
 
-    const [blogs, cheatsheets, modules, tools, roadmaps, events, resources] = await Promise.all([
+    const [blogs, cheatsheets, modules, roadmaps, events, resources] = await Promise.all([
       prisma.blogPost.findMany({
         where: { OR: orQuery, status: "PUBLISHED" },
         select: { id: true, title: true, slug: true },
@@ -29,11 +29,6 @@ export async function GET(req: Request) {
       prisma.roadmapStep.findMany({
         where: { OR: orQuery, status: "PUBLISHED" },
         select: { id: true, title: true },
-        take: 4
-      }),
-      prisma.tool.findMany({
-        where: { OR: [{ name: { contains: query, mode: "insensitive" } as any }, { tags: { contains: query, mode: "insensitive" } as any }], status: "PUBLISHED" },
-        select: { id: true, name: true, slug: true },
         take: 4
       }),
       prisma.roadmap.findMany({
@@ -53,7 +48,7 @@ export async function GET(req: Request) {
       })
     ]);
 
-    return NextResponse.json({ blogs, cheatsheets, modules, tools, roadmaps, events, resources });
+    return NextResponse.json({ blogs, cheatsheets, modules, roadmaps, events, resources });
   } catch (error) {
     return new NextResponse("Internal error", { status: 500 });
   }

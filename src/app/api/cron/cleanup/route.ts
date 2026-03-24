@@ -43,7 +43,7 @@ export async function GET(request: Request) {
   const olderThan30Days = new Date();
   olderThan30Days.setDate(olderThan30Days.getDate() - 30);
 
-  const stats = { cheatsheets: 0, blogs: 0, tools: 0 };
+  const stats = { cheatsheets: 0, blogs: 0 };
 
   try {
     // A. Sweeps Cheatsheets
@@ -72,16 +72,7 @@ export async function GET(request: Request) {
        stats.blogs++;
     }
 
-    // C. Sweeps Tools
-    const toolsToSweep = await prisma.tool.findMany({
-      where: { status: "DELETED", updatedAt: { lte: olderThan30Days } }
-    });
-    for (const tool of toolsToSweep) {
-       const contentBlock = [tool.description, tool.pros, tool.cons, tool.useCases, tool.logoUrl].filter(Boolean).join("\n");
-       await destroyCloudinaryImages(contentBlock);
-       await prisma.tool.delete({ where: { id: tool.id } });
-       stats.tools++;
-    }
+    // C. Sweeps Tools - decommissioned
 
     return NextResponse.json({ success: true, message: "Cleanup complete", stats });
   } catch (err: any) {
