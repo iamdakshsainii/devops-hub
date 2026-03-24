@@ -30,7 +30,7 @@ export async function PUT(
     }
 
     const { id } = await context.params;
-    const { title, description, type, url, tags, imageUrl, status, linkedStepId, linkedToolId } = await req.json();
+    const { title, description, type, url, tags, imageUrl, status, linkedStepId } = await req.json();
 
     // Update the global Resource row
     const resource = await prisma.resource.update({

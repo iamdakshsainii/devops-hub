@@ -19,9 +19,8 @@ export async function POST(req: Request) {
       itemType,
       ...(itemType === "NOTE" ? { noteId: itemId } :
         itemType === "MODULE" ? { stepId: itemId } :
-          itemType === "EVENT" ? { eventId: itemId } :
-            itemType === "TOOL" ? { toolId: itemId } :
-              itemType === "CERT" ? { certId: itemId } :
+        itemType === "EVENT" ? { eventId: itemId } :
+            itemType === "CERT" ? { certId: itemId } :
                 itemType === "TOPIC" ? { topicId: itemId } :
                   itemType === "SUBTOPIC" ? { subtopicId: itemId } :
                     { resourceId: itemId }),
@@ -54,7 +53,6 @@ export async function POST(req: Request) {
         resourceId: itemType === "RESOURCE" ? itemId : null,
         stepId: itemType === "MODULE" ? itemId : null,
         eventId: itemType === "EVENT" ? itemId : null,
-        toolId: itemType === "TOOL" ? itemId : null,
         certId: itemType === "CERT" ? itemId : null,
         topicId: itemType === "TOPIC" ? itemId : null,
         subtopicId: itemType === "SUBTOPIC" ? itemId : null,
@@ -91,9 +89,8 @@ export async function GET(req: Request) {
         itemType,
         ...(itemType === "NOTE" ? { noteId: itemId } :
           itemType === "MODULE" ? { stepId: itemId } :
-            itemType === "EVENT" ? { eventId: itemId } :
-              itemType === "TOOL" ? { toolId: itemId } :
-                itemType === "CERT" ? { certId: itemId } :
+          itemType === "EVENT" ? { eventId: itemId } :
+            itemType === "CERT" ? { certId: itemId } :
                   itemType === "TOPIC" ? { topicId: itemId } :
                     itemType === "SUBTOPIC" ? { subtopicId: itemId } :
                       { resourceId: itemId }),
