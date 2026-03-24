@@ -41,21 +41,43 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
 
     const { id } = await context.params;
     const body = await req.json();
-    const { title, description, icon, color, status, order } = body;
+    const { title, description, icon, color, status, order, steps } = body;
 
-    const roadmap = await prisma.roadmap.update({
-      where: { id },
-      data: {
-        ...(title !== undefined && { title }),
-        ...(description !== undefined && { description }),
-        ...(icon !== undefined && { icon }),
-        ...(color !== undefined && { color }),
-        ...(status !== undefined && { status }),
-        ...(order !== undefined && { order }),
-      },
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Update Roadmap Metadata
+      const roadmap = await tx.roadmap.update({
+        where: { id },
+        data: {
+          ...(title !== undefined && { title }),
+          ...(description !== undefined && { description }),
+          ...(icon !== undefined && { icon }),
+          ...(color !== undefined && { color }),
+          ...(status !== undefined && { status }),
+          ...(order !== undefined && { order }),
+        },
+      });
+
+      // 2. Update Outer Step Metadata (without destroying topics/resources)
+      if (steps && Array.isArray(steps)) {
+        for (const s of steps) {
+          if (s.id) {
+            await tx.roadmapStep.update({
+              where: { id: s.id },
+              data: {
+                ...(s.title !== undefined && { title: s.title }),
+                ...(s.description !== undefined && { description: s.description }),
+                ...(s.icon !== undefined && { icon: s.icon }),
+                ...(s.status !== undefined && { status: s.status }),
+              },
+            });
+          }
+        }
+      }
+
+      return roadmap;
     });
 
-    return NextResponse.json({ message: "Roadmap updated", roadmap });
+    return NextResponse.json({ message: "Roadmap updated", roadmap: result });
   } catch (error) {
     console.error("Roadmap update error:", error);
     return NextResponse.json({ message: "Failed to update roadmap" }, { status: 500 });

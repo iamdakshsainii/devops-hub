@@ -4,6 +4,10 @@ import Link from "next/link";
 import { ArrowLeft, Clock, BarChart, Eye, LayoutGrid } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Edit } from "lucide-react";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { CheatsheetContent } from "../cheatsheet-content";
 
 export const dynamic = "force-dynamic";
@@ -17,10 +21,12 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function CheatsheetDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
+  
+  const session = await getServerSession(authOptions);
+  const isAdmin = session?.user && ["ADMIN", "SUPER_ADMIN"].includes(session.user.role);
 
-  const cheatsheet = await prisma.cheatsheet.update({
+  const cheatsheet = await prisma.cheatsheet.findUnique({
     where: { slug },
-    data: { viewCount: { increment: 1 } },
     include: {
       author: { select: { fullName: true } },
       sections: {
@@ -57,11 +63,20 @@ export default async function CheatsheetDetailPage({ params }: { params: Promise
       </Link>
 
       <header className="space-y-4">
-         <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="px-2.5 py-0.5 text-xs font-bold rounded-full">
-                  {cheatsheet.category}
-              </Badge>
-              <span className="text-2xl">{cheatsheet.icon}</span>
+         <div className="flex items-center justify-between">
+             <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="px-2.5 py-0.5 text-xs font-bold rounded-full">
+                      {cheatsheet.category}
+                  </Badge>
+                  <span className="text-2xl">{cheatsheet.icon}</span>
+             </div>
+             {isAdmin && (
+                <Link href={`/admin/cheatsheets/${cheatsheet.id}`} target="_blank">
+                    <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs font-semibold">
+                       <Edit className="h-3.5 w-3.5" /> Edit Guide
+                    </Button>
+                </Link>
+             )}
          </div>
          <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight leading-tight">
             {cheatsheet.title}
@@ -94,7 +109,7 @@ export default async function CheatsheetDetailPage({ params }: { params: Promise
       <div className="flex flex-col lg:grid lg:grid-cols-10 gap-8 mt-10">
          {/* Main Content (7/10) */}
          <div className="lg:col-span-7">
-              <CheatsheetContent sections={cheatsheet.sections} />
+              <CheatsheetContent sections={cheatsheet.sections} slug={slug} />
          </div>
 
          {/* Sidebar (3/10) */}

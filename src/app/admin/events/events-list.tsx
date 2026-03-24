@@ -105,7 +105,7 @@ export default function AdminEventsList({ events, currentUserId }: { events: any
             return (
               <Card key={event.id} className={`${isPast ? "opacity-75 grayscale-[0.2]" : ""} flex flex-col hover:border-primary/50 transition-colors overflow-hidden`}>
                 {event.imageUrls && (
-                  <div className="h-40 overflow-hidden relative border-b bg-muted/20">
+                  <div className="w-full aspect-video overflow-hidden relative border-b bg-muted/20">
                      <img 
                        src={event.imageUrls.split(',')[0]} 
                        alt={event.title} 

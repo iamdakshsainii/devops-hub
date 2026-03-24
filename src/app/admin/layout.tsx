@@ -14,57 +14,57 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const isSuperAdmin = session.user.role === "SUPER_ADMIN";
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl flex flex-col md:flex-row gap-8 min-h-[calc(100vh-4rem)]">
+    <div className="w-full px-6 py-8 flex flex-col md:flex-row gap-8 min-h-[calc(100vh-4rem)]">
       <aside className="w-full md:w-64 flex-shrink-0 space-y-6">
         <div className="flex items-center gap-2 text-primary font-bold text-lg px-2">
           <Shield className="h-5 w-5" />
           Admin Panel
         </div>
         
-        <nav className="flex flex-col space-y-1">
-          <Link href="/admin" className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors">
+        <nav className="flex flex-row md:flex-col overflow-x-auto md:overflow-visible space-x-1 md:space-x-0 space-y-0 md:space-y-1 pb-2 md:pb-0 scrollbar-none whitespace-nowrap">
+          <Link href="/admin" className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors flex-shrink-0">
             <LayoutDashboard className="h-4 w-4" /> Overview
           </Link>
-          <Link href="/admin/modules" className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors">
+          <Link href="/admin/modules" className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors flex-shrink-0">
              <Library className="h-4 w-4 text-primary" /> Modules Manager
           </Link>
-          <Link href="/admin/roadmaps" className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors">
+          <Link href="/admin/roadmaps" className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors flex-shrink-0">
             <Map className="h-4 w-4" /> Roadmaps / Templates
           </Link>
-          <Link href="/admin/resources" className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors">
+          <Link href="/admin/resources" className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors flex-shrink-0">
              <Database className="h-4 w-4" /> Resources
           </Link>
-          <Link href="/admin/cheatsheets" className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors">
+          <Link href="/admin/cheatsheets" className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors flex-shrink-0">
              <FileText className="h-4 w-4" /> Cheatsheets
           </Link>
-          <Link href="/admin/blog" className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors">
+          <Link href="/admin/blog" className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors flex-shrink-0">
              <FileText className="h-4 w-4 text-sky-500" /> Blog
           </Link>
-          <Link href="/admin/tools" className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors">
+          <Link href="/admin/tools" className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors flex-shrink-0">
              <Archive className="h-4 w-4 text-emerald-500" /> Tools
           </Link>
-          <Link href="/admin/comparisons" className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors">
+          <Link href="/admin/comparisons" className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors flex-shrink-0">
              <GitMerge className="h-4 w-4 text-purple-500" /> Comparisons
           </Link>
-          <Link href="/admin/events" className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors">
+          <Link href="/admin/events" className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors flex-shrink-0">
              <Calendar className="h-4 w-4" /> Events
           </Link>
-          <Link href="/admin/users" className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors">
+          <Link href="/admin/users" className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors flex-shrink-0">
              <Users className="h-4 w-4" /> Users
           </Link>
-          <Link href="/admin/requests" className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors">
+          <Link href="/admin/requests" className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors flex-shrink-0">
              <Shield className="h-4 w-4 text-amber-500" /> Requests & Inbox
           </Link>
-          <Link href="/admin/recycle-bin" className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors">
+          <Link href="/admin/recycle-bin" className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors flex-shrink-0">
              <Archive className="h-4 w-4 text-emerald-500" /> Recycle Bin
           </Link>
 
           {/* SUPER_ADMIN Only */}
           {isSuperAdmin && (
             <>
-              <div className="h-px bg-border my-2" />
+              <div className="h-px md:h-px w-px md:w-full bg-border my-2 md:my-2 mx-1 md:mx-0" />
               <p className="px-3 text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Super Admin</p>
-              <Link href="/admin/roles" className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors text-primary">
+              <Link href="/admin/roles" className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-muted text-sm font-medium transition-colors flex-shrink-0 text-primary">
                 <ShieldCheck className="h-4 w-4" /> Role Management
               </Link>
             </>

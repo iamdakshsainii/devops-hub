@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Save, Plus, Code2, Type, FileText,
   Loader2, X, Trash2, ChevronDown, ChevronRight, Image as ImageIcon,
-  Eye, Edit
+  Eye, Edit, Maximize2
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -99,6 +99,7 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
   const [markdownInput, setMarkdownInput] = useState("");
 
   const [replaceExisting, setReplaceExisting] = useState(true);
+  const [parseTopicsOnly, setParseTopicsOnly] = useState(false);
 
   const [form, setForm] = useState<ModuleForm>({
     title: "", description: "", icon: "📦", tags: "", topics: [], resources: []
@@ -111,6 +112,7 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
   const [globalResources, setGlobalResources] = useState<any[]>([]);
   const [previewModes, setPreviewModes] = useState<Record<string, boolean>>({});
   const [resSearchQuery, setResSearchQuery] = useState("");
+  const [activeFullscreen, setActiveFullscreen] = useState<{ id: string, title: string, value: string, onChange: (v: string) => void } | null>(null);
   const [showResSearch, setShowResSearch] = useState(false);
   const [wordWrap, setWordWrap] = useState<Record<number, boolean>>({});
 
@@ -282,9 +284,19 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
         if (trimmed.startsWith("# ") && !trimmed.startsWith("## ")) {
           mTitle = trimmed.replace(/^# /, "").trim();
           foundHeader1 = true;
-        } else if (trimmed.startsWith("## ")) {
+          
+          if (parseTopicsOnly) {
+            currentTopic = {
+              title: mTitle,
+              content: "",
+              subtopics: [],
+              expanded: false,
+            };
+            topics.push(currentTopic);
+          }
+        } else if (trimmed.startsWith("## ") || trimmed.startsWith("### ")) {
           currentTopic = {
-            title: trimmed.replace(/^## /, "").trim(),
+            title: trimmed.replace(/^#+\s*/, "").trim(),
             content: "",
             subtopics: [],
             expanded: false,
@@ -300,8 +312,10 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
 
       setForm({ 
         ...form, 
-        title: mTitle || form.title,
-        description: mDesc.trim() || form.description,
+        ...(!parseTopicsOnly && {
+          title: mTitle || form.title,
+          description: mDesc.trim() || form.description,
+        }),
         topics: replaceExisting ? topics : [...form.topics, ...topics] 
       });
       setMode("FORM");
@@ -310,6 +324,22 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
     } catch {
       setError("Failed to parse markdown content");
     }
+  };
+
+  const [fullMarkdownOutput, setFullMarkdownOutput] = useState("");
+
+  const exportMarkdown = () => {
+    let md = `# ${form.title || "Untitled"}\n\n`;
+    if (form.description) md += `${form.description}\n\n`;
+    md += `---\n\n`;
+    
+    form.topics.forEach((topic) => {
+      md += `## ${topic.title || "Untitled Topic"}\n\n`;
+      if (topic.content) md += `${topic.content}\n\n`;
+    });
+    
+    setFullMarkdownOutput(md);
+    setMode("PREVIEW" as any);
   };
 
   const exportJson = () => {
@@ -407,9 +437,40 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
         <Button variant={mode === "MARKDOWN" ? "secondary" : "ghost"} size="sm" onClick={() => setMode("MARKDOWN")}>
           <FileText className="h-4 w-4 mr-2" /> AI/Markdown Paste
         </Button>
+        <Button variant={mode === ("PREVIEW" as any) ? "secondary" : "ghost"} size="sm" onClick={exportMarkdown}>
+          <Eye className="h-4 w-4 mr-2" /> Full Preview & Export
+        </Button>
       </div>
 
+      {mode === ("PREVIEW" as any) && (
+        <Card className="border-primary/20 bg-primary/5 mb-6">
+          <CardHeader className="pb-3 flex flex-row items-center justify-between gap-4">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Eye className="h-5 w-5 text-primary" />
+              Full Continuous Markdown Export
+            </CardTitle>
+            <Button size="sm" variant="outline" className="gap-1.5 h-8 border-primary/20 hover:bg-primary/10" onClick={() => {
+              navigator.clipboard.writeText(fullMarkdownOutput);
+              toast.success("Markdown copied to clipboard!");
+            }}>
+              📋 Copy Markdown
+            </Button>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-xs text-muted-foreground bg-muted/50 p-2 rounded border">
+              💡 Below is your entire Module stitched back together. You can copy it directly or use it as backup.
+            </p>
+            <textarea
+              value={fullMarkdownOutput}
+              onChange={(e) => setFullMarkdownOutput(e.target.value)}
+              className="w-full h-[500px] rounded-md border border-input bg-background px-4 py-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring font-mono leading-relaxed"
+            />
+          </CardContent>
+        </Card>
+      )}
+
       {/* JSON Mode */}
+Stream backwards downwards flawlessly downwards flawlessly downstairs downwards onwards onwards flawlessly downstream.
       {mode === "JSON" && (
         <Card>
           <CardContent className="pt-6 space-y-4">
@@ -456,6 +517,16 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
                   className="rounded border-input text-primary focus:ring-1 focus:ring-ring h-4 w-4"
                 />
                 <span className="text-sm font-medium">Replace existing topics</span>
+              </label>
+
+              <label className="flex items-center gap-2 cursor-pointer border px-3 py-1.5 rounded-lg bg-background hover:bg-muted/50 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={parseTopicsOnly}
+                  onChange={(e) => setParseTopicsOnly(e.target.checked)}
+                  className="rounded border-input text-primary focus:ring-1 focus:ring-ring h-4 w-4"
+                />
+                <span className="text-sm font-medium">Ignore Title/Description (Topics Only)</span>
               </label>
 
               <Button onClick={handleMarkdownParse} className="gap-2">

@@ -21,9 +21,7 @@ interface StepForm {
   title: string;
   description: string;
   icon: string;
-  
-  
-  
+  status?: string;
   expanded: boolean;
 }
 
@@ -225,7 +223,7 @@ export default function RoadmapEditorPage({ params }: { params: Promise<{ id: st
                   title: s.title,
                   description: s.description || "",
                   icon: s.icon || "📦",
-                  
+                  status: s.status || "PUBLISHED",
                   topics: (s.topics || []).map((t: any) => ({
                     title: t.title,
                     content: t.content || "",
@@ -356,10 +354,11 @@ export default function RoadmapEditorPage({ params }: { params: Promise<{ id: st
         color: form.color,
         status: form.status,
         steps: form.steps.map((s) => ({
+          id: s.id,
           title: s.title,
           description: s.description,
           icon: s.icon,
-
+          status: s.status || "PUBLISHED",
         })).filter((s) => s.title),
       };
 
@@ -618,14 +617,25 @@ export default function RoadmapEditorPage({ params }: { params: Promise<{ id: st
                 {step.expanded && (
                   <CardContent className="border-t pt-5 space-y-6">
                     {/* Step details */}
-                    <div className="grid sm:grid-cols-[1fr_80px] gap-4">
+                    <div className="grid sm:grid-cols-[1fr_100px_100px] gap-4">
                       <div className="space-y-2">
-                        <label className="text-sm font-medium">Step Title</label>
+                        <label className="text-sm font-medium">Step Title {step.id && <span className="text-[10px] text-muted-foreground ml-2">({step.id})</span>}</label>
                         <Input
                           value={step.title}
                           onChange={(e) => updateStep(si, { title: e.target.value })}
                           placeholder="e.g. Docker & Containers"
                         />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Status ({step.status || "LIVE"})</label>
+                        <select
+                          value={step.status || "PUBLISHED"}
+                          onChange={(e) => updateStep(si, { status: e.target.value })}
+                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        >
+                          <option value="PUBLISHED">Published</option>
+                          <option value="PENDING">Draft</option>
+                        </select>
                       </div>
                       <div className="space-y-2">
                         <label className="text-sm font-medium">Icon</label>

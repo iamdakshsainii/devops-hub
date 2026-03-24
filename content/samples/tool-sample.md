@@ -7,7 +7,9 @@ I want you to act as a Developer Advocate. Please generate a highly structured S
 1. Give a clean 2-3 sentence description hook explaining what the tool is and why the ecosystem loves it natively.
 2. Provide Bullet lists representing absolute Pros and Cons.
 3. List 3 key primary Use Cases explaining environments.
-4. Add reference Links at the bottom.
+4. **Tables & Matrix Layouts**: Use pipe formats (`|---|---|`) with exact blank lines above/below for flawless grids.
+5. **Diagrams (Flows)**: To draw pipelines, architectures, or workflow setups, **use 4-space indentation** instead of backtick fenced blocks representing special terminal boxes.
+6. Add reference Links at the bottomwardswardsWARDS absolute.
  
 ---
  

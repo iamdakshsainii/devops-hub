@@ -10,8 +10,9 @@ import hljs from "highlight.js";
 import {
   FileText, Youtube, BookOpen,
   Download, Link as LinkIcon, ArrowLeft, ArrowRight,
-  Menu, X, Map, ChevronDown, ChevronRight, ChevronLeft, Library, Heart, Twitter, Linkedin, Copy, Search, Bookmark, Check
+  Menu, X, Map, ChevronDown, ChevronRight, ChevronLeft, Library, Heart, Twitter, Linkedin, Copy, Search, Bookmark, Check, Edit
 } from "lucide-react";
+import { useSession } from "next-auth/react";
 import { ResourceCard } from "@/components/resource-card";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -173,6 +174,9 @@ export function StepViewer({
 }) {
   const router = useRouter();
   const [urlStepId, setUrlStepId] = useState<string | null>(null);
+  
+  const { data: session } = useSession();
+  const isAdmin = session?.user && ["ADMIN", "SUPER_ADMIN"].includes((session.user as any).role);
 
 
   useEffect(() => {
@@ -540,6 +544,14 @@ export function StepViewer({
             {step.icon} {step.title}
           </span>
 
+          {isAdmin && (
+             <Link href={`/admin/modules?search=${encodeURIComponent(step.title)}`} className="shrink-0">
+                 <Button variant="outline" size="sm" className="h-7 text-[10px] items-center font-bold px-2 gap-1 hover:bg-muted border-border/40">
+                     <Edit className="h-3 w-3" /> Edit Mode
+                 </Button>
+             </Link>
+          )}
+
           {activeTopic && (
             <>
               <span className="text-muted-foreground/40">/</span>
@@ -684,16 +696,34 @@ export function StepViewer({
                 </div>
               );
             })}
-          </nav>
-
-          {step.resources.length > 0 && (
-            <div className="mt-8 pt-6 border-t">
-              <div className="bg-muted/30 p-4 rounded-xl border border-dashed bg-muted/10">
-                <p className="text-sm font-bold mb-1">📚 {step.resources.length} Resources</p>
-                <p className="text-xs text-muted-foreground">PDFs, videos, articles — at bottom.</p>
+            {isAdmin && (
+              <div className="mt-4 pt-4 border-t border-dashed">
+                <Link href={`/admin/modules?search=${encodeURIComponent(step.title)}`} className="w-full" target="_blank">
+                   <Button className="w-full gap-2 font-bold text-xs h-9 bg-amber-500 hover:bg-amber-600 text-black">
+                       <Edit className="h-3.5 w-3.5" /> Edit Module
+                   </Button>
+                </Link>
               </div>
-            </div>
-          )}
+            )}
+
+            {step.resources.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-dashed">
+                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground/60 mb-2 px-2 flex items-center gap-1.5"><Library className="h-3.5 w-3.5" /> Recommendations</p>
+                {step.resources.map((res: any, idx: number) => (
+                  <a 
+                    key={res.id || idx}
+                    href={res.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-start gap-2.5 px-3 py-2 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-lg transition-all"
+                  >
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 shrink-0" />
+                    <span className="leading-snug truncate">{res.title}</span>
+                  </a>
+                ))}
+              </div>
+            )}
+          </nav>
           </div>
         </aside>
 
@@ -701,7 +731,7 @@ export function StepViewer({
         <main className={`flex-1 min-w-0 px-4 ${isSidebarCollapsed ? "md:px-16" : "md:px-10"} py-8 lg:py-12 ${isSidebarCollapsed ? "" : "md:border-l"} transition-all duration-300`}>
           {(activeTopic || activeSubtopic) ? (
             <article id="devhub-content-area" className="w-full max-w-none">
-              <div className="flex flex-col lg:flex-row gap-10 items-start w-full justify-start">
+              <div className="flex flex-col lg:flex-row gap-14 items-start w-full justify-start">
                 <div className="flex-1 min-w-0 max-w-4xl">
                   <header className="mb-10 pb-8 border-b space-y-4">
                     <div className="flex flex-wrap items-center justify-start gap-3">
@@ -804,7 +834,7 @@ export function StepViewer({
                 </div>
 
                 {/* ── Heading Row ── */}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 mt-8">
                   {/* Checkbox to toggle completion */}
                   {activeTopic && (
                     <Checkbox
@@ -877,7 +907,7 @@ export function StepViewer({
               ) : null}
 
               {/* Prev / Next navigation */}
-              <div className="mt-16 pt-8 border-t flex gap-4">
+              <div className="mt-12 pt-8 border-t flex gap-4">
                 {currentNavIndex > 0 ? (
                   <button onClick={() => goToNav(currentNavIndex - 1)} className="flex-1 flex flex-col items-start gap-1 p-4 border rounded-2xl hover:bg-muted hover:border-foreground/30 transition-all text-left group">
                     <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
@@ -949,51 +979,92 @@ export function StepViewer({
               </div> {/* closes inner .flex-1 content area row for Center text */}
 
               {/* Right Sidebar - inline with content Heading triggers */}
-              {step.resources.length > 0 && (
-                <div className="hidden lg:block w-72 lg:w-80 shrink-0 space-y-3 sticky top-24 h-fit animate-in fade-in-50 duration-300 lg:pt-14">
-                  <div className="mb-4">
-                    <button 
-                      onClick={() => setIsResourcesExpanded(!isResourcesExpanded)}
-                      className="flex w-full items-center justify-between text-sm font-black uppercase tracking-wider text-muted-foreground/80 px-2 hover:text-foreground transition-colors group cursor-pointer"
-                    >
-                      <div className="flex items-center gap-2">
-                        <BookOpen className="h-4 w-4 text-primary group-hover:scale-110 transition-transform" /> Recommended
-                      </div>
-                      <ChevronDown className={`h-4 w-4 text-muted-foreground/50 transition-transform duration-200 ${isResourcesExpanded ? "rotate-0" : "-rotate-90"}`} />
-                    </button>
-                    <p className="text-[11px] text-muted-foreground/60 mt-1 px-2 font-medium tracking-wide">Handpicked videos, docs & articles.</p>
-                  </div>
-
-                  {isResourcesExpanded && (
-                    <div className="space-y-2.5 animate-in fade-in-30 slide-in-from-top-1 duration-200">
-                      {step.resources.map((resource) => (
-                        <a 
-                          key={resource.id} 
-                          href={resource.url} 
-                          target="_blank" 
-                          rel="noreferrer" 
-                          className="flex flex-col gap-2 p-3.5 border border-border/10 rounded-2xl hover:bg-primary/5 hover:border-primary/20 bg-card/10 backdrop-blur-md transition-all group shadow-[0_4px_16px_-4px_rgba(0,0,0,0.1)] hover:shadow-primary/5"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="p-2.5 rounded-xl bg-primary/10 text-primary transition-transform group-hover:scale-105 shrink-0">
-                              {resourceIcon(resource.type)}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-bold text-foreground line-clamp-2 leading-snug group-hover:text-primary transition-colors">{resource.title}</p>
-                              <p className="text-[10px] text-muted-foreground mt-0.5 capitalize font-semibold">{resource.type.toLowerCase()}</p>
-                            </div>
-                          </div>
-                          {resource.description && (
-                            <p className="text-[11px] text-muted-foreground/80 leading-relaxed line-clamp-2 pt-1 border-t border-border/5">
-                              {resource.description}
-                            </p>
-                          )}
-                        </a>
-                      ))}
+              <div className="hidden lg:block w-72 lg:w-80 shrink-0 sticky top-28 h-fit animate-in fade-in-50 duration-300 space-y-5 lg:pt-[142px]">
+                {step.resources.length > 0 && (
+                  <div className="space-y-3">
+                    <div className="mb-4">
+                      <button 
+                        onClick={() => setIsResourcesExpanded(!isResourcesExpanded)}
+                        className="flex w-full items-center justify-between text-sm font-black uppercase tracking-wider text-muted-foreground/80 px-2 hover:text-foreground transition-colors group cursor-pointer"
+                      >
+                        <div className="flex items-center gap-2">
+                          <BookOpen className="h-4 w-4 text-primary group-hover:scale-110 transition-transform" /> Recommended
+                        </div>
+                        <ChevronDown className={`h-4 w-4 text-muted-foreground/50 transition-transform duration-200 ${isResourcesExpanded ? "rotate-0" : "-rotate-90"}`} />
+                      </button>
+                      <p className="text-[11px] text-muted-foreground/60 mt-1 px-2 font-medium tracking-wide">Handpicked videos, docs & articles.</p>
                     </div>
-                  )}
+
+                    {isResourcesExpanded && (
+                      <div className="space-y-2.5 animate-in fade-in-30 slide-in-from-top-1 duration-200">
+                        {step.resources.map((resource) => (
+                          <a 
+                            key={resource.id} 
+                            href={resource.url} 
+                            target="_blank" 
+                            rel="noreferrer" 
+                            className="flex flex-col gap-2 p-3.5 border border-border/10 rounded-2xl hover:bg-primary/5 hover:border-primary/20 bg-card/10 backdrop-blur-md transition-all group shadow-[0_4px_16px_-4px_rgba(0,0,0,0.1)] hover:shadow-primary/5"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="p-2.5 rounded-xl bg-primary/10 text-primary transition-transform group-hover:scale-105 shrink-0">
+                                {resourceIcon(resource.type)}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-bold text-foreground line-clamp-2 leading-snug group-hover:text-primary transition-colors">{resource.title}</p>
+                                <p className="text-[10px] text-muted-foreground mt-0.5 capitalize font-semibold">{resource.type.toLowerCase()}</p>
+                              </div>
+                            </div>
+                            {resource.description && (
+                              <p className="text-[11px] text-muted-foreground/80 leading-relaxed line-clamp-2 pt-1 border-t border-border/5">
+                                {resource.description}
+                              </p>
+                            )}
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Disclaimer / Updates Note explicitly ALWAYS on the Right Side */}
+                <div className="p-5 bg-amber-500/5 rounded-2xl border border-dashed border-amber-500/10 text-xs text-muted-foreground leading-relaxed flex items-start gap-3.5 shadow-sm">
+                  <div className="flex flex-col items-center gap-1.5 shrink-0">
+                    {step.author?.avatarUrl ? (
+                      <img 
+                        src={step.author.avatarUrl} 
+                        alt={step.author.fullName || "Admin"} 
+                        className="w-10 h-10 rounded-full border-2 border-primary/20 bg-background/50 backdrop-blur-md object-cover" 
+                      />
+                    ) : (
+                      <img 
+                        src="https://api.dicebear.com/7.x/miniavs/svg?seed=Admin" 
+                        className="w-10 h-10 rounded-full border-2 border-primary/20 bg-background/50 backdrop-blur-md object-cover" 
+                        alt="Admin"
+                      />
+                    )}
+                    <span className="text-[9px] font-black uppercase text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded-md border border-amber-500/20 shadow-sm font-mono">
+                      Admin
+                    </span>
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <p className="font-black text-amber-500 text-sm">
+                      Welcome Onboard!
+                    </p>
+                    <p className="leading-snug">
+                      All the content on this platform is <span className="font-bold text-foreground">carefully handpicked and created by me</span> to give you the best possible quality and clarity for your learning.
+                    </p>
+                    <p className="leading-snug">
+                      I’m continuously <span className="font-bold text-foreground">refining and improving</span> everything to make it even more simple, practical, and valuable.
+                    </p>
+                    <p className="leading-snug">
+                      If you find anything unclear, feel free to reach out — or just give it a little time while I make it better!
+                    </p>
+                    <p className="font-bold text-foreground border-t border-border/10 pt-2 mt-2 leading-relaxed">
+                      My goal is simple: provide you with <span className="text-primary">high-quality, reliable notes</span> that genuinely help you grow.
+                    </p>
+                  </div>
                 </div>
-              )}
+              </div>
 
               </div> {/* closes outer flex row container row */}
             </article>

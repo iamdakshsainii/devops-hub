@@ -5,6 +5,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminModulesPage() {
   const modules = await prisma.roadmapStep.findMany({
+    where: { roadmapId: null }, // Only list standalone items that acts as attached modules nodeswards downwards smoothly.
     orderBy: { createdAt: "desc" },
     include: {
       roadmap: { select: { title: true, color: true } },

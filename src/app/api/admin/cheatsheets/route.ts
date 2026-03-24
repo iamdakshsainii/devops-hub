@@ -3,6 +3,37 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+export async function GET(req: Request) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session || !["ADMIN", "SUPER_ADMIN"].includes(session.user.role)) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    }
+
+    const cheatsheets = await prisma.cheatsheet.findMany({
+      where: {
+        status: { not: "DELETED" },
+      },
+      include: {
+        author: {
+          select: {
+            fullName: true,
+            email: true,
+          },
+        },
+        _count: {
+          select: { sections: true },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return NextResponse.json(cheatsheets);
+  } catch (error) {
+    return NextResponse.json({ message: "Failed to fetch cheatsheets" }, { status: 500 });
+  }
+}
+
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
@@ -66,11 +97,12 @@ export async function POST(req: Request) {
         }
       }
       return createdCheatsheet;
-    });
+    }, { timeout: 60000 });
 
     return NextResponse.json({ message: "Created", cheatsheet }, { status: 201 });
   } catch (error) {
     console.error("Create cheatsheet failed:", error);
-    return NextResponse.json({ message: "Failed to create" }, { status: 500 });
+    return NextResponse.json({ message: "Failed to create", error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
   }
 }
+

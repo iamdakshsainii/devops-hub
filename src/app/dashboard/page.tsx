@@ -127,8 +127,10 @@ export default async function DashboardPage() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl space-y-10">
       {/* Welcome Banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-card border shadow-sm">
+      <div className="relative overflow-hidden rounded-3xl backdrop-blur-xl bg-card/60 border border-border/10 shadow-md hover:shadow-[0_30px_60px_rgba(0,0,0,0.12)] transition-all duration-700 hover:-translate-y-1 group">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-muted/20 z-0"></div>
+        {/* Backlight flare hover animationwardsWARDS. */}
+        <div className="absolute top-0 right-0 w-64 h-64 rounded-full opacity-0 group-hover:opacity-10 transition-opacity duration-1000 blur-3xl pointer-events-none bg-primary" />
         <div className="relative z-10 px-8 py-10 md:py-14 flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="space-y-4 max-w-2xl">
             <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight">
@@ -201,9 +203,10 @@ export default async function DashboardPage() {
             {latestModules.length > 0 ? (
               <div className="grid sm:grid-cols-2 gap-6">
                 {latestModules.map(mod => (
-                  <Card key={mod.id} className="group overflow-hidden flex flex-col hover:border-foreground/30 transition-all hover:shadow-md cursor-pointer relative">
+                  <Card key={mod.id} className="group overflow-hidden flex flex-col backdrop-blur-xl bg-card/60 border border-border/10 rounded-2xl shadow-md hover:shadow-[0_25px_45px_rgba(0,0,0,0.15)] hover:border-primary/20 transition-all duration-500 hover:-translate-y-1 cursor-pointer relative">
+                    <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-0 group-hover:opacity-10 transition-opacity duration-700 blur-2xl pointer-events-none" style={{ backgroundColor: mod.roadmap?.color || "#3B82F6" }} />
                     <Link href={`/modules?id=${mod.id}`} className="absolute inset-0 z-10"><span className="sr-only">View</span></Link>
-                    <div className="h-1" style={{ backgroundColor: mod.roadmap?.color || "#3B82F6" }} />
+                    <div className="h-1 w-full" style={{ backgroundColor: mod.roadmap?.color || "#3B82F6" }} />
                     <CardHeader className="p-5 pb-2">
                       <div className="flex justify-between items-start mb-2">
                         <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground bg-muted px-2 py-0.5 rounded">{mod.icon} Module</span>

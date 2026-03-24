@@ -114,7 +114,8 @@ export default async function BookmarksPage({
             <div className="grid sm:grid-cols-2 gap-4">
               {moduleBookmarks.map(({ step }) =>
                 step ? (
-                  <Card key={step.id} className="hover:border-primary/50 transition-colors relative overflow-hidden flex flex-col">
+                  <Card key={step.id} className="group flex flex-col backdrop-blur-xl border border-border/10 rounded-2xl overflow-hidden shadow-md hover:shadow-[0_20px_45px_rgba(0,0,0,0.15)] hover:border-primary/30 transition-all duration-500 hover:-translate-y-1 bg-card/60 relative">
+                     <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-0 group-hover:opacity-10 transition-all duration-700 blur-2xl pointer-events-none" style={{ backgroundColor: step.roadmap?.color || "#3B82F6" }} />
                     <div className="h-1" style={{ backgroundColor: step.roadmap?.color || "#3B82F6" }} />
                     <CardHeader className="p-5 pb-2">
                       <div className="flex justify-between items-start mb-2">

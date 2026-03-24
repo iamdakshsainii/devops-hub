@@ -73,8 +73,8 @@ export function BlogClient({ initialData }: { initialData: any[] }) {
 
 
               return (
-              <Card key={item.id} className="group flex flex-col hover:border-primary/50 transition-all duration-300 overflow-hidden bg-card/70 backdrop-blur-sm h-full relative">
-                 <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full blur-3xl opacity-0 group-hover:opacity-10 transition-opacity duration-500 pointer-events-none bg-primary" />
+              <Card key={item.id} className="group flex flex-col backdrop-blur-xl border border-border/10 rounded-2xl overflow-hidden shadow-md hover:shadow-[0_25px_50px_rgba(0,0,0,0.15)] hover:border-primary/30 transition-all duration-500 hover:-translate-y-1 bg-card/60 h-full relative">
+                 <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl opacity-0 group-hover:opacity-10 transition-opacity duration-700 pointer-events-none bg-primary" />
 
                  {item.coverImage && (
                      <div className="w-full h-44 relative bg-muted overflow-hidden border-b border-border/10">

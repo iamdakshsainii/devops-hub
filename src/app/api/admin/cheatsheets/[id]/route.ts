@@ -95,12 +95,12 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
          }
       }
       return cheatsheet;
-    });
+    }, { timeout: 60000 });
 
     return NextResponse.json({ message: "Updated", cheatsheet: updated });
   } catch (error) {
     console.error("Update cheatsheet failed:", error);
-    return NextResponse.json({ message: "Failed to update" }, { status: 500 });
+    return NextResponse.json({ message: "Failed to update", error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
   }
 }
 

@@ -109,115 +109,114 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
     // ── Transaction ────────────────────────────────────────────────────────
     const result = await prisma.$transaction(
       async (tx) => {
-        // 1. Delete existing topics (subtopics cascade)
-        await tx.roadmapTopic.deleteMany({ where: { stepId: id } });
+        // 1. Update topics if fully provided in payload triggerswards downwards smoothly.
+        if (topics !== undefined) {
+          await tx.roadmapTopic.deleteMany({ where: { stepId: id } });
 
-        // 2. Re-create topics + subtopics
-        for (let idx = 0; idx < (topics || []).length; idx++) {
-          const t = topics[idx];
-          await tx.roadmapTopic.create({
-            data: {
-              stepId: id,
-              title: t.title || "Untitled Topic",
-              content: t.content || null,
-              order: idx,
-              subtopics: {
-                create: (t.subtopics || [])
-                  .filter((s: any) => s.title)
-                  .map((s: any, si: number) => ({
-                    title: s.title,
-                    content: s.content || "",
-                    order: si,
-                  })),
+          for (let idx = 0; idx < (topics || []).length; idx++) {
+            const t = topics[idx];
+            await tx.roadmapTopic.create({
+              data: {
+                stepId: id,
+                title: t.title || "Untitled Topic",
+                content: t.content || null,
+                order: idx,
+                subtopics: {
+                  create: (t.subtopics || [])
+                    .filter((s: any) => s.title)
+                    .map((s: any, si: number) => ({
+                      title: s.title,
+                      content: s.content || "",
+                      order: si,
+                    })),
+                },
               },
-            },
-          });
-        }
-
-        // 3. Clean up global mirror rows for removed resources
-        for (const [normalizedUrl, globalId] of roadmapUrlToGlobalId.entries()) {
-          if (!incomingNormalizedSet.has(normalizedUrl) && globalId) {
-            await tx.resource.deleteMany({
-              where: { id: globalId, tags: "Module" },
             });
           }
         }
 
-        // 4. Delete old RoadmapResource rows for this step
-        await tx.roadmapResource.deleteMany({ where: { stepId: id } });
-
-        // 5. Re-create RoadmapResources + upsert mirror into global Resource table
-        for (let idx = 0; idx < resourceList.length; idx++) {
-          const r = resourceList[idx];
-          if (!r.title && !r.url) continue;
-
-          const urlKey = normalizeUrl(r.url);
-          // Explicitly null when empty string — never keep stale cover
-          const imageUrl: string | null = r.imageUrl?.trim() || null;
-          let globalResourceId: string | null = null;
-
-          if (urlKey) {
-            if (urlToGlobalId.has(urlKey)) {
-              // Global row exists — update it fully (including imageUrl cleared to null)
-              const existingId = urlToGlobalId.get(urlKey)!;
-              await tx.resource.update({
-                where: { id: existingId },
-                data: {
-                  title: r.title || "Module Resource",
-                  type: r.type || "ARTICLE",
-                  description:
-                    r.description || `Resource from module: ${title || "Module"}`,
-                  imageUrl,          // ← explicit null when cleared
-                  tags: tags || "Module",
-                  status: "PUBLISHED",
-                },
+        // 2. Update resources if fully provided in payload triggers downwards.
+        if (resources !== undefined) {
+          // Clean up global mirror rows for removed resources
+          for (const [normalizedUrl, globalId] of roadmapUrlToGlobalId.entries()) {
+            if (!incomingNormalizedSet.has(normalizedUrl) && globalId) {
+              await tx.resource.deleteMany({
+                where: { id: globalId, tags: "Module" },
               });
-              globalResourceId = existingId;
-            } else {
-              // No global row yet — create one
-              const created = await tx.resource.create({
-                data: {
-                  title: r.title || "Module Resource",
-                  url: r.url,
-                  type: r.type || "ARTICLE",
-                  description:
-                    r.description || `Resource from module: ${title || "Module"}`,
-                  imageUrl,          // ← explicit null when cleared
-                  tags: tags || "Module",
-                  status: "PUBLISHED",
-                  authorId: session.user.id,
-                },
-              });
-              globalResourceId = created.id;
-              urlToGlobalId.set(urlKey, created.id);
             }
           }
 
-          await tx.roadmapResource.create({
-            data: {
-              stepId: id,
-              title: r.title || "",
-              url: r.url || "",
-              type: r.type || "ARTICLE",
-              description: r.description || "",
-              imageUrl,              // ← explicit null when cleared
-              order: idx,
-              ...(globalResourceId ? { globalResourceId } : {}),
-            },
-          });
+          // Delete old RoadmapResource rows for this step
+          await tx.roadmapResource.deleteMany({ where: { stepId: id } });
+
+          // Re-create RoadmapResources + upsert mirror into global Resource table
+          for (let idx = 0; idx < resourceList.length; idx++) {
+            const r = resourceList[idx];
+            if (!r.title && !r.url) continue;
+
+            const urlKey = normalizeUrl(r.url);
+            const imageUrl: string | null = r.imageUrl?.trim() || null;
+            let globalResourceId: string | null = null;
+
+            if (urlKey) {
+              if (urlToGlobalId.has(urlKey)) {
+                const existingId = urlToGlobalId.get(urlKey)!;
+                await tx.resource.update({
+                  where: { id: existingId },
+                  data: {
+                    title: r.title || "Module Resource",
+                    type: r.type || "ARTICLE",
+                    description: r.description || `Resource from module: ${title || "Module"}`,
+                    imageUrl,
+                    tags: tags || "Module",
+                    status: "PUBLISHED",
+                  },
+                });
+                globalResourceId = existingId;
+              } else {
+                const created = await tx.resource.create({
+                  data: {
+                    title: r.title || "Module Resource",
+                    url: r.url,
+                    type: r.type || "ARTICLE",
+                    description: r.description || `Resource from module: ${title || "Module"}`,
+                    imageUrl,
+                    tags: tags || "Module",
+                    status: "PUBLISHED",
+                    authorId: session.user.id,
+                  },
+                });
+                globalResourceId = created.id;
+                urlToGlobalId.set(urlKey, created.id);
+              }
+            }
+
+            await tx.roadmapResource.create({
+              data: {
+                stepId: id,
+                title: r.title || "",
+                url: r.url || "",
+                type: r.type || "ARTICLE",
+                description: r.description || "",
+                imageUrl,
+                order: idx,
+                ...(globalResourceId ? { globalResourceId } : {}),
+              },
+            });
+          }
         }
 
         // 6. Update the step itself
         return tx.roadmapStep.update({
           where: { id },
           data: {
-            title: title || "Untitled",
-            description: description || "",
-            icon: icon || "📦",
-            status: status || "PENDING",
-            tags: tags || "",
-            introContent: introContent !== undefined ? introContent : undefined,
-          } as any,
+            ...(title !== undefined ? { title: title || "Untitled" } : {}),
+            ...(description !== undefined ? { description } : {}),
+            ...(icon !== undefined ? { icon: icon || "📦" } : {}),
+            ...(status !== undefined ? { status } : {}),
+            ...(tags !== undefined ? { tags } : {}),
+            ...(introContent !== undefined ? { introContent } : {}),
+          },
         });
       },
       { timeout: 30000, maxWait: 5000 }
@@ -244,18 +243,28 @@ export async function DELETE(req: Request, context: { params: Promise<{ id: stri
       select: { globalResourceId: true }
     });
 
+    // Disconnect any RoadmapStepModule attachments so deleting doesn't break parent structures or graph links downwards inwards onwardswards.
+    await prisma.roadmapStepModule.deleteMany({
+      where: {
+        OR: [
+          { stepId: id },
+          { moduleId: id }
+        ]
+      }
+    });
+
     await prisma.roadmapStep.update({ where: { id }, data: { status: "DELETED" } });
 
     const globalIds = roadmapResources.map(r => r.globalResourceId).filter(Boolean) as string[];
     if (globalIds.length > 0) {
-      // Hard delete global mirrored rows mapped only to this module or soft delete them
+      // Soft delete global mirrored rows mapped only to this module 
       await prisma.resource.updateMany({
         where: { id: { in: globalIds }, tags: "Module" },
         data: { status: "DELETED" }
       });
     }
 
-    return NextResponse.json({ message: "Soft Deleted" });
+    return NextResponse.json({ message: "Soft Deleted and Unlinked" });
 
   } catch (err) {
     return NextResponse.json({ message: "Failed to delete" }, { status: 500 });

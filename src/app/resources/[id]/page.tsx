@@ -3,8 +3,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NoteActions } from "@/components/note-actions";
-import { Calendar, User as UserIcon, Link as LinkIcon, ExternalLink } from "lucide-react";
+import { Calendar, User as UserIcon, Link as LinkIcon, ExternalLink, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
@@ -40,8 +41,17 @@ export default async function ResourceDetailPage({ params }: { params: Promise<{
   return (
     <article className="container mx-auto px-4 py-12 max-w-3xl">
       {resource.imageUrl && (
-        <div className="w-full h-64 md:h-96 bg-muted rounded-xl bg-card overflow-hidden mb-8 border">
-          <img src={resource.imageUrl} alt={resource.title || "Resource Cover"} className="w-full h-full object-cover" />
+        <div className="w-full aspect-video md:max-h-[420px] bg-muted/30 rounded-xl bg-card overflow-hidden mb-8 border relative flex items-center justify-center">
+          <img 
+            src={resource.imageUrl} 
+            alt={resource.title || "Resource Cover"} 
+            className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-40 scale-105 pointer-events-none" 
+          />
+          <img 
+            src={resource.imageUrl} 
+            alt={resource.title || "Resource Cover"} 
+            className="relative max-w-full max-h-full object-contain" 
+          />
         </div>
       )}
       <header className="mb-8 space-y-6 bg-card border rounded-xl p-8 shadow-sm">
@@ -61,13 +71,22 @@ export default async function ResourceDetailPage({ params }: { params: Promise<{
               </span>
             )}
           </div>
-          <NoteActions 
-            itemId={resource.id} 
-            itemType="RESOURCE" 
-            initialUpvoteCount={resource._count.upvotes} 
-            hasUpvoted={hasUpvoted} 
-            hasBookmarked={hasBookmarked} 
-          />
+          <div className="flex items-center gap-2">
+            {session?.user?.role === "ADMIN" && (
+                <Link href={`/admin/resources?search=${encodeURIComponent(resource.title)}`} target="_blank">
+                    <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs font-semibold">
+                       <Edit className="h-3.5 w-3.5" /> Edit
+                    </Button>
+                </Link>
+            )}
+            <NoteActions 
+              itemId={resource.id} 
+              itemType="RESOURCE" 
+              initialUpvoteCount={resource._count.upvotes} 
+              hasUpvoted={hasUpvoted} 
+              hasBookmarked={hasBookmarked} 
+            />
+          </div>
         </div>
 
         <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight">{resource.title}</h1>

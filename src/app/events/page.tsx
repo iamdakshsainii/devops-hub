@@ -1,9 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Calendar, Clock, ExternalLink, MapPin, Radio } from "lucide-react";
+import { Calendar, Clock, ExternalLink, MapPin, Radio, Edit } from "lucide-react";
 import Link from "next/link";
 import { EventActions } from "@/components/event-actions";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +25,8 @@ export default async function EventsPage({
   searchParams: Promise<{ filter?: string }>;
 }) {
   const { filter = "all" } = await searchParams;
+  const session = await getServerSession(authOptions);
+  const isAdmin = !!(session?.user && ["ADMIN", "SUPER_ADMIN"].includes(session.user.role));
 
   const events = await prisma.event.findMany({
     where: { status: "PUBLISHED" },
@@ -78,7 +82,7 @@ export default async function EventsPage({
             <Radio className="h-5 w-5 text-red-500 animate-pulse" /> Happening Now
           </h2>
           <div className="grid md:grid-cols-2 gap-6">
-            {ongoing.map((e) => <EventCard key={e.id} event={e} badge="ongoing" />)}
+            {ongoing.map((e) => <EventCard key={e.id} event={e} badge="ongoing" isAdmin={isAdmin} />)}
           </div>
         </section>
       )}
@@ -90,7 +94,7 @@ export default async function EventsPage({
           </h2>
           {upcoming.length > 0 ? (
             <div className="grid md:grid-cols-2 gap-6">
-              {upcoming.map((e) => <EventCard key={e.id} event={e} badge="upcoming" />)}
+              {upcoming.map((e) => <EventCard key={e.id} event={e} badge="upcoming" isAdmin={isAdmin} />)}
             </div>
           ) : (
             <div className="p-8 text-center border rounded-xl bg-muted/20 border-dashed">
@@ -106,7 +110,7 @@ export default async function EventsPage({
             <Clock className="h-5 w-5" /> Past Events
           </h2>
           <div className="grid md:grid-cols-2 gap-6 opacity-80">
-            {past.map((e) => <EventCard key={e.id} event={e} badge="past" />)}
+            {past.map((e) => <EventCard key={e.id} event={e} badge="past" isAdmin={isAdmin} />)}
           </div>
         </section>
       )}
@@ -123,7 +127,7 @@ export default async function EventsPage({
   );
 }
 
-function EventCard({ event, badge }: { event: any; badge: "ongoing" | "upcoming" | "past" }) {
+function EventCard({ event, badge, isAdmin }: { event: any; badge: "ongoing" | "upcoming" | "past"; isAdmin: boolean }) {
   const isPast = badge === "past";
   const isOngoing = badge === "ongoing";
   const date = new Date(event.startTime);
@@ -141,8 +145,9 @@ function EventCard({ event, badge }: { event: any; badge: "ongoing" | "upcoming"
 
   return (
     <Card
-      className={`group flex flex-col hover:border-primary/50 transition-colors overflow-hidden ${isPast ? "bg-muted/10" : "bg-card"
-        }`}
+      className={`group flex flex-col backdrop-blur-xl border border-border/10 rounded-2xl overflow-hidden shadow-md hover:shadow-[0_25px_50px_rgba(0,0,0,0.15)] hover:border-primary/30 transition-all duration-500 hover:-translate-y-1 ${
+        isPast ? "bg-muted/5 dark:bg-muted/5 opacity-80" : "bg-card/60"
+      }`}
     >
       {images.length > 0 && (
         <div
@@ -189,6 +194,13 @@ function EventCard({ event, badge }: { event: any; badge: "ongoing" | "upcoming"
             <span className="text-xs text-muted-foreground">
               {date.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}
             </span>
+            {isAdmin && (
+               <Link href={`/events/dashboard/edit/${event.id}`}>
+                 <Button variant="ghost" size="icon" className="h-7 w-7 mt-1 text-muted-foreground hover:text-primary" title="Edit Event">
+                    <Edit className="h-3.5 w-3.5" />
+                 </Button>
+               </Link>
+            )}
           </div>
         </div>
         <CardTitle className="text-xl line-clamp-2 leading-tight group-hover:text-primary transition-colors">

@@ -4,10 +4,11 @@ import { authOptions } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   FileText, Database, Users, Calendar, AlertCircle,
-  Map, ArrowRight, TrendingUp, Clock, Shield
+  Map, ArrowRight, TrendingUp, Clock, Shield, Trash2
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import AnalyticsCharts from "@/components/admin/AnalyticsCharts";
 
 export const dynamic = "force-dynamic";
 
@@ -18,28 +19,109 @@ export default async function AdminOverviewPage() {
   const [
     totalUsers,
     totalModules,
+    deletedModules,
+    deletedResources,
+    deletedEvents,
+    deletedRoadmaps,
+    deletedCheatsheets,
+    deletedBlogPosts,
+    deletedTools,
     pendingModules,
     totalResources,
     pendingResources,
     totalEvents,
     totalRoadmaps,
     pendingAdminRequests,
-    recentUsers,
-    recentModules,
-    recentResources,
+    usersToday,
+    usersThisWeek,
+    usersThisMonth,
   ] = await Promise.all([
     prisma.user.count(),
-    prisma.roadmapStep.count(),
-    prisma.roadmapStep.count({ where: { status: "PENDING" } }),
+    prisma.roadmapStep.count({ where: { roadmapId: null, status: { not: "DELETED" } } }),
+    prisma.roadmapStep.count({ where: { status: "DELETED" } }),
+    prisma.resource.count({ where: { status: "DELETED" } }),
+    prisma.event.count({ where: { status: "DELETED" } }),
+    prisma.roadmap.count({ where: { status: "DELETED" } }),
+    prisma.cheatsheet.count({ where: { status: "DELETED" } }),
+    prisma.blogPost.count({ where: { status: "DELETED" } }),
+    prisma.tool.count({ where: { status: "DELETED" } }),
+    prisma.roadmapStep.count({ where: { roadmapId: null, status: "PENDING" } }),
     prisma.resource.count({ where: { status: { not: "DELETED" } } }),
     prisma.resource.count({ where: { status: "PENDING" } }),
     prisma.event.count({ where: { status: { not: "DELETED" } } }),
     prisma.roadmap.count({ where: { status: { not: "DELETED" } } }),
     prisma.adminRequest.count({ where: { status: "PENDING" } }),
-    prisma.user.findMany({ take: 5, orderBy: { createdAt: "desc" }, select: { fullName: true, email: true, createdAt: true, role: true } }),
-    prisma.roadmapStep.findMany({ take: 5, orderBy: { createdAt: "desc" }, select: { title: true, status: true, createdAt: true, author: { select: { fullName: true } } } }),
-    prisma.resource.findMany({ take: 5, orderBy: { createdAt: "desc" }, select: { title: true, status: true, createdAt: true, author: { select: { fullName: true } } } }),
+    prisma.user.count({ where: { createdAt: { gte: new Date(new Date().setHours(0,0,0,0)) } } }),
+    prisma.user.count({ where: { createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } } }),
+    prisma.user.count({ where: { createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } } }),
   ]);
+
+  const totalRecycleBin = deletedModules + deletedResources + deletedEvents + deletedRoadmaps + deletedCheatsheets + deletedBlogPosts + deletedTools;
+
+  const recentUsersList = await prisma.user.findMany({
+    where: { createdAt: { gte: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000) } },
+    select: { createdAt: true }
+  });
+
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+  const monthlyData = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date();
+    d.setDate(1);
+    d.setMonth(d.getMonth() - (5 - i));
+    const label = months[d.getMonth()];
+    const count = recentUsersList.filter(u => {
+      const uDate = new Date(u.createdAt);
+      return uDate.getMonth() === d.getMonth() && uDate.getFullYear() === d.getFullYear();
+    }).length;
+    return { date: label, users: count };
+  });
+
+  const dailyGrowthData = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    const label = days[d.getDay()];
+    const dateStr = d.toISOString().split('T')[0];
+    const count = recentUsersList.filter(u => {
+      const uDate = new Date(u.createdAt);
+      return uDate.toISOString().split('T')[0] === dateStr;
+    }).length;
+    return { date: label, users: count };
+  });
+
+  const weeklyGrowthData = Array.from({ length: 4 }, (_, i) => {
+    const d = new Date();
+    d.setHours(23, 59, 59, 999);
+    d.setDate(d.getDate() - (3 - i) * 7);
+    const label = `Week ${i + 1}`;
+    const count = recentUsersList.filter(u => {
+      const uDate = new Date(u.createdAt);
+      const start = new Date(d.getTime() - 7 * 24 * 60 * 60 * 1000);
+      return uDate >= start && uDate <= d;
+    }).length;
+    return { date: label, users: count };
+  });
+
+  const yearlyGrowthData = Array.from({ length: 3 }, (_, i) => {
+    const d = new Date();
+    d.setFullYear(d.getFullYear() - (2 - i));
+    const label = d.getFullYear().toString();
+    const count = recentUsersList.filter(u => {
+      const uDate = new Date(u.createdAt);
+      return uDate.getFullYear() === d.getFullYear();
+    }).length;
+    return { date: label, users: count };
+  });
+
+  const growthData = { daily: dailyGrowthData, weekly: weeklyGrowthData, monthly: monthlyData, yearly: yearlyGrowthData };
+
+  const contentData = [
+    { label: "Modules", value: totalModules },
+    { label: "Resources", value: totalResources },
+    { label: "Events", value: totalEvents },
+    { label: "Roadmaps", value: totalRoadmaps },
+  ];
 
   const publishedModules = totalModules - pendingModules;
   const publishedResources = totalResources - pendingResources;
@@ -48,7 +130,6 @@ export default async function AdminOverviewPage() {
   let dbSizePercent = 0;
   if (isSuperAdmin) {
     try {
-      // Neon free tier logic: ~500MB max per project usually
       const result = await prisma.$queryRaw`SELECT pg_database_size(current_database()) as size;` as any[];
       if (Array.isArray(result) && result[0]?.size) {
         dbSizeMB = Number(result[0].size) / (1024 * 1024);
@@ -58,25 +139,6 @@ export default async function AdminOverviewPage() {
       console.error("Failed to fetch DB size:", e);
     }
   }
-
-  // Data for the bar chart (CSS-based, no library)
-  const chartData = [
-    { label: "Modules", value: totalModules, color: "#3B82F6" },
-    { label: "Resources", value: totalResources, color: "#10B981" },
-    { label: "Events", value: totalEvents, color: "#F59E0B" },
-    { label: "Roadmaps", value: totalRoadmaps, color: "#8B5CF6" },
-    { label: "Users", value: totalUsers, color: "#EC4899" },
-  ];
-  const maxVal = Math.max(...chartData.map(d => d.value), 1);
-
-  const timeAgo = (date: Date) => {
-    const diff = Date.now() - new Date(date).getTime();
-    const mins = Math.floor(diff / 60000);
-    if (mins < 60) return `${mins}m ago`;
-    const hrs = Math.floor(mins / 60);
-    if (hrs < 24) return `${hrs}h ago`;
-    return `${Math.floor(hrs / 24)}d ago`;
-  };
 
   return (
     <div className="space-y-8">
@@ -169,6 +231,21 @@ export default async function AdminOverviewPage() {
           </Card>
         </Link>
 
+        <Link href="/admin/recycle-bin" className="group">
+          <Card className="h-full hover:border-destructive/40 hover:shadow-md transition-all cursor-pointer">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Recycle Bin</CardTitle>
+              <Trash2 className="h-4 w-4 text-destructive" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{totalRecycleBin}</div>
+              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1 group-hover:text-destructive transition-colors">
+                View deleted items <ArrowRight className="h-3 w-3" />
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
+
         <Link href="/admin/roadmaps" className="group">
           <Card className="h-full hover:border-violet-500/40 hover:shadow-md transition-all cursor-pointer">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -205,105 +282,40 @@ export default async function AdminOverviewPage() {
         )}
       </div>
 
-      {/* Chart + Recent Activity */}
-      <div className="grid lg:grid-cols-2 gap-6">
-        {/* Bar Chart */}
-        <Card>
-          <CardHeader className="pb-4">
-            <CardTitle className="text-base flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-primary" /> Content Distribution
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {chartData.map((item) => (
-                <div key={item.label} className="space-y-1.5">
-                  <div className="flex justify-between text-sm">
-                    <span className="font-medium">{item.label}</span>
-                    <span className="text-muted-foreground font-mono">{item.value}</span>
-                  </div>
-                  <div className="w-full h-3 bg-muted rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all duration-1000 ease-out"
-                      style={{
-                        width: `${Math.max((item.value / maxVal) * 100, 2)}%`,
-                        backgroundColor: item.color,
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+      {/* User Growth and Platform Metrics Section */}
+      <div className="mt-8 space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="bg-gradient-to-br from-background to-accent/20">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Today's Sign-ups</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-extrabold text-pink-500">{usersToday}</div>
+              <p className="text-xs text-muted-foreground mt-1">Total platform joins today</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-gradient-to-br from-background to-accent/20">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">This Week</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-extrabold text-blue-500">{usersThisWeek}</div>
+              <p className="text-xs text-muted-foreground mt-1">Growth last 7 days</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-gradient-to-br from-background to-accent/20">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">This Month</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-extrabold text-emerald-500">{usersThisMonth}</div>
+              <p className="text-xs text-muted-foreground mt-1">Overall monthly acquisition</p>
+            </CardContent>
+          </Card>
+        </div>
 
-        {/* Recent Activity */}
-        <Card>
-          <CardHeader className="pb-4">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Clock className="h-4 w-4 text-primary" /> Recent Activity
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3 max-h-[300px] overflow-y-auto">
-              {/* New users */}
-              {recentUsers.map((user, i) => (
-                <div key={`u-${i}`} className="flex items-center gap-3 text-sm">
-                  <div className="w-8 h-8 rounded-full bg-pink-500/10 flex items-center justify-center shrink-0">
-                    <Users className="h-3.5 w-3.5 text-pink-500" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{user.fullName || user.email}</p>
-                    <p className="text-xs text-muted-foreground">Joined</p>
-                  </div>
-                  <span className="text-xs text-muted-foreground shrink-0">{timeAgo(user.createdAt)}</span>
-                </div>
-              ))}
-
-              {/* Recent modules */}
-              {recentModules.map((module, i) => (
-                <div key={`m-${i}`} className="flex items-center gap-3 text-sm">
-                  <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center shrink-0">
-                    <Database className="h-3.5 w-3.5 text-blue-500" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{module.title}</p>
-                    <p className="text-xs text-muted-foreground">
-                      by {module.author?.fullName || "Unknown"} ·{" "}
-                      <span className={module.status === "PENDING" ? "text-amber-500 font-medium" : "text-emerald-500"}>
-                        {module.status === "PENDING" ? "DRAFT" : "PUBLISHED"}
-                      </span>
-                    </p>
-                  </div>
-                  <span className="text-xs text-muted-foreground shrink-0">{timeAgo(module.createdAt)}</span>
-                </div>
-              ))}
-
-              {/* Recent resources */}
-              {recentResources.map((res, i) => (
-                <div key={`r-${i}`} className="flex items-center gap-3 text-sm">
-                  <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center shrink-0">
-                    <Database className="h-3.5 w-3.5 text-emerald-500" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{res.title}</p>
-                    <p className="text-xs text-muted-foreground">
-                      by {res.author?.fullName || "Unknown"} ·{" "}
-                      <span className={res.status === "PENDING" ? "text-amber-500 font-medium" : "text-emerald-500"}>
-                        {res.status}
-                      </span>
-                    </p>
-                  </div>
-                  <span className="text-xs text-muted-foreground shrink-0">{timeAgo(res.createdAt)}</span>
-                </div>
-              ))}
-
-              {recentUsers.length === 0 && recentModules.length === 0 && recentResources.length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-8">No recent activity yet.</p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        {/* Visual Analytics */}
+        <AnalyticsCharts growthData={growthData} contentData={contentData} />
       </div>
 
       {/* Quick Actions */}

@@ -148,8 +148,12 @@ export default function AdminResourcesList({ resources }: { resources: any[] }) 
                 className="flex flex-col hover:border-primary/50 transition-colors overflow-hidden h-full"
               >
                 {finalImageUrl && (
-                  <div className="w-full h-40 relative bg-muted flex items-center justify-center overflow-hidden border-b">
-                    <img src={finalImageUrl} alt={res.title} className="object-cover w-full h-full" />
+                  <div className="w-full aspect-video relative bg-muted flex items-center justify-center overflow-hidden border-b">
+                    <img 
+                      src={finalImageUrl} 
+                      alt={res.title} 
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                    />
                   </div>
                 )}
                 <CardHeader className="p-5 pb-3">

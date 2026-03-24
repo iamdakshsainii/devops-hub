@@ -13,7 +13,9 @@ I want you to act as an Elite DevOps Instructor. Please generate a detailed, com
 
 2. `# Section Title` -> Use single Level-1 Headings to define a **Major Group / Category** (e.g., `# 🐋 Container Management`).
 3. `## Subsection Title` -> Use Level-2 Headings under a level-1 heading to define a **Specific Action / Command** (e.g., `## Start a container`).
-4. **Everything else** (Paragraphs, Code blocks, Lists, URL references) -> Falls directly inside that subsection content frame flawlessly.
+4. **Use Pipe Tables** (`|---|---|:---`) for parameter descriptions with exact spaces above and below it.
+5. **Diagrams & flows**: Whenever doing ASCII architecture pipeline representations, **use 4-space indentation**. DO NOT use normal backtick fenced blocks for visual graphs or chartswardsWARDS outwards.
+6. **Everything else** (Paragraphs, Code blocks, Lists, URL references) -> Falls directly inside that subsection content frame flawlessly.
 
 ---
 

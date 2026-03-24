@@ -76,10 +76,20 @@ function wireCopyButtons(containerId: string) {
   });
 }
 
-export function CheatsheetContent({ sections }: { sections: any[] }) {
+export function CheatsheetContent({ sections, slug }: { sections: any[], slug?: string }) {
   useEffect(() => {
      wireCopyButtons("devhub-cheatsheet-area");
-  }, [sections]);
+
+     if (slug) {
+         const key = `viewed_cheatsheet_${slug}`;
+         const viewed = localStorage.getItem(key);
+         if (!viewed) {
+             fetch(`/api/cheatsheets/${slug}/view`, { method: "POST" })
+                 .catch(() => { }); // Ignore errors
+             localStorage.setItem(key, "true");
+         }
+     }
+  }, [sections, slug]);
 
   return (
     <div id="devhub-cheatsheet-area" className="space-y-12">

@@ -33,7 +33,9 @@ export default async function UserEventsDashboard() {
 
       {/* Analytics Overview */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-card/50">
+        <Card className="bg-card/60 backdrop-blur-xl border border-border/10 rounded-2xl shadow-md hover:shadow-[0_20px_45px_rgba(0,0,0,0.15)] hover:border-primary/20 transition-all duration-500 hover:-translate-y-1 relative group overflow-hidden">
+           {/* Backlight flare hover animationwardsWARDS. */}
+           <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-0 group-hover:opacity-10 transition-opacity duration-700 blur-2xl pointer-events-none bg-primary" />
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Total Hosted</CardTitle>
             <Calendar className="h-4 w-4 text-purple-500" />
@@ -42,7 +44,9 @@ export default async function UserEventsDashboard() {
             <div className="text-2xl font-bold">{myEvents.length}</div>
           </CardContent>
         </Card>
-        <Card className="bg-card/50">
+        <Card className="bg-card/60 backdrop-blur-xl border border-border/10 rounded-2xl shadow-md hover:shadow-[0_20px_45px_rgba(0,0,0,0.15)] hover:border-primary/20 transition-all duration-500 hover:-translate-y-1 relative group overflow-hidden">
+           {/* Backlight flare hover animationwardsWARDS. */}
+           <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-0 group-hover:opacity-10 transition-opacity duration-700 blur-2xl pointer-events-none bg-primary" />
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Total Saves</CardTitle>
             <Heart className="h-4 w-4 text-pink-500" />
@@ -51,7 +55,9 @@ export default async function UserEventsDashboard() {
             <div className="text-2xl font-bold">{totalSaves}</div>
           </CardContent>
         </Card>
-        <Card className="bg-card/50">
+        <Card className="bg-card/60 backdrop-blur-xl border border-border/10 rounded-2xl shadow-md hover:shadow-[0_20px_45px_rgba(0,0,0,0.15)] hover:border-primary/20 transition-all duration-500 hover:-translate-y-1 relative group overflow-hidden">
+           {/* Backlight flare hover animationwardsWARDS. */}
+           <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-0 group-hover:opacity-10 transition-opacity duration-700 blur-2xl pointer-events-none bg-primary" />
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Live On Platform</CardTitle>
             <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -60,7 +66,9 @@ export default async function UserEventsDashboard() {
             <div className="text-2xl font-bold text-emerald-500">{publishedCount}</div>
           </CardContent>
         </Card>
-        <Card className="bg-card/50">
+        <Card className="bg-card/60 backdrop-blur-xl border border-border/10 rounded-2xl shadow-md hover:shadow-[0_20px_45px_rgba(0,0,0,0.15)] hover:border-primary/20 transition-all duration-500 hover:-translate-y-1 relative group overflow-hidden">
+           {/* Backlight flare hover animationwardsWARDS. */}
+           <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-0 group-hover:opacity-10 transition-opacity duration-700 blur-2xl pointer-events-none bg-primary" />
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Pending Review</CardTitle>
              <Settings className="h-4 w-4 text-amber-500" />

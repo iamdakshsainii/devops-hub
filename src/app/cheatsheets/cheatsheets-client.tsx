@@ -70,54 +70,71 @@ export function CheatsheetsClient({ initialData }: { initialData: any[] }) {
       {filtered.length > 0 ? (
         <div className={viewMode === "grid" ? "grid sm:grid-cols-2 lg:grid-cols-3 gap-6" : "flex flex-col gap-4"}>
            {filtered.map((item) => (
-              <Card key={item.id} className="group flex flex-col hover:border-primary/50 transition-all duration-300 overflow-hidden bg-card/70 backdrop-blur-md relative h-full">
-                 <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full blur-3xl opacity-0 group-hover:opacity-10 transition-opacity duration-500 pointer-events-none bg-primary" />
-                 
-                 <CardHeader className="pb-3">
-                     <div className="flex justify-between items-start mb-2">
-                         <Badge variant="secondary" className="text-[10px] items-center font-bold px-2 py-0.5 rounded-full">
-                             {item.category}
-                         </Badge>
-                         <span className="text-2xl">{item.icon}</span>
-                     </div>
-                     <CardTitle className="text-xl group-hover:text-primary transition-colors line-clamp-1">{item.title}</CardTitle>
-                     <CardDescription className="line-clamp-2 text-xs h-8">
-                         {item.description || "Quick overview setup layout guide for references triggers."}
-                     </CardDescription>
-                 </CardHeader>
+              <Link key={item.id} href={`/cheatsheets/${item.slug}`} className="block h-full group">
+               <Card className="flex flex-col hover:border-primary/50 transition-all duration-300 overflow-hidden bg-card/70 backdrop-blur-md relative h-full">
+                  
+                  {item.coverImage ? (
+                    <div className="w-full aspect-video bg-muted/30 overflow-hidden border-b border-border/10 relative flex items-center justify-center">
+                        <img 
+                            src={item.coverImage} 
+                            alt={item.title} 
+                            className="absolute inset-0 w-full h-full object-cover blur-xl opacity-40 scale-105 pointer-events-none" 
+                        />
+                        <img 
+                            src={item.coverImage} 
+                            alt={item.title} 
+                            className="relative w-full h-full object-contain group-hover:scale-105 transition-all duration-500" 
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-background/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    </div>
+                  ) : (
+                    <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full blur-3xl opacity-0 group-hover:opacity-10 transition-opacity duration-500 pointer-events-none bg-primary" />
+                  )}
+                  
+                  <CardHeader className="pb-3">
+                      <div className="flex justify-between items-start mb-2">
+                          <Badge variant="secondary" className="text-[10px] items-center font-bold px-2 py-0.5 rounded-full">
+                              {item.category}
+                          </Badge>
+                          <span className="text-2xl">{item.icon}</span>
+                      </div>
+                      <CardTitle className="text-xl group-hover:text-primary transition-colors line-clamp-1">{item.title}</CardTitle>
+                      <CardDescription className="line-clamp-2 text-xs h-8">
+                          {item.description || "Quick overview setup layout guide for references triggers."}
+                      </CardDescription>
+                  </CardHeader>
 
-                 <CardContent className="flex-1 flex flex-col pt-0">
-                     <div className="flex items-center gap-4 text-xs font-semibold text-muted-foreground mb-4">
-                         <span className="flex items-center gap-1">
-                             <Clock className="h-3.5 w-3.5" /> {item.readTime} min
-                         </span>
-                         <span className="flex items-center gap-1">
-                             <BarChart className="h-3.5 w-3.5" /> {item.difficulty}
-                         </span>
-                         <span className="flex items-center gap-1">
-                             <Eye className="h-3.5 w-3.5" /> {item.viewCount} Views
-                         </span>
-                     </div>
+                  <CardContent className="flex-1 flex flex-col pt-0">
+                      <div className="flex items-center gap-4 text-xs font-semibold text-muted-foreground mb-4">
+                          <span className="flex items-center gap-1">
+                              <Clock className="h-3.5 w-3.5" /> {item.readTime} min
+                          </span>
+                          <span className="flex items-center gap-1">
+                              <BarChart className="h-3.5 w-3.5" /> {item.difficulty}
+                          </span>
+                          <span className="flex items-center gap-1">
+                              <Eye className="h-3.5 w-3.5" /> {item.viewCount} Views
+                          </span>
+                      </div>
 
-                     {item.tags && (
-                         <div className="flex flex-wrap gap-1 mb-4">
-                             {item.tags.split(",").filter(Boolean).map((t: string) => (
-                                 <span key={t} className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/10">
-                                     #{t.trim()}
-                                 </span>
-                             ))}
-                         </div>
-                     )}
+                      {item.tags && (
+                          <div className="flex flex-wrap gap-1 mb-4">
+                              {item.tags.split(",").filter(Boolean).map((t: string) => (
+                                  <span key={t} className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/10">
+                                      #{t.trim()}
+                                  </span>
+                              ))}
+                          </div>
+                      )}
 
-                     <div className="mt-auto pt-4 border-t border-border/20">
-                         <Link href={`/cheatsheets/${item.slug}`} className="w-full">
-                             <Button variant="outline" size="sm" className="w-full gap-2 h-9 text-xs font-semibold text-foreground/80 hover:text-foreground">
-                                 <FileText className="h-3.5 w-3.5" /> Read Cheatsheet
-                             </Button>
-                         </Link>
-                     </div>
-                 </CardContent>
-              </Card>
+                      <div className="mt-auto pt-4 border-t border-border/20">
+                          <div className="w-full inline-flex items-center justify-center gap-2 h-9 rounded-md border border-input bg-background group-hover:bg-accent group-hover:text-accent-foreground text-xs font-semibold text-foreground/80 group-hover:text-foreground transition-colors">
+                              <FileText className="h-3.5 w-3.5" /> Read Cheatsheet
+                          </div>
+                      </div>
+                  </CardContent>
+               </Card>
+              </Link>
            ))}
         </div>
       ) : (

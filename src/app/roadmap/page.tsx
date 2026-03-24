@@ -105,33 +105,36 @@ export default async function RoadmapPage({
         {/* Core selection portal layout */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
            <Link href="/roadmap?q=DevOps" className="group">
-              <div className="p-6 h-full bg-gradient-to-br from-primary/5 via-transparent to-transparent border rounded-2xl hover:border-primary/40 hover:shadow-xl hover:shadow-primary/[0.03] transition-all duration-300 relative overflow-hidden flex flex-col items-start bg-card">
-                 <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">🚀</div>
-                 <h3 className="text-xl font-bold">Core DevOps</h3>
-                 <p className="text-xs text-muted-foreground mt-1 flex-1">Master core infrastructure components, CI/CD, and pipelined automation.</p>
-                 <div className="mt-4 flex items-center gap-1 text-xs font-semibold text-primary/80 group-hover:text-primary">
+              <div className="p-7 h-full backdrop-blur-xl bg-card/60 border border-border/10 rounded-2xl hover:border-primary/30 shadow-md hover:shadow-[0_20px_40px_rgba(59,130,246,0.08)] transition-all duration-500 relative overflow-hidden flex flex-col items-start group hover:-translate-y-1">
+                 <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full opacity-0 group-hover:opacity-20 transition-all duration-500 blur-2xl pointer-events-none bg-primary" />
+                 <div className="text-4xl mb-4 group-hover:scale-110 transition-all duration-500 filter drop-shadow-md">🚀</div>
+                 <h3 className="text-lg font-extrabold tracking-tight group-hover:text-primary transition-colors">Core DevOps</h3>
+                 <p className="text-xs text-muted-foreground mt-1.5 flex-1 leading-relaxed">Master core infrastructure components, CI/CD, and pipelined automation.</p>
+                 <div className="mt-5 flex items-center gap-1 text-[11px] font-black uppercase tracking-wider text-primary group-hover:underline">
                     Explore Focus <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform" />
                  </div>
               </div>
            </Link>
 
            <Link href="/roadmap?q=Security" className="group">
-              <div className="p-6 h-full bg-gradient-to-br from-amber-500/5 via-transparent to-transparent border rounded-2xl hover:border-amber-500/40 hover:shadow-xl hover:shadow-amber-500/[0.03] transition-all duration-300 relative overflow-hidden flex flex-col items-start bg-card">
-                 <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">🛡️</div>
-                 <h3 className="text-xl font-bold">DevSecOps</h3>
-                 <p className="text-xs text-muted-foreground mt-1 flex-1">Implement security scanning, compliance grids, and shift-left configurations.</p>
-                 <div className="mt-4 flex items-center gap-1 text-xs font-semibold text-amber-500/80 group-hover:text-amber-500">
+              <div className="p-7 h-full backdrop-blur-xl bg-card/60 border border-border/10 rounded-2xl hover:border-amber-500/30 shadow-md hover:shadow-[0_20px_40px_rgba(245,158,11,0.08)] transition-all duration-500 relative overflow-hidden flex flex-col items-start group hover:-translate-y-1">
+                 <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full opacity-0 group-hover:opacity-20 transition-all duration-500 blur-2xl pointer-events-none bg-amber-500" />
+                 <div className="text-4xl mb-4 group-hover:scale-110 transition-all duration-500 filter drop-shadow-md">🛡️</div>
+                 <h3 className="text-lg font-extrabold tracking-tight group-hover:text-amber-500 transition-colors">DevSecOps</h3>
+                 <p className="text-xs text-muted-foreground mt-1.5 flex-1 leading-relaxed">Implement security scanning, compliance grids, and shift-left configurations.</p>
+                 <div className="mt-5 flex items-center gap-1 text-[11px] font-black uppercase tracking-wider text-amber-500 group-hover:underline">
                     Explore Focus <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform" />
                  </div>
               </div>
            </Link>
 
            <Link href="/roadmap?q=AI" className="group">
-              <div className="p-6 h-full bg-gradient-to-br from-purple-500/5 via-transparent to-transparent border rounded-2xl hover:border-purple-500/40 hover:shadow-xl hover:shadow-purple-500/[0.03] transition-all duration-300 relative overflow-hidden flex flex-col items-start bg-card">
-                 <div className="text-4xl mb-4 group-hover:scale-110 transition-transform">🧠</div>
-                 <h3 className="text-xl font-bold">AIOps / MLOps</h3>
-                 <p className="text-xs text-muted-foreground mt-1 flex-1">Monitor models, LLM Deployments, and setup metric anomaly detection streams.</p>
-                 <div className="mt-4 flex items-center gap-1 text-xs font-semibold text-purple-500/80 group-hover:text-purple-500">
+              <div className="p-7 h-full backdrop-blur-xl bg-card/60 border border-border/10 rounded-2xl hover:border-purple-500/30 shadow-md hover:shadow-[0_20px_40px_rgba(168,85,247,0.08)] transition-all duration-500 relative overflow-hidden flex flex-col items-start group hover:-translate-y-1">
+                 <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full opacity-0 group-hover:opacity-20 transition-all duration-500 blur-2xl pointer-events-none bg-purple-500" />
+                 <div className="text-4xl mb-4 group-hover:scale-110 transition-all duration-500 filter drop-shadow-md">🧠</div>
+                 <h3 className="text-lg font-extrabold tracking-tight group-hover:text-purple-500 transition-colors">AIOps / MLOps</h3>
+                 <p className="text-xs text-muted-foreground mt-1.5 flex-1 leading-relaxed">Monitor models, LLM Deployments, and setup metric anomaly detection streams.</p>
+                 <div className="mt-5 flex items-center gap-1 text-[11px] font-black uppercase tracking-wider text-purple-500 group-hover:underline">
                     Explore Focus <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform" />
                  </div>
               </div>
@@ -141,7 +144,7 @@ export default async function RoadmapPage({
           {/* Sidebar Area */}
           <aside className="w-full lg:w-64 flex-shrink-0 space-y-5">
             <form method="GET" action="/roadmap" className="space-y-5">
-              <Card className="shadow-smooth border-slate-100 dark:border-slate-800">
+              <Card className="backdrop-blur-md bg-card/60 shadow-md border-border/10 rounded-2xl">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
                     <Search className="h-4 w-4 text-primary" /> Search
@@ -160,7 +163,7 @@ export default async function RoadmapPage({
               </Card>
 
               {/* Sorting Bucket */}
-              <Card className="shadow-smooth border-slate-100 dark:border-slate-800">
+              <Card className="backdrop-blur-md bg-card/60 shadow-md border-border/10 rounded-2xl">
                 <CardHeader className="pb-3 border-b">
                   <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
                     <Clock className="h-4 w-4 text-purple-500" /> Sort By
@@ -184,7 +187,7 @@ export default async function RoadmapPage({
               </Card>
 
               {/* Steps Bucket */}
-              <Card className="shadow-smooth border-slate-100 dark:border-slate-800">
+              <Card className="backdrop-blur-md bg-card/60 shadow-md border-border/10 rounded-2xl">
                 <CardHeader className="pb-3 border-b">
                   <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
                     <LayoutGrid className="h-4 w-4 text-blue-500" /> Path Length
@@ -215,9 +218,12 @@ export default async function RoadmapPage({
               <div className="space-y-8">
                 {roadmaps.map((roadmap) => (
                   <Link key={roadmap.id} href={`/roadmap/${roadmap.id}`} className="block group">
-                    <div className="relative bg-card border rounded-2xl overflow-hidden shadow-sm hover:shadow-md hover:border-primary/20 transition-all duration-300">
+                    <div className="relative backdrop-blur-xl bg-card/60 border border-border/10 rounded-2xl overflow-hidden shadow-md hover:shadow-[0_25px_60px_rgba(0,0,0,0.15)] hover:border-primary/30 transition-all duration-500 hover:-translate-y-1">
+                      {/* Backlight sphere animation triggerswards coords item coords option downwards. */}
+                      <div className="absolute top-0 right-0 w-48 h-48 rounded-full opacity-0 group-hover:opacity-10 transition-all duration-700 blur-3xl pointer-events-none" style={{ backgroundColor: roadmap.color }} />
+                      
                       {/* Accent Strip */}
-                      <div className="h-1 w-full" style={{ backgroundColor: roadmap.color }} />
+                      <div className="h-1 w-full" style={{ backgroundColor: roadmap.color, opacity: 0.8 }} />
 
                       <div className="p-6 md:p-8">
                         <div className="flex items-start justify-between gap-4 mb-6">

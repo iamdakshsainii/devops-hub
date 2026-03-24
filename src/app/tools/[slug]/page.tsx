@@ -1,10 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Award, Shield, FileText, Check, X, Bookmark, GitMerge } from "lucide-react";
+import { ArrowLeft, Award, Shield, FileText, Check, X, Bookmark, GitMerge, Edit } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +19,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function ToolDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
+  const session = await getServerSession(authOptions);
+  const isAdmin = session?.user && ["ADMIN", "SUPER_ADMIN"].includes(session.user.role);
 
   const tool = await prisma.tool.findUnique({ where: { slug } });
   if (!tool || tool.status === "DELETED") return notFound();
@@ -48,10 +52,19 @@ export default async function ToolDetailPage({ params }: { params: Promise<{ slu
       </Link>
 
       <header className="space-y-4">
-         <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="px-2.5 py-0.5 text-xs font-bold rounded-full">
-                  {tool.category}
-              </Badge>
+         <div className="flex items-center justify-between">
+             <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="px-2.5 py-0.5 text-xs font-bold rounded-full">
+                      {tool.category}
+                  </Badge>
+             </div>
+             {isAdmin && (
+                  <Link href={`/admin/tools?search=${encodeURIComponent(tool.name)}`} target="_blank">
+                       <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs font-semibold">
+                            <Edit className="h-3.5 w-3.5" /> Edit Tool
+                       </Button>
+                  </Link>
+             )}
          </div>
          <div className="flex items-center gap-3">
               <div className="h-14 w-14 rounded-2xl bg-muted/30 flex items-center justify-center text-2xl shadow-inner border border-border/10">

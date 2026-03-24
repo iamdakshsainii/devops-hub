@@ -85,17 +85,25 @@ export function ResourceCard({ resource }: ResourceCardProps) {
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
 
       {finalImageUrl ? (
-        <div className="w-full h-48 bg-muted overflow-hidden border-b border-border/20 relative">
+        <div className="w-full aspect-video bg-muted overflow-hidden border-b border-border/20 relative">
           <img
             src={finalImageUrl}
             alt={resource.title || "Resource cover"}
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+            className="absolute inset-0 w-full h-full object-cover blur-xl opacity-40 scale-110 pointer-events-none"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-background/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <img
+            src={finalImageUrl}
+            alt={resource.title || "Resource cover"}
+            className="relative w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-background/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         </div>
       ) : (
-        <div className="w-full h-48 overflow-hidden border-b border-border/20 bg-gradient-to-br from-primary/5 via-background to-primary/10 flex items-center justify-center relative">
-          <ImageIcon className="h-12 w-12 text-primary/30 stroke-[1.5] transition-transform duration-500 group-hover:scale-110" />
+        <div className="w-full aspect-video overflow-hidden border-b border-border/20 bg-gradient-to-br from-primary/5 via-secondary/10 to-primary/10 flex items-center justify-center relative backdrop-blur-sm">
+           <div className="absolute inset-0 bg-secondary/5" />
+           <div className="p-4 bg-primary/10 rounded-2xl border border-primary/20 scale-100 group-hover:scale-110 transition-transform duration-500 shadow-sm">
+              <ImageIcon className="h-10 w-10 text-primary stroke-[1.5]" />
+           </div>
         </div>
       )}
       

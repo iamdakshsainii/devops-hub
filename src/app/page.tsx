@@ -21,12 +21,10 @@ export default function Home() {
           }}
         />
 
-        {/* Glow — top-left */}
-        <div className="absolute -top-32 -left-32 w-[500px] h-[500px] rounded-full
-          bg-primary/10 blur-[120px] pointer-events-none" />
-        {/* Glow — bottom-right */}
-        <div className="absolute -bottom-32 -right-32 w-[400px] h-[400px] rounded-full
-          bg-primary/8 blur-[100px] pointer-events-none" />
+        {/* Ambient Floating Ambient Light Spheres for backdrops framing nodeCoords downwards flaws. */}
+        <div className="absolute -top-12 -left-12 w-64 h-64 rounded-full bg-primary/20 blur-[90px] animate-pulse duration-[5s] pointer-events-none" />
+        <div className="absolute top-1/4 left-1/4 w-48 h-48 rounded-full bg-amber-500/10 blur-[90px] animate-pulse duration-[4s] pointer-events-none" />
+        <div className="absolute bottom-1/4 right-1/4 w-72 h-72 rounded-full bg-purple-500/15 blur-[100px] animate-pulse duration-[6s] pointer-events-none" />
 
         <div className="relative z-10 container px-6 mx-auto max-w-5xl">
           <div className="flex flex-col items-center text-center space-y-8">
@@ -41,9 +39,9 @@ export default function Home() {
 
             {/* Headline */}
             <div className="space-y-4 max-w-4xl">
-              <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tighter leading-[0.9]">
+              <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tighter leading-none">
                 <span className="block text-foreground">Learn DevOps.</span>
-                <span className="block text-foreground/30">The right way.</span>
+                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary via-purple-500 to-amber-500">The right way.</span>
               </h1>
               <p className="mx-auto max-w-2xl text-muted-foreground text-lg md:text-xl leading-relaxed">
                 Structured roadmaps, curated resources, and a community of engineers
@@ -52,15 +50,15 @@ export default function Home() {
             </div>
 
             {/* CTAs */}
-            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+            <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
               <Link href="/roadmap">
-                <Button size="lg" className="w-full sm:w-auto h-12 px-8 rounded-full text-base gap-2 group">
+                <Button size="lg" className="w-full sm:w-auto h-12 px-8 rounded-full text-base gap-2 group bg-primary hover:bg-primary/95 hover:shadow-[0_15px_35px_rgba(59,130,246,0.3)] hover:-translate-y-1 transition-all duration-300">
                   Start the Roadmap
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </Button>
               </Link>
               <Link href="/modules">
-                <Button variant="outline" size="lg" className="w-full sm:w-auto h-12 px-8 rounded-full text-base">
+                <Button variant="outline" size="lg" className="w-full sm:w-auto h-12 px-8 rounded-full text-base hover:bg-background hover:shadow-[0_15px_35px_rgba(0,0,0,0.1)] hover:-translate-y-1 transition-all duration-300 border-border/60">
                   Browse Modules
                 </Button>
               </Link>
@@ -169,8 +167,9 @@ export default function Home() {
               },
             ].map((f) => (
               <div key={f.title}
-                className="group relative rounded-2xl border bg-card p-7 hover:border-primary/30
-                hover:shadow-md transition-all duration-200 flex flex-col">
+                className="group relative rounded-2xl border border-border/10 backdrop-blur-xl bg-card/60 p-7 hover:border-primary/30 shadow-md hover:shadow-[0_20px_45px_rgba(0,0,0,0.15)] transition-all duration-500 hover:-translate-y-1 flex flex-col overflow-hidden">
+                {/* Backlight flare effect forwards downwards flaws chords. */}
+                <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-0 group-hover:opacity-10 transition-all duration-700 blur-2xl pointer-events-none bg-primary" />
                 {/* Top accent line on hover */}
                 <div className="absolute top-0 left-6 right-6 h-px bg-primary scale-x-0
                   group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full" />
@@ -235,10 +234,10 @@ export default function Home() {
                 { label: "Free forever — no paywalls, no subscriptions" },
               ].map((item) => (
                 <div key={item.label}
-                  className="flex items-center gap-3 p-4 rounded-xl border border-border
-                  bg-muted/30 hover:border-primary/20 hover:bg-muted/50 transition-colors">
+                  className="flex items-center gap-3 p-4 rounded-2xl border border-border/10 backdrop-blur-xl bg-card/60 hover:border-primary/30 hover:bg-card/40 hover:shadow-[0_15px_30px_rgba(0,0,0,0.1)] transition-all duration-300 hover:-translate-y-0.5 relative group overflow-hidden">
+                  <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-0 group-hover:opacity-10 transition-opacity duration-700 blur-2xl pointer-events-none bg-primary" />
                   <div className="h-5 w-5 rounded-full bg-primary/10 flex items-center
-                    justify-center shrink-0">
+                    justify-center shrink-0 group-hover:scale-110 transition-transform">
                     <Zap className="h-3 w-3 text-primary" />
                   </div>
                   <p className="text-sm font-medium">{item.label}</p>
