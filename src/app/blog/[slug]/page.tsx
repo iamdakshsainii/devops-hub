@@ -61,30 +61,31 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
   const tagList = post.tags ? post.tags.split(",").map((t: string) => t.trim()).filter(Boolean) : [];
 
   const relatedResources = tagList.length > 0 ? await prisma.resource.findMany({
-    where: { status: "PUBLISHED", OR: tagList.map(tag => ({ tags: { contains: tag } })) },
+    where: { status: "PUBLISHED", OR: tagList.map(tag => ({ tags: { contains: tag, mode: 'insensitive' } })) },
     take: 3
   }) : [];
 
   const relatedModules = tagList.length > 0 ? await prisma.roadmapStep.findMany({
-    where: { OR: tagList.map(tag => ({ tags: { contains: tag } })) },
+    where: { OR: tagList.map(tag => ({ tags: { contains: tag, mode: 'insensitive' } })) },
     take: 2
   }) : [];
 
   const relatedTools = tagList.length > 0 ? await prisma.tool.findMany({
-    where: { status: "PUBLISHED", OR: tagList.map(tag => ({ tags: { contains: tag } })) },
+    where: { status: "PUBLISHED", OR: tagList.map(tag => ({ tags: { contains: tag, mode: 'insensitive' } })) },
     take: 1
   }) : [];
 
   const relatedCheatsheets = tagList.length > 0 ? await prisma.cheatsheet.findMany({
-    where: { status: "PUBLISHED", OR: tagList.map(tag => ({ tags: { contains: tag } })) },
+    where: { status: "PUBLISHED", OR: tagList.map(tag => ({ tags: { contains: tag, mode: 'insensitive' } })) },
     take: 1
   }) : [];
 
-  const relatedContent = [
-     ...relatedModules.map(m => ({ id: m.id, title: m.title, type: "Module", url: `/roadmap?stepId=${m.id}` })),
-     ...relatedTools.map((t: any) => ({ id: t.id, title: t.name, type: "Tool", url: `/tools/${t.slug}` })),
-     ...relatedCheatsheets.map((c: any) => ({ id: c.id, title: c.title, type: "Cheatsheet", url: `/cheatsheets/${c.slug}` }))
-  ];
+  const recommendedItems = [
+     ...relatedResources.map((r: any) => ({ id: r.id, title: r.title, description: r.description || "Access full documentation, videos, and tutorials in-app.", type: r.type || "Link", categoryType: "Resource", url: `/resources/${r.id}` })),
+     ...relatedModules.map((m: any) => ({ id: m.id, title: m.title, description: "Master this core step part of roadmap workflows securely.", type: "Module", categoryType: "Module", url: `/roadmap?stepId=${m.id}` })),
+     ...relatedCheatsheets.map((c: any) => ({ id: c.id, title: c.title, description: c.description || "Quick-reference sheet loaded with command notes layouts.", type: "Cheatsheet", categoryType: "Cheatsheet", url: `/cheatsheets/${c.slug}` })),
+     ...relatedTools.map((t: any) => ({ id: t.id, title: t.name, description: t.description || "Discover premium developer tools setups.", type: "Tool", categoryType: "Tool", url: `/tools/${t.slug}` }))
+  ].slice(0, 4);
 
 
 
@@ -210,29 +211,43 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
               )}
 
               {/* Related Resources */}
-              <Card className="bg-card/20 backdrop-blur-xl rounded-2xl border border-border/10 shadow-sm">
-                  <CardHeader className="p-4 border-b border-border/10 flex items-center gap-1.5"><CardTitle className="text-xs font-black uppercase tracking-wider text-muted-foreground/80 flex items-center gap-1.5"><Library className="h-3.5 w-3.5 text-blue-400" /> Related Resources</CardTitle></CardHeader>
-                  <CardContent className="p-3 space-y-2">
-                     {relatedResources.length > 0 ? relatedResources.map(r => {
+              {relatedResources.length > 0 && (
+              <div className="space-y-3">
+                  <div className="mb-4">
+                      <div className="flex w-full items-center justify-between text-sm font-black uppercase tracking-wider text-muted-foreground/80 px-2 group">
+                        <div className="flex items-center gap-2">
+                          <Library className="h-4 w-4 text-primary group-hover:scale-110 transition-transform" /> RECOMMENDED
+                        </div>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground/60 mt-1 px-2 font-medium tracking-wide">Handpicked videos, docs & articles.</p>
+                  </div>
+
+                  <div className="space-y-2.5">
+                     {relatedResources.map((r: any) => {
                          const isVideo = r.type.toLowerCase() === "video";
-                         const isNotes = r.type.toLowerCase() === "notes";
+                         const isNotes = r.type.toLowerCase() === "notes" || r.type.toLowerCase() === "article";
                          return (
-                          <a key={r.id} href={r.url} target="_blank" className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/40 transition-all border border-transparent hover:border-border/10 hover:shadow-sm group">
-                              <div className={`p-2 rounded-xl bg-blue-500/10 text-blue-400 group-hover:bg-blue-500 group-hover:text-white transition-all`}>
-                                   {isVideo ? <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> : <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a4 4 0 0 0-4-4H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a4 4 0 0 1 4-4h6z"/></svg>}
+                          <a key={r.id} href={r.url} target="_blank" rel="noreferrer" className="flex flex-col gap-2 p-3.5 border border-border/10 rounded-2xl hover:bg-primary/5 hover:border-primary/20 bg-card/10 backdrop-blur-md transition-all group shadow-[0_4px_16px_-4px_rgba(0,0,0,0.1)] hover:shadow-primary/5">
+                              <div className="flex items-center gap-3">
+                                  <div className="p-2.5 rounded-xl bg-primary/10 text-primary transition-transform group-hover:scale-105 shrink-0">
+                                       {isVideo ? <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> : <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>}
+                                  </div>
+                                  <div>
+                                      <p className="text-xs font-bold text-foreground group-hover:text-primary transition-colors flex items-center gap-1.5">{r.title}</p>
+                                      <div className="flex items-center gap-1.5 mt-0.5">
+                                          <span className="text-[9px] font-bold text-muted-foreground bg-muted/30 px-1.5 py-0.5 rounded-md capitalize tracking-wide border border-border/5">{r.type.toLowerCase()}</span>
+                                      </div>
+                                  </div>
                               </div>
-                              <div className="flex-1 min-w-0">
-                                  <p className="text-xs font-bold text-foreground line-clamp-1 group-hover:text-blue-400 transition-colors">{r.title}</p>
-                                  <span className="text-[9px] font-bold text-blue-400/80 bg-blue-400/5 px-1.5 py-0.5 rounded-full mt-1.5 inline-block capitalize border border-blue-400/10">{r.type.toLowerCase()}</span>
-                              </div>
+                              {r.description && (
+                                  <p className="text-[10px] text-muted-foreground/80 line-clamp-2 leading-relaxed mt-1 font-medium pl-1 border-l border-border/10 ml-2">{r.description}</p>
+                              )}
                           </a>
-                        )}) : (
-                          <div className="p-4 text-center text-xs text-muted-foreground/50 border border-dashed border-border/10 rounded-xl">
-                               No related resources yet.
-                          </div>
-                      )}
-                  </CardContent>
-              </Card>
+                        )
+                      })}
+                  </div>
+              </div>
+              )}
 
 
 
