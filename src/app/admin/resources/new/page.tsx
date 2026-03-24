@@ -17,7 +17,6 @@ export default function NewResourceAdminPage() {
   const [jsonInput, setJsonInput] = useState("");
 
   const [modules, setModules] = useState<any[]>([]);
-  const [tools, setTools] = useState<any[]>([]);
 
   const handleJsonParse = () => {
     try {
@@ -44,11 +43,6 @@ export default function NewResourceAdminPage() {
     fetch('/api/modules?all=true')
       .then(res => res.json())
       .then(data => setModules(data || []))
-      .catch(() => {});
-
-    fetch('/api/tools')
-      .then(res => res.json())
-      .then(data => setTools(data || []))
       .catch(() => {});
 
   }, []);
@@ -125,21 +119,12 @@ export default function NewResourceAdminPage() {
                </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-               <div className="space-y-1.5">
-                  <label className="text-sm font-medium">Link to Module (Optional)</label>
-                  <select value={(form as any).linkedStepId || ""} onChange={e => setForm({...form, linkedStepId: e.target.value})} className="border h-10 px-2 rounded-md w-full bg-background">
-                     <option value="">-- None --</option>
-                     {modules.map(opt => <option key={opt.id} value={opt.id}>{opt.title}</option>)}
-                  </select>
-               </div>
-               <div className="space-y-1.5">
-                  <label className="text-sm font-medium">Link to Tool (Optional)</label>
-                  <select value={(form as any).linkedToolId || ""} onChange={e => setForm({...form, linkedToolId: e.target.value})} className="border h-10 px-2 rounded-md w-full bg-background">
-                     <option value="">-- None --</option>
-                     {tools.map(opt => <option key={opt.id} value={opt.id}>{opt.name}</option>)}
-                  </select>
-               </div>
+            <div className="space-y-1.5">
+               <label className="text-sm font-medium">Link to Module (Optional)</label>
+               <select value={(form as any).linkedStepId || ""} onChange={e => setForm({...form, linkedStepId: e.target.value})} className="border h-10 px-2 rounded-md w-full bg-background">
+                  <option value="">-- None --</option>
+                  {modules.map(opt => <option key={opt.id} value={opt.id}>{opt.title}</option>)}
+               </select>
             </div>
 
             <div className="space-y-1.5">
