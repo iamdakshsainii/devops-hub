@@ -61,7 +61,7 @@ export async function PUT(
       }
     }
 
-    // linkedToolId block removed - decommissioned
+
 
 
     // Sync the edit back to the linked RoadmapResource row (if any).
