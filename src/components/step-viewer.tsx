@@ -94,14 +94,27 @@ function wireCopyButtons(containerId: string) {
 
     btn.addEventListener("click", async () => {
       const text = decodeURIComponent(btn.dataset.code ?? "");
-      await navigator.clipboard.writeText(text).catch(() => { });
+      
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text).catch(() => { });
+      } else {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed";
+        textArea.style.opacity = "0";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try { document.execCommand("copy"); } catch (_) { }
+        document.body.removeChild(textArea);
+      }
 
       btn.classList.add("copied");
-      btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span>Copied!</span>`;
+      btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-emerald-500"><path d="M20 6 9 17l-5-5"/></svg><span class="text-[11px] text-emerald-500 font-bold ml-1">Copied!</span>`;
 
       setTimeout(() => {
         btn.classList.remove("copied");
-        btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg><span>Copy</span>`;
+        btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`;
       }, 2000);
     });
   });
@@ -933,11 +946,13 @@ export function StepViewer({
                 </div>
               </div>
 
-              {/* Resources */}
+              </div> {/* closes inner .flex-1 content area row for Center text */}
+
+              {/* Right Sidebar - inline with content Heading triggers */}
               {step.resources.length > 0 && (
-                <div className="mt-20 pt-10 border-t space-y-6">
+                <div className="hidden lg:block w-72 lg:w-80 shrink-0 space-y-3 sticky top-24 h-fit animate-in fade-in-50 duration-300 lg:pt-14">
                   <div className="mb-4">
-                    <button
+                    <button 
                       onClick={() => setIsResourcesExpanded(!isResourcesExpanded)}
                       className="flex w-full items-center justify-between text-sm font-black uppercase tracking-wider text-muted-foreground/80 px-2 hover:text-foreground transition-colors group cursor-pointer"
                     >
@@ -948,30 +963,6 @@ export function StepViewer({
                     </button>
                     <p className="text-[11px] text-muted-foreground/60 mt-1 px-2 font-medium tracking-wide">Handpicked videos, docs & articles.</p>
                   </div>
-                  {isResourcesExpanded && (
-                    <div className="grid sm:grid-cols-2 gap-4">
-                      {step.resources.map((resource) => (
-                        <ResourceCard key={resource.id} resource={{
-                          ...resource,
-                          description: resource.description || "",
-                          imageUrl: (resource as any).imageUrl || "",
-                          tags: ""
-                        }} />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-              </div> {/* closes inner .flex-1 content area row for Center text */}
-
-              {/* Right Sidebar - inline with content Heading triggers downwardswards and balanced gap spacing */}
-              {step.resources.length > 0 && (
-                <div className="hidden lg:block w-72 lg:w-80 shrink-0 space-y-3 sticky top-24 h-fit animate-in fade-in-50 duration-300 lg:pt-14">
-                    <div className="flex items-center gap-2">
-                      <BookOpen className="h-4 w-4 text-primary group-hover:scale-110 transition-transform" /> Recommended
-                    </div>
-                    <ChevronDown className={`h-4 w-4 text-muted-foreground/50 transition-transform duration-200 ${isResourcesExpanded ? "rotate-0" : "-rotate-90"}`} />
-                  </button>
 
                   {isResourcesExpanded && (
                     <div className="space-y-2.5 animate-in fade-in-30 slide-in-from-top-1 duration-200">
