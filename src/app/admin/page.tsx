@@ -25,7 +25,6 @@ export default async function AdminOverviewPage() {
     deletedRoadmaps,
     deletedCheatsheets,
     deletedBlogPosts,
-    deletedTools,
     pendingModules,
     totalResources,
     pendingResources,
@@ -44,7 +43,6 @@ export default async function AdminOverviewPage() {
     prisma.roadmap.count({ where: { status: "DELETED" } }),
     prisma.cheatsheet.count({ where: { status: "DELETED" } }),
     prisma.blogPost.count({ where: { status: "DELETED" } }),
-    prisma.tool.count({ where: { status: "DELETED" } }),
     prisma.roadmapStep.count({ where: { roadmapId: null, status: "PENDING" } }),
     prisma.resource.count({ where: { status: { not: "DELETED" } } }),
     prisma.resource.count({ where: { status: "PENDING" } }),
@@ -56,7 +54,7 @@ export default async function AdminOverviewPage() {
     prisma.user.count({ where: { createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } } }),
   ]);
 
-  const totalRecycleBin = deletedModules + deletedResources + deletedEvents + deletedRoadmaps + deletedCheatsheets + deletedBlogPosts + deletedTools;
+  const totalRecycleBin = deletedModules + deletedResources + deletedEvents + deletedRoadmaps + deletedCheatsheets + deletedBlogPosts;
 
   const recentUsersList = await prisma.user.findMany({
     where: { createdAt: { gte: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000) } },
