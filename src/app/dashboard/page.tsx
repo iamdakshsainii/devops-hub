@@ -157,8 +157,22 @@ export default async function DashboardPage() {
               </Link>
             </div>
           </div>
-          <div className="hidden md:flex h-32 w-32 shrink-0 rounded-full border-4 border-background shadow-xl bg-primary/10 items-center justify-center">
-             <Terminal className="h-12 w-12 text-primary" />
+          <div className="hidden md:flex flex-col items-center gap-3">
+            <Link href="/dashboard" className="h-32 w-32 shrink-0 rounded-full border-4 border-background shadow-xl bg-primary/10 flex items-center justify-center overflow-hidden hover:scale-105 transition-transform duration-500 cursor-pointer">
+               {session.user.image ? (
+                  <img src={session.user.image} alt={session.user.name || "User"} className="h-full w-full object-cover" />
+               ) : (
+                  <Terminal className="h-12 w-12 text-primary" />
+               )}
+            </Link>
+            <div className="text-center space-y-1">
+               <span className="text-sm font-bold text-foreground/90">{session.user.name}</span>
+               {(session.user as any).resumeUrl && (
+                  <a href={(session.user as any).resumeUrl} target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline flex items-center justify-center gap-1 font-semibold">
+                     <FileText className="h-3.5 w-3.5" /> View Resume
+                  </a>
+               )}
+            </div>
           </div>
         </div>
       </div>

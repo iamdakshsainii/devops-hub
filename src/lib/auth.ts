@@ -63,12 +63,13 @@ export const authOptions: NextAuthOptions = {
         
         const dbUser = await prisma.user.findUnique({
           where: { id: token.id as string },
-          select: { role: true, avatarUrl: true, fullName: true }
+          select: { role: true, avatarUrl: true, fullName: true, resumeUrl: true }
         });
         
         session.user.role = dbUser?.role || "MEMBER";
         if (dbUser?.fullName) session.user.name = dbUser.fullName;
         if (dbUser?.avatarUrl) session.user.image = dbUser.avatarUrl;
+        if (dbUser?.resumeUrl) (session.user as any).resumeUrl = dbUser.resumeUrl;
       }
       return session;
     }

@@ -1,14 +1,13 @@
-import { PrismaClient } from "@prisma/client";
-import { deleteFromCloudinary } from "../src/lib/cloudinary";
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { deleteFromCloudinary } from "@/lib/cloudinary";
 
-const prisma = new PrismaClient();
+export const dynamic = "force-dynamic";
 
-// Helper to extract public_id from Cloudinary URL
 function extractPublicId(url: string): string | null {
-  // Matches: .../v12345678/folder/asset_id.jpg
   const match = url.match(/\/v\d+\/([^\s]+)\.\w+$/);
   if (match && match[1]) {
-    return match[1]; // Includes folder/file-name without ext
+    return match[1];
   }
   return null;
 }
@@ -27,7 +26,6 @@ async function destroyCloudinaryImages(contentBlock: string) {
     if (publicId) {
       try {
         await deleteFromCloudinary(publicId);
-        console.log(`Deleted asset: ${publicId}`);
       } catch (err) {
         console.error(`Failed deleting Cloudinary asset ${publicId}:`, err);
       }
@@ -35,61 +33,58 @@ async function destroyCloudinaryImages(contentBlock: string) {
   }
 }
 
-async function runCleanup() {
-  console.log("Starting soft-delete sweeping...");
+export async function GET(request: Request) {
+  // 1. Verify Vercel Cron Auth header
+  const authHeader = request.headers.get("Authorization");
+  if (process.env.NODE_ENV === "production" && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const olderThan30Days = new Date();
   olderThan30Days.setDate(olderThan30Days.getDate() - 30);
 
+  const stats = { cheatsheets: 0, blogs: 0, tools: 0 };
+
   try {
-    // 1. Find Cheatsheets soft-deleted over 30 days ago
+    // A. Sweeps Cheatsheets
     const cheatsheetsToSweep = await prisma.cheatsheet.findMany({
       where: { status: "DELETED", updatedAt: { lte: olderThan30Days } },
       include: { sections: { include: { subsections: true } } }
     });
-
-    console.log(`Found ${cheatsheetsToSweep.length} cheatsheets candidates for Hard Deletion.`);
-
     for (const cheatsheet of cheatsheetsToSweep) {
-      console.log(`Hard deleting cheatsheet: [${cheatsheet.id}] ${cheatsheet.title}`);
       let contentBlock = (cheatsheet.description || "") + "\n" + (cheatsheet.coverImage || "");
       cheatsheet.sections.forEach(sec => {
           sec.subsections.forEach(sub => { contentBlock += "\n" + sub.content; });
       });
       await destroyCloudinaryImages(contentBlock);
       await prisma.cheatsheet.delete({ where: { id: cheatsheet.id } });
+      stats.cheatsheets++;
     }
 
-    // 2. Find BlogPosts soft-deleted over 30 days ago
+    // B. Sweeps BlogPosts
     const blogsToSweep = await prisma.blogPost.findMany({
       where: { status: "DELETED", updatedAt: { lte: olderThan30Days } }
     });
-    console.log(`Found ${blogsToSweep.length} blogs candidates for Hard Deletion.`);
     for (const blog of blogsToSweep) {
-       console.log(`Hard deleting blog: [${blog.id}] ${blog.title}`);
        const contentBlock = (blog.content || "") + "\n" + (blog.coverImage || "") + "\n" + (blog.excerpt || "");
        await destroyCloudinaryImages(contentBlock);
        await prisma.blogPost.delete({ where: { id: blog.id } });
+       stats.blogs++;
     }
 
-    // 3. Find Tools soft-deleted over 30 days ago
+    // C. Sweeps Tools
     const toolsToSweep = await prisma.tool.findMany({
       where: { status: "DELETED", updatedAt: { lte: olderThan30Days } }
     });
-    console.log(`Found ${toolsToSweep.length} tools candidates for Hard Deletion.`);
     for (const tool of toolsToSweep) {
-       console.log(`Hard deleting tool: [${tool.id}] ${tool.name}`);
        const contentBlock = [tool.description, tool.pros, tool.cons, tool.useCases, tool.logoUrl].filter(Boolean).join("\n");
        await destroyCloudinaryImages(contentBlock);
        await prisma.tool.delete({ where: { id: tool.id } });
+       stats.tools++;
     }
 
-    console.log("Cleanup cycle complete!");
-  } catch (err) {
-    console.error("Cleanup sweeping failed:", err);
-  } finally {
-    await prisma.$disconnect();
+    return NextResponse.json({ success: true, message: "Cleanup complete", stats });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
-
-runCleanup();
