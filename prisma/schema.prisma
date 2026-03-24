@@ -149,7 +149,6 @@ model Bookmark {
 
   noteId     String?
   resourceId String?
-  toolId     String?
   certId     String?
   stepId     String?
   eventId    String?
