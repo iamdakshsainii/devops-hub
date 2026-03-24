@@ -44,8 +44,7 @@ export default async function RecycleBinPage() {
         initialRoadmaps={deletedRoadmaps}
         initialCheatsheets={deletedCheatsheets}
         initialBlogPosts={deletedBlogPosts}
-        // Map name into title for generic render support just in case
-        initialTools={deletedTools.map(t => ({ ...t, title: t.name }))}
+        // initialTools removed - decommissioned
       />
     </div>
   );

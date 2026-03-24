@@ -11,16 +11,14 @@ export default function RecycleBinList({
   initialEvents = [],
   initialRoadmaps = [],
   initialCheatsheets = [],
-  initialBlogPosts = [],
-  initialTools = []
+  initialBlogPosts = []
 }: { 
   initialModules?: any[], 
   initialResources?: any[],
   initialEvents?: any[],
   initialRoadmaps?: any[],
   initialCheatsheets?: any[],
-  initialBlogPosts?: any[],
-  initialTools?: any[]
+  initialBlogPosts?: any[]
 }) {
   const [modules, setModules] = useState(initialModules);
   const [resources, setResources] = useState(initialResources);
@@ -28,10 +26,9 @@ export default function RecycleBinList({
   const [roadmaps, setRoadmaps] = useState(initialRoadmaps);
   const [cheatsheets, setCheatsheets] = useState(initialCheatsheets);
   const [blogPosts, setBlogPosts] = useState(initialBlogPosts);
-  const [tools, setTools] = useState(initialTools);
   const [loadingId, setLoadingId] = useState<string | null>(null);
 
-  const totalItems = modules.length + resources.length + events.length + roadmaps.length + cheatsheets.length + blogPosts.length + tools.length;
+  const totalItems = modules.length + resources.length + events.length + roadmaps.length + cheatsheets.length + blogPosts.length;
 
   const handleAction = async (id: string, type: string, action: "restore" | "purge") => {
     setLoadingId(id);
@@ -54,7 +51,6 @@ export default function RecycleBinList({
          else if (type === "ROADMAP") setRoadmaps(roadmaps.filter(r => r.id !== id));
          else if (type === "CHEATSHEET") setCheatsheets(cheatsheets.filter(c => c.id !== id));
          else if (type === "BLOG") setBlogPosts(blogPosts.filter(b => b.id !== id));
-         else if (type === "TOOL") setTools(tools.filter(t => t.id !== id));
       } else { alert("Operation failed"); }
     } catch (err) { console.error(err); }
     setLoadingId(null);
@@ -117,12 +113,7 @@ export default function RecycleBinList({
             </div>
           )}
 
-          {tools.length > 0 && (
-            <div className="space-y-3">
-              <h2 className="text-sm font-semibold flex items-center gap-2 text-emerald-500">Tools ({tools.length})</h2>
-              {tools.map((t: any) => <DeletedCard key={t.id} item={t} type="TOOL" loading={loadingId === t.id} onAction={handleAction}/>)}
-            </div>
-          )}
+        // tools block removed - decommissioned
         </div>
       )}
     </div>

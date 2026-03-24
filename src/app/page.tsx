@@ -137,13 +137,7 @@ export default function Home() {
                 href: "/blog",
                 cta: "Read Blog",
               },
-              {
-                icon: Zap,
-                title: "Head-to-Head Tools",
-                desc: "Side-by-side benchmarking of DevOps platforms. Compare pros, cons, and direct use cases before you adopt.",
-                href: "/tools",
-                cta: "Explore Tools",
-              },
+              // tools block removed - decommissioned
               {
                 icon: Calendar,
                 title: "Community Events",

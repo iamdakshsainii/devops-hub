@@ -19,7 +19,6 @@ const TYPE_FILTERS = [
   { label: "Playlist", value: "PLAYLIST", icon: List },
 
   { label: "Notes", value: "NOTES", icon: BookOpen },
-  { label: "Tool", value: "TOOL", icon: Wrench },
 ];
 
 const TYPE_ICON_MAP: Record<string, React.ElementType> = {
@@ -28,7 +27,6 @@ const TYPE_ICON_MAP: Record<string, React.ElementType> = {
   PLAYLIST: List,
 
   NOTES: BookOpen,
-  TOOL: Wrench,
 };
 
 export default function AdminResourcesList({ resources }: { resources: any[] }) {

@@ -117,7 +117,7 @@ export default function NewResourceAdminPage() {
             <div className="grid grid-cols-2 gap-4">
                <div className="space-y-1.5">
                   <label className="text-sm font-medium">Type</label>
-                  <select value={form.type} onChange={e => setForm({...form, type: e.target.value})} className="border h-10 px-2 rounded-md w-full bg-background"><option value="ARTICLE">Article</option><option value="VIDEO">Video</option><option value="TOOL">Tool</option></select>
+                  <select value={form.type} onChange={e => setForm({...form, type: e.target.value})} className="border h-10 px-2 rounded-md w-full bg-background"><option value="ARTICLE">Article</option><option value="VIDEO">Video</option></select>
                </div>
                <div className="space-y-1.5">
                   <label className="text-sm font-medium">Tags (comma separated)</label>
