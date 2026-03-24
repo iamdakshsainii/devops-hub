@@ -23,6 +23,75 @@ export function ComparisonForm({ initialData, tools }: { initialData?: any; tool
   const [status, setStatus] = useState(initialData?.status || "PUBLISHED");
   const [loading, setLoading] = useState(false);
 
+  const [pasteText, setPasteText] = useState("");
+  const [showPasteModal, setShowPasteModal] = useState<"JSON" | "MD" | "Criteria" | null>(null);
+
+  const applyJson = (text: string) => {
+     try {
+         const data = JSON.parse(text);
+         if (data.toolAId) setToolAId(data.toolAId);
+         if (data.toolBId) setToolBId(data.toolBId);
+         if (data.summary) setSummary(data.summary);
+         if (data.criteria) setCriteria(data.criteria);
+         setShowPasteModal(null);
+         setPasteText("");
+     } catch { alert("Invalid JSON"); }
+  };
+
+  const applyCriteria = (text: string) => {
+      const lines = text.split("\n").filter(l => l.includes("|"));
+      const parsed: Criterion[] = [];
+      for (const line of lines) {
+          const parts = line.replace(/^-\s*/, '').split("|").map(p => p.trim());
+          if (parts.length >= 2) {
+              parsed.push({
+                  label: parts[0],
+                  toolAValue: parts[1] || "",
+                  toolBValue: parts[2] || ""
+              });
+          }
+      }
+      if (parsed.length > 0) setCriteria([...criteria, ...parsed]);
+      setShowPasteModal(null);
+      setPasteText("");
+  };
+
+  const applyMarkdown = (text: string) => {
+     const summaryMatch = text.match(/^## Summary\n([\s\S]*?)(?=\n## |$)/im);
+     if (summaryMatch) setSummary(summaryMatch[1].trim());
+
+     const titleMatch = text.match(/^# (.*?) vs (.*)/i);
+     if (titleMatch && tools.length) {
+         const nameA = titleMatch[1].trim().toLowerCase();
+         const nameB = titleMatch[2].trim().toLowerCase();
+         
+         const tA = tools.find(t => t.name.toLowerCase() === nameA || nameA.includes(t.name.toLowerCase()) || t.name.toLowerCase().includes(nameA));
+         const tB = tools.find(t => t.name.toLowerCase() === nameB || nameB.includes(t.name.toLowerCase()) || t.name.toLowerCase().includes(nameB));
+         if (tA) setToolAId(tA.id);
+         if (tB) setToolBId(tB.id);
+     }
+
+     const criteriaMatch = text.match(/^## Criteria\n([\s\S]*?)(?=\n## |$)/im);
+     if (criteriaMatch) {
+         const lines = criteriaMatch[1].split("\n").filter(l => l.includes("|"));
+         const parsed: Criterion[] = [];
+         for (const line of lines) {
+             const parts = line.replace(/^-\s*/, '').split("|").map(p => p.trim());
+             if (parts.length >= 2) {
+                 parsed.push({
+                     label: parts[0],
+                     toolAValue: parts[1] || "",
+                     toolBValue: parts[2] || ""
+                 });
+             }
+         }
+         if (parsed.length > 0) setCriteria([...criteria, ...parsed]);
+     }
+
+     setShowPasteModal(null);
+     setPasteText("");
+  };
+
   const handleAddCriterion = () => {
     setCriteria([...criteria, { label: "", toolAValue: "", toolBValue: "" }]);
   };
@@ -71,11 +140,58 @@ export function ComparisonForm({ initialData, tools }: { initialData?: any; tool
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       <Card className="bg-card rounded-2xl border border-border/40 shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-xl font-bold">{initialData ? "Edit Comparison" : "Create Comparison"}</CardTitle>
-          <CardDescription>Setup benchmark aggregates pitting two platforms platforms together.</CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+          <div>
+            <CardTitle className="text-xl font-bold">{initialData ? "Edit Comparison" : "Create Comparison"}</CardTitle>
+            <CardDescription>Setup benchmark aggregates pitting two platforms together.</CardDescription>
+          </div>
+          <div className="flex gap-2">
+             <Button type="button" variant="outline" size="sm" onClick={() => setShowPasteModal("Criteria")} className="h-8 gap-1 text-xs">
+                 Paste Criteria Only
+             </Button>
+             <Button type="button" variant="outline" size="sm" onClick={() => setShowPasteModal("JSON")} className="h-8 gap-1 text-xs">
+                 Paste JSON
+             </Button>
+             <Button type="button" variant="outline" size="sm" onClick={() => setShowPasteModal("MD")} className="h-8 gap-1 text-xs">
+                 Paste Markdown
+             </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
+
+        {/* Paste Modal Overlay */}
+        {showPasteModal && (
+           <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+               <div className="bg-card border border-border/40 rounded-2xl w-full max-w-lg p-6 space-y-4 shadow-2xl animate-in fade-in zoom-in duration-200">
+                   <div className="flex justify-between items-center">
+                       <div>
+                          <h3 className="text-lg font-bold">Paste {showPasteModal}</h3>
+                          <p className="text-xs text-muted-foreground">Paste your raw content below and we'll fill the form natively.</p>
+                       </div>
+                       <Button type="button" variant="ghost" size="sm" onClick={() => { setShowPasteModal(null); setPasteText(""); }} className="h-8 w-8 p-0">
+                           <Trash2 className="h-4 w-4" />
+                       </Button>
+                   </div>
+                   <Textarea 
+                      value={pasteText} 
+                      onChange={e => setPasteText(e.target.value)} 
+                      placeholder={showPasteModal === "JSON" ? '{"toolAId": "...", "criteria": [...]}' : showPasteModal === "Criteria" ? 'Scaling | High | Very High\nLanguage | Go | Rust' : '# ToolA vs ToolB\n\n## Summary\n...\n\n## Criteria\n- Criterion | ValA | ValB'} 
+                      rows={12} 
+                      className="font-mono text-xs bg-muted/20" 
+                   />
+                   <div className="flex justify-end gap-2 pt-2">
+                       <Button type="button" variant="outline" onClick={() => { setShowPasteModal(null); setPasteText(""); }}>Cancel</Button>
+                       <Button type="button" onClick={() => {
+                           if (showPasteModal === "JSON") applyJson(pasteText);
+                           else if (showPasteModal === "Criteria") applyCriteria(pasteText);
+                           else applyMarkdown(pasteText);
+                       }}>
+                           Load & Apply
+                       </Button>
+                   </div>
+               </div>
+           </div>
+        )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-b border-border/10 pb-4">
             <div className="space-y-1">
               <label className="text-sm font-semibold text-foreground">Tool A</label>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,9 @@ const LICENSES = ["Open Source", "Proprietary", "Freemium", "Free"];
 
 export function ToolForm({ initialData }: { initialData?: any }) {
   const router = useRouter();
+  const jsonInputRef = useRef<HTMLInputElement>(null);
+  const mdInputRef = useRef<HTMLInputElement>(null);
+
   const [name, setName] = useState(initialData?.name || "");
   const [slug, setSlug] = useState(initialData?.slug || "");
   const [description, setDescription] = useState(initialData?.description || "");
@@ -40,6 +43,175 @@ export function ToolForm({ initialData }: { initialData?: any }) {
     setName(val);
     const s = val.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
     setSlug(s);
+  };
+
+  const [pasteText, setPasteText] = useState("");
+  const [showPasteModal, setShowPasteModal] = useState<"JSON" | "MD" | null>(null);
+
+  const applyJson = (text: string) => {
+     try {
+         const data = JSON.parse(text);
+         if (data.name) handleNameChange(data.name);
+         if (data.slug) setSlug(data.slug);
+         if (data.description) setDescription(data.description);
+         if (data.category) setCategory(data.category);
+         if (data.difficulty) setDifficulty(data.difficulty);
+         if (data.license) setLicense(data.license);
+         if (data.icon) setIcon(data.icon);
+         if (data.logoUrl) setLogoUrl(data.logoUrl);
+         if (data.docsUrl) setDocsUrl(data.docsUrl);
+         if (data.githubUrl) setGithubUrl(data.githubUrl);
+         if (data.tags) setTags(data.tags);
+         if (data.pros) setPros(data.pros);
+         if (data.cons) setCons(data.cons);
+         if (data.useCases) setUseCases(data.useCases);
+         if (data.moduleUrl) setModuleUrl(data.moduleUrl);
+         if (data.resourceUrl) setResourceUrl(data.resourceUrl);
+         setShowPasteModal(null);
+         setPasteText("");
+     } catch (err) { alert("Invalid JSON"); }
+  };
+
+  const applyMarkdown = (text: string) => {
+     const frontmatterMatch = text.match(/^---([\s\S]*?)---/);
+     
+     if (frontmatterMatch) {
+        try {
+           const lines = frontmatterMatch[1].split('\n');
+           const data: any = {};
+           lines.forEach(l => {
+             const [k, ...v] = l.split(':');
+             if (k && v.length) data[k.trim()] = v.join(':').trim();
+           });
+           if (data.name) handleNameChange(data.name);
+           if (data.slug) setSlug(data.slug);
+           if (data.description) setDescription(data.description);
+           if (data.category && CATEGORIES.includes(data.category)) setCategory(data.category);
+           if (data.difficulty) setDifficulty(data.difficulty);
+           if (data.license) setLicense(data.license);
+           if (data.icon) setIcon(data.icon);
+           if (data.docsUrl) setDocsUrl(data.docsUrl);
+           if (data.githubUrl) setGithubUrl(data.githubUrl);
+           if (data.logoUrl) setLogoUrl(data.logoUrl);
+           if (data.tags) setTags(data.tags);
+           if (data.moduleUrl) setModuleUrl(data.moduleUrl);
+           if (data.resourceUrl) setResourceUrl(data.resourceUrl);
+        } catch {}
+     }
+
+     const nameMatch = text.match(/^# (.*)/m);
+     if (nameMatch) handleNameChange(nameMatch[1].trim());
+
+     const descMatch = text.match(/^## Description\n([\s\S]*?)(?=\n## |$)/im);
+     if (descMatch) setDescription(descMatch[1].trim());
+
+     const prosMatch = text.match(/^## Pros\n([\s\S]*?)(?=\n## |$)/im);
+     if (prosMatch) {
+         const items = prosMatch[1].split('\n').map(l => l.replace(/^[-*+]\s*/, '').trim()).filter(Boolean);
+         setPros(items);
+     }
+     const consMatch = text.match(/^## Cons\n([\s\S]*?)(?=\n## |$)/im);
+     if (consMatch) {
+         const items = consMatch[1].split('\n').map(l => l.replace(/^[-*+]\s*/, '').trim()).filter(Boolean);
+         setCons(items);
+     }
+     
+     const useCasesMatch = text.match(/^## Use Cases\n([\s\S]*?)(?=\n## |$)/im);
+     if (useCasesMatch) {
+         const items = useCasesMatch[1].split('\n').map(l => l.replace(/^[-*+]\s*/, '').trim()).filter(Boolean);
+         setUseCases(items);
+     }
+     
+     setShowPasteModal(null);
+     setPasteText("");
+  };
+
+  const handleImportJson = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const data = JSON.parse(evt.target?.result as string);
+        if (data.name) handleNameChange(data.name);
+        if (data.slug) setSlug(data.slug);
+        if (data.description) setDescription(data.description);
+        if (data.category) setCategory(data.category);
+        if (data.difficulty) setDifficulty(data.difficulty);
+        if (data.license) setLicense(data.license);
+        if (data.icon) setIcon(data.icon);
+        if (data.logoUrl) setLogoUrl(data.logoUrl);
+        if (data.docsUrl) setDocsUrl(data.docsUrl);
+        if (data.githubUrl) setGithubUrl(data.githubUrl);
+        if (data.tags) setTags(data.tags);
+        if (data.pros) setPros(data.pros);
+        if (data.cons) setCons(data.cons);
+        if (data.useCases) setUseCases(data.useCases);
+        if (data.moduleUrl) setModuleUrl(data.moduleUrl);
+        if (data.resourceUrl) setResourceUrl(data.resourceUrl);
+      } catch (err) { alert("Invalid JSON"); }
+    };
+    reader.readAsText(file);
+    e.target.value = ""; // reset
+  };
+
+  const handleImportMarkdown = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const text = evt.target?.result as string;
+      const frontmatterMatch = text.match(/^---([\s\S]*?)---/);
+      
+      if (frontmatterMatch) {
+         try {
+            const lines = frontmatterMatch[1].split('\n');
+            const data: any = {};
+            lines.forEach(l => {
+              const [k, ...v] = l.split(':');
+              if (k && v.length) data[k.trim()] = v.join(':').trim();
+            });
+            if (data.name) handleNameChange(data.name);
+            if (data.slug) setSlug(data.slug);
+            if (data.description) setDescription(data.description);
+            if (data.category && CATEGORIES.includes(data.category)) setCategory(data.category);
+            if (data.difficulty) setDifficulty(data.difficulty);
+            if (data.license) setLicense(data.license);
+            if (data.icon) setIcon(data.icon);
+            if (data.docsUrl) setDocsUrl(data.docsUrl);
+            if (data.githubUrl) setGithubUrl(data.githubUrl);
+            if (data.logoUrl) setLogoUrl(data.logoUrl);
+            if (data.tags) setTags(data.tags);
+            if (data.moduleUrl) setModuleUrl(data.moduleUrl);
+            if (data.resourceUrl) setResourceUrl(data.resourceUrl);
+         } catch {}
+      }
+
+      const nameMatch = text.match(/^# (.*)/m);
+      if (nameMatch) handleNameChange(nameMatch[1].trim());
+
+      const descMatch = text.match(/^## Description\n([\s\S]*?)(?=\n## |$)/im);
+      if (descMatch) setDescription(descMatch[1].trim());
+
+      const prosMatch = text.match(/^## Pros\n([\s\S]*?)(?=\n## |$)/im);
+      if (prosMatch) {
+         const items = prosMatch[1].split('\n').map(l => l.replace(/^[-*+]\s*/, '').trim()).filter(Boolean);
+         setPros(items);
+      }
+      const consMatch = text.match(/^## Cons\n([\s\S]*?)(?=\n## |$)/im);
+      if (consMatch) {
+         const items = consMatch[1].split('\n').map(l => l.replace(/^[-*+]\s*/, '').trim()).filter(Boolean);
+         setCons(items);
+      }
+      
+      const useCasesMatch = text.match(/^## Use Cases\n([\s\S]*?)(?=\n## |$)/im);
+      if (useCasesMatch) {
+         const items = useCasesMatch[1].split('\n').map(l => l.replace(/^[-*+]\s*/, '').trim()).filter(Boolean);
+         setUseCases(items);
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = ""; // reset
   };
 
   const handleArrayChange = (setter: any, arr: string[], idx: number, val: string) => {
@@ -104,11 +276,58 @@ export function ToolForm({ initialData }: { initialData?: any }) {
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       <Card className="bg-card rounded-2xl border border-border/40 shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-xl font-bold">{initialData ? "Edit Tool" : "New Tool"}</CardTitle>
-          <CardDescription>Fill out tool descriptive elements setup natively.</CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+          <div>
+            <CardTitle className="text-xl font-bold">{initialData ? "Edit Tool" : "New Tool"}</CardTitle>
+            <CardDescription>Fill out tool descriptive elements setup natively.</CardDescription>
+          </div>
+          <div className="flex gap-2">
+             <input type="file" ref={jsonInputRef} accept=".json" onChange={handleImportJson} className="hidden" />
+             <input type="file" ref={mdInputRef} accept=".md" onChange={handleImportMarkdown} className="hidden" />
+             
+             <Button type="button" variant="outline" size="sm" onClick={() => setShowPasteModal("JSON")} className="h-8 gap-1 text-xs">
+                 Paste JSON
+             </Button>
+             
+             <Button type="button" variant="outline" size="sm" onClick={() => setShowPasteModal("MD")} className="h-8 gap-1 text-xs">
+                 Paste Markdown
+             </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
+        
+        {/* Paste Modal Overlay */}
+        {showPasteModal && (
+           <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+               <div className="bg-card border border-border/40 rounded-2xl w-full max-w-lg p-6 space-y-4 shadow-2xl animate-in fade-in zoom-in duration-200">
+                   <div className="flex justify-between items-center">
+                       <div>
+                          <h3 className="text-lg font-bold">Paste {showPasteModal}</h3>
+                          <p className="text-xs text-muted-foreground">Paste your raw content below and we'll fill the form natively.</p>
+                       </div>
+                       <Button type="button" variant="ghost" size="sm" onClick={() => { setShowPasteModal(null); setPasteText(""); }} className="h-8 w-8 p-0">
+                           <Trash2 className="h-4 w-4" />
+                       </Button>
+                   </div>
+                   <Textarea 
+                      value={pasteText} 
+                      onChange={e => setPasteText(e.target.value)} 
+                      placeholder={`Paste your ${showPasteModal} here...`} 
+                      rows={12} 
+                      className="font-mono text-xs bg-muted/20" 
+                   />
+                   <div className="flex justify-end gap-2 pt-2">
+                       <Button type="button" variant="outline" onClick={() => { setShowPasteModal(null); setPasteText(""); }}>Cancel</Button>
+                       <Button type="button" onClick={() => {
+                           if (showPasteModal === "JSON") applyJson(pasteText);
+                           else applyMarkdown(pasteText);
+                       }}>
+                           Load & Apply
+                       </Button>
+                   </div>
+               </div>
+           </div>
+        )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1">
               <label className="text-sm font-semibold text-foreground">Name</label>
