@@ -63,12 +63,7 @@ export async function POST(req: Request) {
         });
       }
 
-      if (linkedToolId) {
-        await tx.tool.update({
-          where: { id: linkedToolId },
-          data: { resourceUrl: `/resources/${r.id}` }
-        });
-      }
+      // linkedToolId block removed - decommissioned
 
       return r;
     });
