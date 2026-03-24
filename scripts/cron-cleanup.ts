@@ -72,17 +72,7 @@ async function runCleanup() {
        await prisma.blogPost.delete({ where: { id: blog.id } });
     }
 
-    // 3. Find Tools soft-deleted over 30 days ago
-    const toolsToSweep = await prisma.tool.findMany({
-      where: { status: "DELETED", updatedAt: { lte: olderThan30Days } }
-    });
-    console.log(`Found ${toolsToSweep.length} tools candidates for Hard Deletion.`);
-    for (const tool of toolsToSweep) {
-       console.log(`Hard deleting tool: [${tool.id}] ${tool.name}`);
-       const contentBlock = [tool.description, tool.pros, tool.cons, tool.useCases, tool.logoUrl].filter(Boolean).join("\n");
-       await destroyCloudinaryImages(contentBlock);
-       await prisma.tool.delete({ where: { id: tool.id } });
-    }
+    // 3. Tools and Comparisons are decommissioned - no action required
 
     console.log("Cleanup cycle complete!");
   } catch (err) {
