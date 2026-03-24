@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,6 +36,58 @@ const emptySubtopic = (): SubtopicForm => ({ title: "", content: "" });
 const emptyTopic = (): TopicForm => ({ title: "", content: "", subtopics: [], expanded: true });
 const emptyResource = (): ResourceForm => ({ title: "", url: "", type: "ARTICLE", description: "", imageUrl: "" });
 
+const TopicTextarea = ({ id, value, onChange, className, placeholder, onImageUpload, wrapText = true }: { id: string, value: string, onChange: (v: string) => void, className?: string, placeholder?: string, onImageUpload?: (f: File) => void, wrapText?: boolean }) => {
+  const [val, setVal] = useState(value);
+  const timeoutRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (typeof document !== "undefined" && document.activeElement?.id === id) return;
+    setVal(value);
+  }, [value, id]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const nextVal = e.target.value;
+    setVal(nextVal);
+
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => {
+      onChange(nextVal);
+    }, 500); 
+  };
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.startsWith("image/")) {
+        const file = items[i].getAsFile();
+        if (file && onImageUpload) {
+          e.preventDefault();
+          onImageUpload(file);
+          return; // only upload one image per paste
+        }
+      }
+    }
+  };
+
+  useEffect(() => {
+    return () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); };
+  }, []);
+
+  return (
+    <textarea
+      id={id}
+      value={val}
+      onChange={handleChange}
+      onPaste={handlePaste}
+      wrap={wrapText ? "soft" : "off"}
+      className={`${className} ${wrapText ? "" : "overflow-x-auto whitespace-pre"}`}
+      placeholder={placeholder}
+    />
+  );
+};
+
 export default function EditModulePage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const [moduleId, setModuleId] = useState("");
@@ -58,12 +110,15 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
   const [collapsedIntro, setCollapsedIntro] = useState<Record<number, boolean>>({});
   const [globalResources, setGlobalResources] = useState<any[]>([]);
   const [previewModes, setPreviewModes] = useState<Record<string, boolean>>({});
+  const [resSearchQuery, setResSearchQuery] = useState("");
+  const [showResSearch, setShowResSearch] = useState(false);
+  const [wordWrap, setWordWrap] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
     fetch('/api/admin/resources')
       .then(res => res.json())
-      .then(data => setGlobalResources(data || []))
-      .catch(() => {});
+      .then(data => setGlobalResources(Array.isArray(data) ? data : []))
+      .catch(() => setGlobalResources([]));
   }, []);
 
 
@@ -160,17 +215,31 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
     try {
       const res = await fetch("/api/upload", { method: "POST", body: formData });
       const data = await res.json();
-      if (data.url) {
-        if (si !== null) {
-          const current = form.topics[ti].subtopics[si].content || "";
-          updateSubtopic(ti, si, { content: current + `\n\n![Image](${data.url})\n` });
-        } else {
-          const current = form.topics[ti].content || "";
-          updateTopic(ti, { content: current + `\n\n![Image](${data.url})\n` });
-        }
+      if (!res.ok) {
+        alert(data.message || "Image upload failed");
+        setError(data.message || "Image upload failed");
+        return;
       }
-    } catch {
-       setError("Image upload failed");
+      if (data.url) {
+        // Since Subtopics were removed, we do flat topic updates only
+        const textarea = document.getElementById(`textarea-intro-${ti}`) as HTMLTextAreaElement;
+        const current = form.topics[ti].content || "";
+        let updated = current;
+
+        if (textarea) {
+          const start = textarea.selectionStart;
+          const end = textarea.selectionEnd;
+          updated = current.substring(0, start) + `\n![Image](${data.url})\n` + current.substring(end);
+        } else {
+          updated = current + `\n\n![Image](${data.url})\n`;
+        }
+
+        updateTopic(ti, { content: updated });
+        alert("Image uploaded and inserted into content cursor offset!");
+      }
+    } catch (err: any) {
+        alert("Upload error: " + (err.message || err));
+        setError("Image upload failed");
     }
   };
 
@@ -640,6 +709,61 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
                                 >
                                   <ImageIcon className="h-3 w-3" /> Upload Image
                                 </Button>
+
+                                <div className="w-px h-3.5 bg-border mx-0.5" />
+                                
+                                <Button 
+                                  type="button" 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="h-6 text-[10px] items-center gap-1.5 px-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
+                                  onClick={() => {
+                                    const textarea = document.getElementById(`textarea-intro-${ti}`) as HTMLTextAreaElement;
+                                    if (!textarea) return;
+                                    textarea.select();
+                                    document.execCommand('copy');
+                                  }}
+                                  title="Select All & Copy"
+                                >
+                                  Select All
+                                </Button>
+
+                                <Button 
+                                  type="button" 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="h-6 text-[10px] items-center gap-1.5 px-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
+                                  onClick={() => {
+                                    const textarea = document.getElementById(`textarea-intro-${ti}`) as HTMLTextAreaElement;
+                                    if (textarea) { textarea.focus(); document.execCommand('cut'); }
+                                  }}
+                                >
+                                  Cut
+                                </Button>
+
+                                <Button 
+                                  type="button" 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="h-6 text-[10px] items-center gap-1.5 px-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
+                                  onClick={() => {
+                                    const textarea = document.getElementById(`textarea-intro-${ti}`) as HTMLTextAreaElement;
+                                    if (textarea) { textarea.focus(); document.execCommand('copy'); }
+                                  }}
+                                >
+                                  Copy
+                                </Button>
+
+                                <Button 
+                                  type="button" 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className={`h-6 text-[10px] font-semibold items-center gap-1 px-1.5 transition-all ${(wordWrap[ti] ?? true) ? "text-primary hover:bg-primary/10" : "text-muted-foreground hover:bg-muted/50"}`}
+                                  onClick={() => setWordWrap(prev => ({ ...prev, [ti]: !(prev[ti] ?? true) }))}
+                                  title="Toggle Word Wrap"
+                                >
+                                  Wrap
+                                </Button>
                               </>
                             )}
                           </div>
@@ -650,9 +774,12 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
                               dangerouslySetInnerHTML={{ __html: parseMarkdown(topic.content || "") }} 
                             />
                           ) : (
-                            <textarea
+                            <TopicTextarea
+                              id={`textarea-intro-${ti}`}
                               value={topic.content || ""}
-                              onChange={(e) => updateTopic(ti, { content: e.target.value })}
+                              onChange={(v) => updateTopic(ti, { content: v })}
+                              onImageUpload={(file) => handleContentImageUpload(ti, null, file)}
+                              wrapText={wordWrap[ti] ?? true}
                               className="w-full h-32 rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring font-mono"
                               placeholder="Intro content (Markdown supported)..."
                             />
@@ -672,19 +799,62 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
             <CardHeader className="pb-4 flex flex-row items-center justify-between gap-4 flex-wrap">
               <CardTitle className="text-base">📚 Resources ({form.resources.length})</CardTitle>
               <div className="flex items-center gap-2">
-                {globalResources.length > 0 && (
-                  <select 
-                    onChange={e => {
-                      const r = globalResources.find(g => g.id === e.target.value);
-                      if (r) setForm({ ...form, resources: [...form.resources, { title: r.title, url: r.url, type: r.type, description: r.description || "", imageUrl: r.imageUrl || "" }] });
-                      e.target.value = ""; // reset
-                    }}
-                    className="h-8 px-2 border rounded-md bg-background text-xs text-muted-foreground w-40"
-                  >
-                    <option value="">+ Add Existing Material</option>
-                    {globalResources.filter(g => !form.resources.some(fr => fr.url === g.url)).map(g => <option key={g.id} value={g.id}>{g.title}</option>)}
-                  </select>
-                )}
+                  <div className="relative">
+                    {!showResSearch ? (
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        onClick={() => setShowResSearch(true)} 
+                        className="h-8 text-xs text-muted-foreground border border-dashed border-muted-foreground/30 hover:border-primary/50 transition-all duration-200"
+                      >
+                        <Plus className="h-3.5 w-3.5 mr-1" /> Attach Existing
+                      </Button>
+                    ) : (
+                      <div className="flex items-center gap-1.5 animate-in fade-in-50 duration-150">
+                        <Input 
+                          value={resSearchQuery}
+                          onChange={(e) => setResSearchQuery(e.target.value)}
+                          placeholder="Search title..."
+                          className="h-8 text-xs w-48 shadow-sm focus-visible:ring-1"
+                          autoFocus
+                          onKeyDown={(e) => { if (e.key === 'Escape') { setShowResSearch(false); setResSearchQuery(""); } }}
+                        />
+                        <Button size="sm" variant="ghost" onClick={() => { setShowResSearch(false); setResSearchQuery(""); }} className="h-7 w-7 p-0 rounded-full hover:bg-muted"><X className="h-3 w-3" /></Button>
+                      </div>
+                    )}
+
+                    {showResSearch && resSearchQuery.trim().length > 0 && (
+                      <Card className="absolute top-9 right-0 bg-background/95 backdrop-blur-md border border-border shadow-xl z-50 w-72 max-h-56 overflow-y-auto p-1.5 text-xs animate-in slide-in-from-top-2 duration-150 rounded-lg">
+                        <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold p-1">Search Results</div>
+                        <div className="space-y-0.5 mt-1">
+                          {globalResources
+                            .filter(g => !form.resources.some(fr => fr.url === g.url))
+                            .filter(g => g.title.toLowerCase().includes(resSearchQuery.toLowerCase()))
+                            .slice(0, 10) 
+                            .map(g => (
+                              <div 
+                                key={g.id} 
+                                className="p-2 hover:bg-primary/10 hover:text-primary cursor-pointer rounded-md transition-colors flex flex-col gap-0.5 border border-transparent hover:border-primary/20"
+                                onClick={() => {
+                                  setForm({ ...form, resources: [...form.resources, { title: g.title, url: g.url, type: g.type, description: g.description || "", imageUrl: g.imageUrl || "" }] });
+                                  setResSearchQuery("");
+                                  setShowResSearch(false);
+                                  toast.success("Resource attached!");
+                                }}
+                              >
+                                <span className="font-medium text-foreground">{g.title}</span>
+                                <span className="text-[9px] text-muted-foreground truncate">{g.url}</span>
+                              </div>
+                            ))}
+                          {globalResources
+                            .filter(g => !form.resources.some(fr => fr.url === g.url))
+                            .filter(g => g.title.toLowerCase().includes(resSearchQuery.toLowerCase())).length === 0 && (
+                            <div className="text-center py-3 text-muted-foreground">No matches found</div>
+                          )}
+                        </div>
+                      </Card>
+                    )}
+                  </div>
                 <Button size="sm" variant="outline" onClick={() => setForm({ ...form, resources: [...form.resources, emptyResource()] })} className="h-8 text-xs">
                   <Plus className="h-3 w-3 mr-1" /> Add New
                 </Button>

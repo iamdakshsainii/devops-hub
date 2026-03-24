@@ -1053,7 +1053,7 @@ Without TLS (HTTP):
 With TLS (HTTPS):
   Browser  -->  x7k$#mNp9@q2!vB3...  -->  Server
   Looks like garbage to anyone intercepting. Safe.
-```
+```-
 
 **How TLS works (simplified):**
 

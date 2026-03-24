@@ -13,6 +13,7 @@ import {
   Menu, X, Map, ChevronDown, ChevronRight, ChevronLeft, Library, Heart, Twitter, Linkedin, Copy, Search, Bookmark, Check
 } from "lucide-react";
 import { ResourceCard } from "@/components/resource-card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -470,6 +471,7 @@ export function StepViewer({
 
   const themeColor = roadmap?.color || "#6366f1";
   const [shareUrl, setShareUrl] = useState("");
+  const [isResourcesExpanded, setIsResourcesExpanded] = useState(true);
   useEffect(() => {
     setShareUrl(window.location.href);
   }, []);
@@ -492,7 +494,7 @@ export function StepViewer({
         )}
 
         {/* Breadcrumb row */}
-        <div className={`container mx-auto px-4 ${isSidebarCollapsed ? "max-w-none" : "max-w-7xl"} flex items-center h-14 gap-2 overflow-x-auto whitespace-nowrap scrollbar-hide text-sm transition-all duration-300`}>
+        <div className="flex items-center h-14 gap-2 px-4 overflow-x-auto whitespace-nowrap scrollbar-hide text-sm transition-all duration-300 w-full">
           <button className="md:hidden p-1.5 rounded-md hover:bg-muted shrink-0" onClick={() => setSidebarOpen(!sidebarOpen)}>
             {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
@@ -550,7 +552,7 @@ export function StepViewer({
         </div>
       </div>
 
-      <div className="container mx-auto max-w-7xl flex flex-1 relative">
+      <div className="flex flex-1 relative w-full px-4 md:px-6">
 
         {sidebarOpen && <div className="fixed inset-0 bg-black/50 z-30 md:hidden" onClick={() => setSidebarOpen(false)} />}
 
@@ -685,10 +687,12 @@ export function StepViewer({
         {/* Main content */}
         <main className={`flex-1 min-w-0 px-4 ${isSidebarCollapsed ? "md:px-16" : "md:px-10"} py-8 lg:py-12 ${isSidebarCollapsed ? "" : "md:border-l"} transition-all duration-300`}>
           {(activeTopic || activeSubtopic) ? (
-            <article id="devhub-content-area" className="max-w-4xl mx-auto">
-
-              <header className="mb-10 pb-8 border-b space-y-4">
-                <div className="flex flex-wrap items-center justify-between gap-4">
+            <article id="devhub-content-area" className="w-full max-w-none">
+              <div className="flex flex-col lg:flex-row gap-10 items-start w-full justify-start">
+                <div className="flex-1 min-w-0 max-w-4xl">
+                  <header className="mb-10 pb-8 border-b space-y-4">
+                    <div className="flex flex-wrap items-center justify-start gap-3">
+                        {/* Expand Sidebar for Desktop */}
 
                   {/* Expand Sidebar for Desktop */}
                   {isSidebarCollapsed && (
@@ -766,26 +770,21 @@ export function StepViewer({
                   </div>
 
                   {/* View mode toggle */}
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center">
                     {!isBlog && (
-                      <div className="flex flex-col items-end gap-1">
-                        <div className="flex bg-muted p-1 rounded-lg w-fit gap-1 text-[11px] font-bold border shadow-sm">
-                          <button
-                            onClick={() => setViewMode("PAGINATED")}
-                            className={`px-3 py-1.5 rounded-md transition-all ${viewMode === "PAGINATED" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-                          >
-                            Step-by-Step
-                          </button>
-                          <button
-                            onClick={() => setViewMode("CONTINUOUS")}
-                            className={`px-3 py-1.5 rounded-md transition-all ${viewMode === "CONTINUOUS" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-                          >
-                            Continuous
-                          </button>
-                        </div>
-                        <p className="text-[9px] text-muted-foreground/60 font-medium pr-1">
-                          {viewMode === "PAGINATED" ? "💡 Tip: Use Continuous for full scrolling" : "💡 Tip: Use Step-by-Step for focused reading"}
-                        </p>
+                      <div className="flex bg-muted p-1 rounded-lg w-fit gap-1 text-[11px] font-bold border shadow-sm h-[32px] items-center">
+                        <button
+                          onClick={() => setViewMode("PAGINATED")}
+                          className={`px-3 py-1.5 rounded-md transition-all h-full flex items-center ${viewMode === "PAGINATED" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                        >
+                          Step-by-Step
+                        </button>
+                        <button
+                          onClick={() => setViewMode("CONTINUOUS")}
+                          className={`px-3 py-1.5 rounded-md transition-all h-full flex items-center ${viewMode === "CONTINUOUS" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                        >
+                          Continuous
+                        </button>
                       </div>
                     )}
                   </div>
@@ -937,23 +936,75 @@ export function StepViewer({
               {/* Resources */}
               {step.resources.length > 0 && (
                 <div className="mt-20 pt-10 border-t space-y-6">
-                  <div>
-                    <h3 className="text-2xl font-bold tracking-tight">📚 Recommended Resources</h3>
-                    <p className="text-muted-foreground mt-1 text-sm">Curated materials to go deeper.</p>
+                  <div className="mb-4">
+                    <button
+                      onClick={() => setIsResourcesExpanded(!isResourcesExpanded)}
+                      className="flex w-full items-center justify-between text-sm font-black uppercase tracking-wider text-muted-foreground/80 px-2 hover:text-foreground transition-colors group cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2">
+                        <BookOpen className="h-4 w-4 text-primary group-hover:scale-110 transition-transform" /> Recommended
+                      </div>
+                      <ChevronDown className={`h-4 w-4 text-muted-foreground/50 transition-transform duration-200 ${isResourcesExpanded ? "rotate-0" : "-rotate-90"}`} />
+                    </button>
+                    <p className="text-[11px] text-muted-foreground/60 mt-1 px-2 font-medium tracking-wide">Handpicked videos, docs & articles.</p>
                   </div>
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    {step.resources.map((resource) => (
-                      <ResourceCard key={resource.id} resource={{
-                        ...resource,
-                        description: resource.description || "",
-                        imageUrl: (resource as any).imageUrl || "",
-                        tags: ""
-                      }} />
-                    ))}
-                  </div>
+                  {isResourcesExpanded && (
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      {step.resources.map((resource) => (
+                        <ResourceCard key={resource.id} resource={{
+                          ...resource,
+                          description: resource.description || "",
+                          imageUrl: (resource as any).imageUrl || "",
+                          tags: ""
+                        }} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+              </div> {/* closes inner .flex-1 content area row for Center text */}
+
+              {/* Right Sidebar - inline with content Heading triggers downwardswards and balanced gap spacing */}
+              {step.resources.length > 0 && (
+                <div className="hidden lg:block w-72 lg:w-80 shrink-0 space-y-3 sticky top-24 h-fit animate-in fade-in-50 duration-300 lg:pt-14">
+                    <div className="flex items-center gap-2">
+                      <BookOpen className="h-4 w-4 text-primary group-hover:scale-110 transition-transform" /> Recommended
+                    </div>
+                    <ChevronDown className={`h-4 w-4 text-muted-foreground/50 transition-transform duration-200 ${isResourcesExpanded ? "rotate-0" : "-rotate-90"}`} />
+                  </button>
+
+                  {isResourcesExpanded && (
+                    <div className="space-y-2.5 animate-in fade-in-30 slide-in-from-top-1 duration-200">
+                      {step.resources.map((resource) => (
+                        <a 
+                          key={resource.id} 
+                          href={resource.url} 
+                          target="_blank" 
+                          rel="noreferrer" 
+                          className="flex flex-col gap-2 p-3.5 border border-border/10 rounded-2xl hover:bg-primary/5 hover:border-primary/20 bg-card/10 backdrop-blur-md transition-all group shadow-[0_4px_16px_-4px_rgba(0,0,0,0.1)] hover:shadow-primary/5"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="p-2.5 rounded-xl bg-primary/10 text-primary transition-transform group-hover:scale-105 shrink-0">
+                              {resourceIcon(resource.type)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-bold text-foreground line-clamp-2 leading-snug group-hover:text-primary transition-colors">{resource.title}</p>
+                              <p className="text-[10px] text-muted-foreground mt-0.5 capitalize font-semibold">{resource.type.toLowerCase()}</p>
+                            </div>
+                          </div>
+                          {resource.description && (
+                            <p className="text-[11px] text-muted-foreground/80 leading-relaxed line-clamp-2 pt-1 border-t border-border/5">
+                              {resource.description}
+                            </p>
+                          )}
+                        </a>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
+              </div> {/* closes outer flex row container row */}
             </article>
           ) : (
             <div className="flex flex-col items-center justify-center p-20 text-center">

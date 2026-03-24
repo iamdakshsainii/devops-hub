@@ -3,6 +3,24 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+export async function GET(req: Request) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session || !["ADMIN", "SUPER_ADMIN"].includes(session.user.role)) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    }
+
+    const resources = await prisma.resource.findMany({
+      where: { status: "PUBLISHED" },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return NextResponse.json(resources);
+  } catch (error) {
+    return NextResponse.json({ message: "Failed to fetch" }, { status: 500 });
+  }
+}
+
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
