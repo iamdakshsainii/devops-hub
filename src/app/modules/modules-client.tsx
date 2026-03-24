@@ -12,9 +12,16 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { PlusCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
+import { useSession } from "next-auth/react";
+import { Edit } from "lucide-react";
+
 export default function ModulesPageClient({ data }: { data: any[] }) {
+  const { data: session } = useSession();
+  const isAdmin = !!(session?.user && ["ADMIN", "SUPER_ADMIN"].includes(session.user.role));
+
   const [search, setSearch] = useState("");
   const [selectedRoadmap, setSelectedRoadmap] = useState<string | null>(null);
   const [selectedStep, setSelectedStep] = useState<string | null>(null); // Interactive two-tier
@@ -120,7 +127,17 @@ export default function ModulesPageClient({ data }: { data: any[] }) {
           instantly.
         </p>
 
-        <div className="flex items-center justify-center gap-2 flex-wrap mt-4">
+        {isAdmin && (
+           <div className="flex justify-center pt-2">
+               <Link href="/admin/modules" target="_blank">
+                     <Button className="font-bold gap-1.5 h-9 text-xs bg-amber-500 hover:bg-amber-600 text-black shadow-sm">
+                         <PlusCircle className="h-4 w-4" /> Create Module
+                     </Button>
+               </Link>
+           </div>
+        )}
+
+        <div className="flex items-center justify-center gap-2 flex-wrap mt-5">
           {[
             { key: "ALL", label: "All", icon: "◈" },
             { key: "NEW", label: "New", icon: "✦" },
@@ -336,14 +353,23 @@ export default function ModulesPageClient({ data }: { data: any[] }) {
                           <div className="text-3xl bg-primary/5 p-3.5 rounded-2xl shadow-sm border border-border/10 group-hover:bg-primary/10 group-hover:scale-105 transition-all duration-300">
                             {mod.icon}
                           </div>
-                          {mod.roadmapTitle && (
-                            <Badge
-                              variant="outline"
-                              className="text-[10px] uppercase font-bold tracking-wider rounded-md border-border/30 text-muted-foreground/80 bg-background/40 backdrop-blur-sm"
-                            >
-                              {mod.roadmapTitle}
-                            </Badge>
-                          )}
+                          <div className="flex items-center gap-1.5">
+                            {isAdmin && (
+                              <Link href={`/admin/modules?search=${encodeURIComponent(mod.title)}`} target="_blank" onClick={(e) => e.stopPropagation()}>
+                                <Button variant="outline" size="sm" className="rounded-full h-8 text-[11px] font-bold gap-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 border-amber-500/20 shadow-sm">
+                                  <Edit className="h-3 w-3" /> Edit
+                                </Button>
+                              </Link>
+                            )}
+                            {mod.roadmapTitle && (
+                              <Badge
+                                variant="outline"
+                                className="text-[10px] uppercase font-bold tracking-wider rounded-md border-border/30 text-muted-foreground/80 bg-background/40 backdrop-blur-sm"
+                              >
+                                {mod.roadmapTitle}
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                         <CardTitle className="text-xl group-hover:text-primary transition-colors line-clamp-2 font-black flex items-center leading-snug tracking-tight mb-1 h-14">
                           {mod.title}

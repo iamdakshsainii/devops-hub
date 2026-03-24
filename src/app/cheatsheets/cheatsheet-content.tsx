@@ -76,6 +76,24 @@ function wireCopyButtons(containerId: string) {
   });
 }
 
+const PROSE = [
+  "devhub-prose",
+  "prose prose-base md:prose-lg dark:prose-invert max-w-none",
+  "prose-headings:font-bold prose-headings:tracking-tight prose-headings:scroll-mt-24",
+  "prose-p:leading-relaxed prose-p:mb-5",
+  "prose-ul:mb-5 prose-ol:mb-5 prose-li:mb-1.5",
+  "prose-a:text-primary prose-a:no-underline prose-a:font-medium hover:prose-a:underline prose-a:underline-offset-4",
+  "prose-blockquote:not-italic prose-blockquote:border-l-4 prose-blockquote:border-primary prose-blockquote:bg-primary/5 prose-blockquote:py-3 prose-blockquote:px-5 prose-blockquote:rounded-r-xl",
+  "prose-img:rounded-2xl prose-img:border prose-img:shadow-xl",
+  "prose-th:border prose-th:border-border/40 prose-th:px-3.5 prose-th:py-2 prose-th:text-left prose-th:text-xs prose-th:uppercase prose-th:tracking-wider prose-th:bg-muted/40",
+  "prose-td:border prose-td:border-border/20 prose-td:px-3.5 prose-td:py-1.5 prose-td:text-sm prose-td:leading-normal",
+  "[&_code]:before:content-none [&_code]:after:content-none",
+  "[&_:not(pre)>code]:bg-muted [&_:not(pre)>code]:text-foreground [&_:not(pre)>code]:border",
+  "[&_:not(pre)>code]:px-1.5 [&_:not(pre)>code]:py-0.5 [&_:not(pre)>code]:rounded",
+  "[&_:not(pre)>code]:font-mono [&_:not(pre)>code]:text-[0.85em] [&_:not(pre)>code]:font-semibold",
+  "prose-pre:p-0 prose-pre:m-0 prose-pre:bg-transparent prose-pre:shadow-none prose-pre:border-0 prose-pre:rounded-none",
+].join(" ");
+
 export function CheatsheetContent({ sections, slug }: { sections: any[], slug?: string }) {
   useEffect(() => {
      wireCopyButtons("devhub-cheatsheet-area");
@@ -100,12 +118,13 @@ export function CheatsheetContent({ sections, slug }: { sections: any[], slug?: 
           </h2>
           <div className="space-y-8 pl-1">
             {sec.subsections.map((sub: any) => (
-              <div key={sub.id} className="space-y-3">
-                <h3 className="text-xl font-bold tracking-tight text-foreground/90">
+              <div key={sub.id} className="space-y-3 p-5 md:p-6 bg-card/40 rounded-2xl border border-border/10 shadow-sm">
+                <h3 className="text-xl font-bold tracking-tight text-foreground/90 flex items-center gap-2">
+                   <div className="w-1.5 h-1.5 rounded-full bg-primary mt-0.5" />
                    {sub.title}
                 </h3>
                 <div 
-                   className="devhub-prose prose prose-invert max-w-none text-muted-foreground leading-relaxed text-sm md:text-base"
+                   className={PROSE}
                    dangerouslySetInnerHTML={{ __html: parseMarkdown(sub.content) }}
                 />
               </div>

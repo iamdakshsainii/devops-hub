@@ -421,7 +421,7 @@
    PRE + CODE BLOCKS
 ════════════════════════════════════════════════════════════════════ */
 
-.devhub-pre {
+.devhub-prose .devhub-pre {
   margin: 0 !important;
   padding: 1.5rem 1.75rem !important;
   overflow-x: auto !important;

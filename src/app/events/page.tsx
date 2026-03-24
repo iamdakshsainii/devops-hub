@@ -163,7 +163,7 @@ function EventCard({ event, badge, isAdmin }: { event: any; badge: "ongoing" | "
               <img
                 src={url}
                 alt="Event"
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                className="w-full h-full object-cover transition-all duration-500"
               />
             </div>
           ))}

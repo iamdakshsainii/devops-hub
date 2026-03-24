@@ -93,21 +93,34 @@ export function CheatsheetForm({ initialData }: { initialData?: any }) {
       let currentSection: any = null;
       let currentSub: any = null;
 
+       let isInsideCodeBlock = false;
+
        for (const line of lines) {
-         if (line.startsWith("Tags: ")) { setTags(line.replace("Tags: ", "").trim()); continue; }
-         if (line.startsWith("Category: ")) { setCategory(line.replace("Category: ", "").trim()); continue; }
-         if (line.startsWith("Difficulty: ")) { setDifficulty(line.replace("Difficulty: ", "").trim().toUpperCase()); continue; }
-         if (line.startsWith("Cover: ")) { setCoverImage(line.replace("Cover: ", "").trim()); continue; }
-         if (line.startsWith("Description: ")) { setDescription(line.replace("Description: ", "").trim()); continue; }
-         
-         if (line.startsWith("# ")) {
-             if (!title) handleTitleChange(line.replace("# ", "").trim());
-             currentSection = { id: Math.random().toString(), title: line.replace("# ", "").trim(), collapsed: false, subsections: [] };
-             parsedSections.push(currentSection); currentSub = null;
-         } else if (line.startsWith("## ") && currentSection) {
-             currentSub = { id: Math.random().toString(), title: line.replace("## ", "").trim(), content: "" };
-             currentSection.subsections.push(currentSub);
-         } else if (currentSub) { currentSub.content += line + "\n"; }
+         const trimmedLine = line.trim();
+         if (trimmedLine.startsWith("```")) {
+            isInsideCodeBlock = !isInsideCodeBlock;
+         }
+
+         if (!isInsideCodeBlock) {
+           if (line.startsWith("Tags: ")) { setTags(line.replace("Tags: ", "").trim()); continue; }
+           if (line.startsWith("Category: ")) { setCategory(line.replace("Category: ", "").trim()); continue; }
+           if (line.startsWith("Difficulty: ")) { setDifficulty(line.replace("Difficulty: ", "").trim().toUpperCase()); continue; }
+           if (line.startsWith("Cover: ")) { setCoverImage(line.replace("Cover: ", "").trim()); continue; }
+           if (line.startsWith("Description: ")) { setDescription(line.replace("Description: ", "").trim()); continue; }
+           
+           if (line.startsWith("# ")) {
+               if (!title) handleTitleChange(line.replace("# ", "").trim());
+               currentSection = { id: Math.random().toString(), title: line.replace("# ", "").trim(), collapsed: false, subsections: [] };
+               parsedSections.push(currentSection); currentSub = null;
+               continue;
+           } else if (line.startsWith("## ") && currentSection) {
+               currentSub = { id: Math.random().toString(), title: line.replace("## ", "").trim(), content: "" };
+               currentSection.subsections.push(currentSub);
+               continue;
+           }
+         }
+
+         if (currentSub) { currentSub.content += line + "\n"; }
       }
       setSections(replaceExisting ? parsedSections.map(s => ({ ...s, collapsed: true })) : [...sections, ...parsedSections.map(s => ({ ...s, collapsed: true }))]);
       setMode("FORM");

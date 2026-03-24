@@ -2,11 +2,13 @@
 
 import { useEffect } from "react"
 import { useSession } from "next-auth/react"
+import { usePathname } from "next/navigation"
 import { toast } from "sonner"
-import { Sparkles, Hand } from "lucide-react"
+import { Sparkles, Hand, FileText } from "lucide-react"
 
 export function WelcomeToast() {
   const { data: session, status } = useSession()
+  const pathname = usePathname()
 
   useEffect(() => {
     if (typeof window === "undefined") return
@@ -41,7 +43,24 @@ export function WelcomeToast() {
         }, 1000)
       }
     }
-  }, [session, status])
+
+    // Logic 3: Cheatsheets first-time guide
+    if (pathname === "/cheatsheets") {
+      const cheatsheetVisitedKey = "visited_cheatsheets"
+      const hasVisitedCheatsheets = localStorage.getItem(cheatsheetVisitedKey)
+      
+      if (!hasVisitedCheatsheets) {
+        setTimeout(() => {
+          toast("Explore Cheatsheets! 🚀", {
+            description: "High-density quick references for dense toolkits, configurations, and core lifecycles setups.",
+            icon: <FileText className="h-4 w-4 text-primary" />,
+            duration: 6000,
+          })
+          localStorage.setItem(cheatsheetVisitedKey, "true")
+        }, 1200)
+      }
+    }
+  }, [session, status, pathname])
 
   return null
 }

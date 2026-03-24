@@ -7,10 +7,15 @@ import { Input } from "@/components/ui/input";
 import { Search, Clock, Heart, MessageSquare, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
+import { useSession } from "next-auth/react";
+import { Edit } from "lucide-react";
 
 const CATEGORIES = ["ALL", "Docker", "Kubernetes", "Terraform", "Linux", "Security", "CI/CD", "MLOps", "AIOps", "SecOps", "Career", "General"];
 
 export function BlogClient({ initialData }: { initialData: any[] }) {
+  const { data: session } = useSession();
+  const isAdmin = !!(session?.user && ["ADMIN", "SUPER_ADMIN"].includes(session.user.role));
+
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("ALL");
 
@@ -77,8 +82,26 @@ export function BlogClient({ initialData }: { initialData: any[] }) {
                  <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl opacity-0 group-hover:opacity-10 transition-opacity duration-700 pointer-events-none bg-primary" />
 
                  {item.coverImage && (
-                     <div className="w-full h-44 relative bg-muted overflow-hidden border-b border-border/10">
-                         <img src={item.coverImage} alt={item.title} className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500" />
+                     <div className="w-full h-48 bg-muted/30 overflow-hidden border-b border-border/10 relative flex items-center justify-center p-2 group/img">
+                         <img 
+                             src={item.coverImage} 
+                             alt={item.title} 
+                             className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-500" 
+                         />
+                         
+                         {isAdmin ? (
+                            <Link href={`/admin/blog?search=${encodeURIComponent(item.title)}`} target="_blank" onClick={(e) => e.stopPropagation()} className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 flex items-center justify-center transition-opacity">
+                                <Button size="sm" className="gap-1.5 text-xs bg-amber-500 hover:bg-amber-600 text-black font-bold h-8 shadow-md">
+                                    <Edit className="h-3.5 w-3.5" /> Edit Image
+                                </Button>
+                            </Link>
+                         ) : (
+                            <a href={item.coverImage} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="absolute inset-0 bg-black/30 opacity-0 group-hover/img:opacity-100 flex items-center justify-center transition-opacity cursor-zoom-in">
+                                <Button size="sm" variant="secondary" className="gap-1 text-xs font-bold h-7 px-2.5 backdrop-blur-md bg-background/80">
+                                    View Full
+                                </Button>
+                            </a>
+                         )}
                      </div>
                  )}
                  

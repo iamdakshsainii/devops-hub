@@ -1,8 +1,10 @@
 import { prisma } from "@/lib/prisma";
-import { Input } from "@/components/ui/input";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { ResourceCard } from "@/components/resource-card";
-import { Database, Search, FileText, Video, List, FileType2, BookOpen, LayoutGrid } from "lucide-react";
+import { Search, FileText, Video, List, BookOpen, Wrench, LayoutGrid, PlusCircle, Database } from "lucide-react";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -37,6 +39,9 @@ export default async function ResourcesPage({
     ];
   }
 
+  const session = await getServerSession(authOptions);
+  const isAdmin = !!(session?.user && ["ADMIN", "SUPER_ADMIN"].includes(session.user.role));
+
   const resources = await prisma.resource.findMany({
     where,
     orderBy: { createdAt: "desc" },
@@ -48,13 +53,22 @@ export default async function ResourcesPage({
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl space-y-8">
-      <div>
-        <h1 className="text-3xl font-extrabold tracking-tight">
-          Community Resources ({resources.length})
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          Curated links, PDFs, tools, and videos published by modern Admins.
-        </p>
+      <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+        <div>
+          <h1 className="text-3xl font-extrabold tracking-tight">
+            Community Resources ({resources.length})
+          </h1>
+          <p className="text-muted-foreground mt-1 text-sm md:text-base">
+            Curated links, PDFs, tools, and videos published by modern Admins.
+          </p>
+        </div>
+        {isAdmin && (
+           <Link href="/admin/resources/new" target="_blank" className="shrink-0 w-full sm:w-auto">
+               <Button className="font-bold gap-1.5 h-9 text-xs w-full sm:w-auto bg-amber-500 hover:bg-amber-600 text-black">
+                   + Create Resource
+               </Button>
+           </Link>
+        )}
       </div>
 
       {/* Search + Filter bar */}

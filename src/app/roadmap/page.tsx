@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import Link from "next/link";
-import { ArrowRight, BookOpen, FileText, Map, Search, LayoutGrid, Clock, Calendar } from "lucide-react";
+import { ArrowRight, BookOpen, FileText, Map, Search, LayoutGrid, Clock, Calendar, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
@@ -13,6 +15,8 @@ export default async function RoadmapPage({
   searchParams: Promise<{ q?: string; sort?: string; steps?: string }>;
 }) {
   const { q = "", sort = "newest", steps = "all" } = await searchParams;
+  const session = await getServerSession(authOptions);
+  const isAdmin = !!(session?.user && ["ADMIN", "SUPER_ADMIN"].includes(session.user.role));
 
   const where: any = { status: "PUBLISHED" };
 
@@ -217,7 +221,7 @@ export default async function RoadmapPage({
             {roadmaps.length > 0 ? (
               <div className="space-y-8">
                 {roadmaps.map((roadmap) => (
-                  <Link key={roadmap.id} href={`/roadmap/${roadmap.id}`} className="block group">
+                  <div key={roadmap.id} className="block group">
                     <div className="relative backdrop-blur-xl bg-card/60 border border-border/10 rounded-2xl overflow-hidden shadow-md hover:shadow-[0_25px_60px_rgba(0,0,0,0.15)] hover:border-primary/30 transition-all duration-500 hover:-translate-y-1">
                       {/* Backlight sphere animation triggerswards coords item coords option downwards. */}
                       <div className="absolute top-0 right-0 w-48 h-48 rounded-full opacity-0 group-hover:opacity-10 transition-all duration-700 blur-3xl pointer-events-none" style={{ backgroundColor: roadmap.color }} />
@@ -233,16 +237,29 @@ export default async function RoadmapPage({
                             </div>
                             <div>
                               <h2 className="text-xl font-bold tracking-tight group-hover:text-primary transition-colors">
-                                {roadmap.title}
+                                <Link href={`/roadmap/${roadmap.id}`} className="hover:underline">
+                                  {roadmap.title}
+                                </Link>
                               </h2>
                               <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
                                 {roadmap.description}
                               </p>
                             </div>
                           </div>
-                          <Button variant="ghost" size="sm" className="rounded-full gap-1.5 group-hover:bg-primary group-hover:text-primary-foreground transition-all">
-                            Explore <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
-                          </Button>
+                          <div className="flex items-center gap-2">
+                            {isAdmin && (
+                              <Link href={`/admin/roadmaps?search=${encodeURIComponent(roadmap.title)}`} target="_blank">
+                                 <Button variant="outline" size="sm" className="rounded-full h-8 text-xs font-bold gap-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 border-amber-500/20 shadow-sm">
+                                   <Edit className="h-3.5 w-3.5" /> Edit
+                                 </Button>
+                              </Link>
+                            )}
+                            <Link href={`/roadmap/${roadmap.id}`}>
+                              <Button variant="ghost" size="sm" className="rounded-full gap-1.5 group-hover:bg-primary group-hover:text-primary-foreground transition-all">
+                                Explore <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+                              </Button>
+                            </Link>
+                          </div>
                         </div>
 
                         {/* Station dots linear representation */}
@@ -286,13 +303,10 @@ export default async function RoadmapPage({
                             <FileText className="h-3.5 w-3.5" style={{ color: `${roadmap.color}bb` }} /> 
                             <span>{roadmap.steps.reduce((s, st) => s + st._count.topics, 0)} Topics</span>
                           </div>
-                          <div className="ml-auto text-xs text-primary/80 group-hover:text-primary font-bold flex items-center gap-1">
-                             Start Roadmap <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform" />
-                          </div>
                         </div>
                       </div>
                     </div>
-                  </Link>
+                  </div>
                 ))}
               </div>
             ) : (
