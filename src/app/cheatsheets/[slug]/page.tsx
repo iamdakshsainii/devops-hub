@@ -55,32 +55,32 @@ export default async function CheatsheetDetailPage({ params }: { params: Promise
 
   const dynamicResources = tagList.length > 0 ? await prisma.resource.findMany({
     where: { status: "PUBLISHED", OR: tagList.map(tag => ({ tags: { contains: tag, mode: 'insensitive' } })) },
-    take: 2
+    take: 3
   }) : [];
 
   const dynamicModules = tagList.length > 0 ? await prisma.roadmapStep.findMany({
     where: { OR: tagList.map(tag => ({ tags: { contains: tag, mode: 'insensitive' } })) },
-    take: 2
+    take: 3
   }) : [];
 
   const dynamicCheatsheets = tagList.length > 0 ? await prisma.cheatsheet.findMany({
     where: { status: "PUBLISHED", OR: tagList.map(tag => ({ tags: { contains: tag, mode: 'insensitive' } })), id: { not: cheatsheet.id } },
-    take: 1
+    take: 3
   }) : [];
 
   const dynamicBlogs = tagList.length > 0 ? await prisma.blogPost.findMany({
     where: { status: "PUBLISHED", OR: tagList.map(tag => ({ tags: { contains: tag, mode: 'insensitive' } })) },
-    take: 2
+    take: 3
   }) : [];
 
   const allResources = [ ...(cheatsheet.resources || []), ...dynamicResources ];
 
-  const recommendedItems = [
-     ...allResources.map((r: any) => ({ id: r.id, title: r.title, description: r.description || "Access full documentation, videos, and tutorials in-app.", type: r.type || "Link", categoryType: "Resource", url: `/resources/${r.id}` })),
-     ...dynamicModules.map((m: any) => ({ id: m.id, title: m.title, description: "Master this core step part of roadmap workflows securely.", type: "Module", categoryType: "Module", url: `/roadmap?stepId=${m.id}` })),
-     ...dynamicCheatsheets.map((c: any) => ({ id: c.id, title: c.title, description: c.description || "Quick-reference sheet loaded with command notes layouts.", type: "Cheatsheet", categoryType: "Cheatsheet", url: `/cheatsheets/${c.slug}` })),
-     ...dynamicBlogs.map((b: any) => ({ id: b.id, title: b.title, description: b.excerpt || "Read our latest blog guide loaded with dimensions.", type: "Blog", categoryType: "Blog", url: `/blog/${b.slug}` }))
-  ].slice(0, 4);
+  const groupedRecommendations = [
+    { title: "Resources", items: allResources.map((r: any) => ({ ...r, categoryType: "Resource", url: `/resources/${r.id}` })) },
+    { title: "Modules", items: dynamicModules.map((m: any) => ({ id: m.id, title: m.title, description: "Master step workflow", type: "Module", categoryType: "Module", url: `/roadmap?stepId=${m.id}` })) },
+    { title: "Cheatsheets", items: dynamicCheatsheets.map((c: any) => ({ ...c, categoryType: "Cheatsheet", url: `/cheatsheets/${c.slug}` })) },
+    { title: "Blogs", items: dynamicBlogs.map((b: any) => ({ id: b.id, title: b.title, description: b.excerpt, type: "Blog", categoryType: "Blog", url: `/blog/${b.slug}` })) }
+  ].filter(group => group.items.length > 0);
 
   const formattedDate = new Date(cheatsheet.createdAt).toLocaleDateString(undefined, {
     month: "short",
@@ -171,46 +171,49 @@ export default async function CheatsheetDetailPage({ params }: { params: Promise
               </Card>
 
               {/* Related Resources / Recommendations */}
-              {recommendedItems.length > 0 && (
+              {groupedRecommendations.length > 0 && (
               <details className="group [&_summary::-webkit-details-marker]:hidden" open>
-                  <summary className="mb-3 flex cursor-pointer items-center justify-between text-sm font-black uppercase tracking-wider text-muted-foreground/80 px-2 hover:text-foreground transition-colors group">
+                  <summary className="mb-3 flex cursor-pointer items-center justify-between text-sm font-black uppercase tracking-wider text-muted-foreground/80 px-2 hover:text-primary transition-colors group">
                     <div className="flex items-center gap-2">
-                      <Library className="h-4 w-4 text-primary group-hover:scale-110 transition-transform" /> RECOMMENDED
+                       <Library className="h-4 w-4 text-primary group-hover:scale-110 transition-transform" /> RECOMMENDED
                     </div>
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-muted-foreground/50 transition-transform duration-200 group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" /></svg>
                   </summary>
-                  <p className="text-[11px] text-muted-foreground/60 -mt-2 px-2 font-medium tracking-wide mb-3">Handpicked modules, videos, and guides.</p>
 
-                  <div className="space-y-2.5 animate-in fade-in-30 slide-in-from-top-1 duration-200">
-                     {recommendedItems.map((r: any) => {
-                         const isVideo = r.type.toLowerCase() === "video";
-                         const isModule = r.type === "Module";
-                         const isCheatsheet = r.type === "Cheatsheet";
-                         const isBlog = r.type === "Blog";
-                         
-                         return (
-                          <Link key={r.id} href={r.url} className="flex flex-col gap-2 p-3.5 border border-border/10 rounded-2xl hover:bg-primary/5 hover:border-primary/20 bg-card/10 backdrop-blur-md transition-all group shadow-[0_4px_16px_-4px_rgba(0,0,0,0.1)] hover:shadow-primary/5">
-                              <div className="flex items-center gap-3">
-                                  <div className={`p-2.5 rounded-xl transition-transform group-hover:scale-105 shrink-0 ${isModule ? "bg-emerald-500/10 text-emerald-400" : "bg-primary/10 text-primary"}`}>
-                                       {isVideo && <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>}
-                                       {isModule && <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>}
-                                       {isCheatsheet && <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><line x1="3" x2="21" y1="9" y2="9"/><line x1="9" x2="9" y1="21" y2="9"/></svg>}
-                                       {isBlog && <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>}
-                                       {!isVideo && !isModule && !isCheatsheet && !isBlog && <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>}
-                                  </div>
-                                  <div>
-                                      <p className="text-xs font-bold text-foreground group-hover:text-primary transition-colors flex items-center gap-1.5">{r.title}</p>
-                                      <div className="flex items-center gap-1.5 mt-0.5">
-                                          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md capitalize tracking-wide border border-border/5 ${isModule ? "bg-emerald-500/5 text-emerald-400" : "bg-muted/30 text-muted-foreground"}`}>{r.type.toLowerCase()}</span>
-                                      </div>
-                                  </div>
-                              </div>
-                              {r.description && (
-                                  <p className="text-[10px] text-muted-foreground/80 line-clamp-2 leading-relaxed mt-1 font-medium pl-1 border-l border-border/10 ml-2">{r.description}</p>
-                              )}
-                          </Link>
-                        )
-                      })}
+                  <div className="space-y-4 animate-in fade-in-30 slide-in-from-top-1 duration-200">
+                     {groupedRecommendations.map((group) => (
+                        <div key={group.title} className="space-y-2">
+                            <h4 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 px-2 flex items-center gap-1.5 before:h-px before:flex-1 before:bg-border/5 after:h-px after:flex-1 after:bg-border/5">{group.title}</h4>
+                            <div className="space-y-2">
+                               {group.items.map((r: any) => {
+                                   const isVideo = r.type?.toLowerCase() === "video";
+                                   const isModule = r.categoryType === "Module";
+                                   const isCheatsheet = r.categoryType === "Cheatsheet";
+                                   const isBlog = r.categoryType === "Blog";
+                                   
+                                   return (
+                                    <Link key={r.id} href={r.url} className="flex flex-col gap-1.5 p-3 border border-border/5 rounded-2xl hover:bg-muted/30 hover:border-border/40 bg-card/5 backdrop-blur-md transition-all group shadow-sm hover:-translate-y-0.5 hover:shadow-md">
+                                        <div className="flex items-center gap-2.5">
+                                            <div className="p-2 rounded-xl transition-all group-hover:scale-105 shrink-0 bg-muted/20 text-muted-foreground">
+                                                 {isVideo && <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>}
+                                                 {isModule && <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>}
+                                                 {isCheatsheet && <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><line x1="3" x2="21" y1="9" y2="9"/><line x1="9" x2="9" y1="21" y2="9"/></svg>}
+                                                 {isBlog && <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>}
+                                                 {!isVideo && !isModule && !isCheatsheet && !isBlog && <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>}
+                                            </div>
+                                            <div className="min-w-0 flex-1">
+                                                <p className="text-xs font-bold text-foreground flex items-center gap-1.5 truncate">{r.title}</p>
+                                                <div className="flex items-center gap-1.5 mt-0.5">
+                                                    <span className="text-[8px] font-bold px-1.2 py-0.3 rounded-md capitalize border border-border/5 bg-muted/30 text-muted-foreground transition-colors">{r.type?.toLowerCase() || r.categoryType?.toLowerCase()}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </Link>
+                                  )
+                               })}
+                            </div>
+                        </div>
+                     ))}
                   </div>
               </details>
               )}
