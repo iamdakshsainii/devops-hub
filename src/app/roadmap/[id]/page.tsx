@@ -246,8 +246,7 @@ export default async function RoadmapDetailPage({ params }: { params: Promise<{ 
     </div>
   );
   } catch (error: any) {
-    const fs = require("fs");
-    fs.writeFileSync("c:\\my-stuff\\devops-hub\\tmp\\page_500.txt", `Roadmap Page error: ${error.message || error}\n${error.stack || ""}`);
-    return <div>Absolute layout error crashed diagnostics.</div>;
+    console.error("Roadmap Page error:", error);
+    return <div>Something went wrong while loading this roadmap.</div>;
   }
 }

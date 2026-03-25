@@ -18,6 +18,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function BlogDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
 
+  // Production-Ready: Casting to 'any' here ensures the page still renders even if 
+  // the generated Prisma types are slightly behind the live database schema.
   const post = await (prisma.blogPost as any).findUnique({
     where: { slug },
     include: {
@@ -95,7 +97,16 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
 
       <header className="text-center space-y-4 max-w-3xl mx-auto mb-12">
          <div className="flex justify-center flex-wrap items-center gap-2">
-              <Badge variant="secondary" className="px-2.5 py-0.5 text-xs font-bold rounded-full">
+              <Badge 
+                variant="secondary" 
+                className={`px-2.5 py-0.5 text-xs font-bold rounded-full ${
+                  post.category === 'Career' 
+                    ? 'bg-amber-500/10 text-amber-600 border-amber-500/20 shadow-sm shadow-amber-500/5' 
+                    : post.category === 'General'
+                    ? 'bg-blue-500/10 text-blue-600 border-blue-500/20 shadow-sm shadow-blue-500/5'
+                    : 'bg-muted text-muted-foreground'
+                }`}
+              >
                   {post.category}
               </Badge>
          </div>

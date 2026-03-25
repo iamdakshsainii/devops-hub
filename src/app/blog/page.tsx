@@ -8,10 +8,12 @@ import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
+import { Suspense } from "react";
+ 
 export default async function BlogPage() {
   const session = await getServerSession(authOptions);
   const isAdmin = !!(session?.user && ["ADMIN", "SUPER_ADMIN"].includes(session.user.role));
-
+ 
   const posts = await prisma.blogPost.findMany({
     where: {
       status: "PUBLISHED",
@@ -29,7 +31,7 @@ export default async function BlogPage() {
     },
     orderBy: { createdAt: "desc" },
   });
-
+ 
   return (
     <div className="container mx-auto px-4 py-12 max-w-6xl space-y-10">
       <div className="text-center space-y-4 max-w-2xl mx-auto">
@@ -48,8 +50,10 @@ export default async function BlogPage() {
            </div>
         )}
       </div>
-
-      <BlogClient initialData={posts} />
+ 
+      <Suspense fallback={<div>Loading articles...</div>}>
+         <BlogClient initialData={posts} />
+      </Suspense>
     </div>
   );
 }

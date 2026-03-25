@@ -1,11 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { 
   Pin, X, ExternalLink, Sparkles, Coffee, Briefcase, 
-  ArrowRight, Heart, MessageSquare, Clock, FileText
+  ArrowRight, Heart, MessageSquare, Clock, FileText, Users
 } from "lucide-react";
 import { 
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger 
@@ -63,13 +62,13 @@ export function PinnedBlogs({ blogs }: { blogs: any[] }) {
           <DialogHeader className="space-y-1">
              <div className="flex items-center gap-2 text-amber-600 dark:text-amber-500 mb-1">
                <Sparkles className="h-4 w-4" />
-               <span className="text-[10px] font-black uppercase tracking-[0.2em]">Curated Hot-Takes</span>
+               <span className="text-[10px] font-black uppercase tracking-[0.2em]">Industry Perspectives</span>
              </div>
              <DialogTitle className="text-3xl font-black tracking-tight leading-none">
-                Essential <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-600">Pinned Stories.</span>
+                Curated <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-600">Growth Blueprint.</span>
              </DialogTitle>
              <p className="text-muted-foreground text-sm max-w-sm pt-1">
-               Handpicked content covering office culture, Gen-Z careers, and role-based depth.
+               Deep-dives into company culture, role expectations, and the reality of production engineering.
              </p>
           </DialogHeader>
         </div>
@@ -77,13 +76,13 @@ export function PinnedBlogs({ blogs }: { blogs: any[] }) {
         <div className="px-6 py-6 overflow-y-auto max-h-[70vh] custom-scrollbar space-y-4">
           <div className="flex items-center gap-4 mb-2 overflow-x-auto pb-2 scrollbar-hide no-scrollbar">
              <Badge variant="outline" className="rounded-full px-3 py-1 bg-amber-500/5 border-amber-500/20 text-amber-600 flex items-center gap-1.5 shrink-0">
-               <Coffee className="h-3 w-3" /> Gen-Z Stuff
+               <Briefcase className="h-3 w-3" /> Career Blueprint
              </Badge>
              <Badge variant="outline" className="rounded-full px-3 py-1 bg-blue-500/5 border-blue-500/20 text-blue-600 flex items-center gap-1.5 shrink-0">
-               <Briefcase className="h-3 w-3" /> Office Culture
+               <Users className="h-3 w-3" /> Company Culture
              </Badge>
              <Badge variant="outline" className="rounded-full px-3 py-1 bg-purple-500/5 border-purple-500/20 text-purple-600 flex items-center gap-1.5 shrink-0">
-               <ArrowRight className="h-3 w-3" /> Growth
+               <ArrowRight className="h-3 w-3" /> Work Dynamics
              </Badge>
           </div>
 
@@ -93,20 +92,11 @@ export function PinnedBlogs({ blogs }: { blogs: any[] }) {
                 <Card className="border-border/40 bg-card/40 hover:bg-muted/10 transition-all duration-300 hover:border-amber-500/40 relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-full blur-2xl -mr-8 -mt-8" />
                   <CardContent className="p-4 flex gap-4 items-center">
-                    <div className="relative h-20 w-20 shrink-0 rounded-xl overflow-hidden shadow-sm">
-                      {blog.coverImage ? (
-                        <Image src={blog.coverImage} alt={blog.title} fill className="object-cover group-hover:scale-110 transition-transform duration-500" />
-                      ) : (
-                        <div className="h-full w-full bg-muted flex items-center justify-center">
-                           <FileText className="h-6 w-6 text-muted-foreground/30" />
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-black/10 transition-opacity opacity-0 group-hover:opacity-100" />
-                    </div>
-
                     <div className="flex-1 min-w-0 space-y-1.5">
                       <div className="flex items-center gap-2">
-                         <span className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">{blog.category}</span>
+                         <span className={`text-[10px] font-bold uppercase tracking-wider ${
+                           blog.category === 'Career' ? 'text-amber-600' : 'text-blue-600'
+                         }`}>{blog.category}</span>
                          <span className="h-1 w-1 rounded-full bg-border" />
                          <span className="text-[10px] text-muted-foreground">{blog.readTime} min read</span>
                       </div>
@@ -127,7 +117,7 @@ export function PinnedBlogs({ blogs }: { blogs: any[] }) {
             ))}
           </div>
 
-          <Link href="/blog" className="block w-full pt-2" onClick={() => setOpen(false)}>
+          <Link href="/blog?category=Career" className="block w-full pt-2" onClick={() => setOpen(false)}>
             <Button variant="ghost" className="w-full text-xs font-bold text-muted-foreground hover:text-foreground hover:bg-muted/30">
               EXPLORE ALL PERSPECTIVES <ArrowRight className="ml-2 h-3.5 w-3.5" />
             </Button>

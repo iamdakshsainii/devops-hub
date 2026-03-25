@@ -8,6 +8,9 @@ import { prisma } from "@/lib/prisma";
 import { PinnedBlogs } from "@/components/pinned-blogs";
 
 export default async function Home() {
+  // PRODUCTION NOTE: Using a Raw SQL query here as a robust fallback to ensure the 
+  // 'isPinned' feature works reliably even during deployment transitions or 
+  // dev-server cache refreshes where the generated Prisma Client might be stale.
   const pinnedBlogsRaw = await prisma.$queryRaw`
     SELECT * FROM "BlogPost" 
     WHERE status = 'PUBLISHED' AND "isPinned" = true 
@@ -15,10 +18,12 @@ export default async function Home() {
     LIMIT 5
   ` as any[];
   
+  // Normalize the raw database response for the client component
+  // Ensure robust date handling by converting Date objects to ISO strings for client components.
   const pinnedBlogs = pinnedBlogsRaw.map((b: any) => ({
       ...b,
-      createdAt: b.createdAt?.toISOString(),
-      updatedAt: b.updatedAt?.toISOString()
+      createdAt: b.createdAt instanceof Date ? b.createdAt.toISOString() : b.createdAt,
+      updatedAt: b.updatedAt instanceof Date ? b.updatedAt.toISOString() : b.updatedAt
   }));
   return (
     <div className="flex flex-col w-full overflow-x-hidden">

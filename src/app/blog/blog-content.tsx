@@ -131,9 +131,6 @@ export function BlogContent({ post, initialComments }: { post: any; initialComme
                <div className="h-full w-full overflow-auto">
                    <StepViewer step={mockStep as any} roadmap={mockRoadmap} isStandalone={true} isBlog={true} />
                </div>
-Ref of Continuous view button absolute layout flawlessly trigger
-
-
            </div>
        );
   }

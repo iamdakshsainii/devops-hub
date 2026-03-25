@@ -9,15 +9,18 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { useSession } from "next-auth/react";
 import { Edit } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 
 const CATEGORIES = ["ALL", "Docker", "Kubernetes", "Terraform", "Linux", "Security", "CI/CD", "MLOps", "AIOps", "SecOps", "Career", "General"];
 
 export function BlogClient({ initialData }: { initialData: any[] }) {
   const { data: session } = useSession();
+  const searchParams = useSearchParams();
   const isAdmin = !!(session?.user && ["ADMIN", "SUPER_ADMIN"].includes(session.user.role));
 
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("ALL");
+  const initialCategory = searchParams.get("category") || "ALL";
+  const [category, setCategory] = useState(initialCategory);
 
   const filtered = initialData.filter(item => {
      const matchesSearch = item.title.toLowerCase().includes(search.toLowerCase()) || 
@@ -31,19 +34,33 @@ export function BlogClient({ initialData }: { initialData: any[] }) {
       {/* Category Pills & Search */}
       <div className="flex flex-col md:flex-row justify-between gap-4 items-center">
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 flex-nowrap w-full md:w-auto">
-          {CATEGORIES.map((c) => (
-            <button
-              key={c}
-              onClick={() => setCategory(c)}
-              className={`inline-flex items-center px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all whitespace-nowrap ${
-                category === c
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-muted/40 text-muted-foreground border-border hover:bg-muted hover:text-foreground"
-              }`}
-            >
-              {c === "ALL" ? "All Posts" : c}
-            </button>
-          ))}
+          {CATEGORIES.map((c) => {
+            const isActive = category === c;
+            const isCareer = c === "Career";
+            const isGeneral = c === "General";
+            
+            return (
+              <button
+                key={c}
+                onClick={() => setCategory(c)}
+                className={`inline-flex items-center px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all whitespace-nowrap ${
+                  isActive
+                    ? isCareer
+                      ? "bg-amber-500 text-black border-amber-500 shadow-lg shadow-amber-500/20"
+                      : isGeneral
+                      ? "bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-600/20"
+                      : "bg-primary text-primary-foreground border-primary"
+                    : isCareer
+                    ? "bg-amber-500/10 text-amber-600 border-amber-500/30 hover:bg-amber-500/20 hover:text-amber-700 hover:border-amber-500/60 shadow-[0_2px_10px_rgba(245,158,11,0.05)]"
+                    : isGeneral
+                    ? "bg-blue-500/10 text-blue-600 border-blue-500/30 hover:bg-blue-500/20 hover:text-blue-700 hover:border-blue-500/60 shadow-[0_2px_10px_rgba(37,99,235,0.05)]"
+                    : "bg-muted/40 text-muted-foreground border-border hover:bg-muted hover:text-foreground"
+                }`}
+              >
+                {c === "ALL" ? "All Posts" : c}
+              </button>
+            );
+          })}
         </div>
 
         <div className="relative flex-1 w-full max-w-xs">
@@ -107,9 +124,18 @@ export function BlogClient({ initialData }: { initialData: any[] }) {
                  
                  <CardHeader className="pb-3 flex-1">
                      <div className="flex justify-between items-center mb-2">
-                         <Badge variant="secondary" className="text-[10px] items-center font-bold px-2 py-0.5 rounded-full">
-                             {item.category}
-                         </Badge>
+                          <Badge 
+                            variant="secondary" 
+                            className={`text-[10px] items-center font-bold px-2 py-0.5 rounded-full ${
+                              item.category === 'Career' 
+                                ? 'bg-amber-500/10 text-amber-600 border-amber-500/20' 
+                                : item.category === 'General'
+                                ? 'bg-blue-500/10 text-blue-600 border-blue-500/20'
+                                : 'bg-muted text-muted-foreground'
+                            }`}
+                          >
+                              {item.category}
+                          </Badge>
                      </div>
                      <CardTitle className="text-lg group-hover:text-primary transition-colors line-clamp-2">{item.title}</CardTitle>
                      <CardDescription className="line-clamp-3 text-xs h-12">
