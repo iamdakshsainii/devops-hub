@@ -386,6 +386,7 @@ model BlogPost {
   author     User          @relation(fields: [authorId], references: [id])
   comments   BlogComment[]
   resources  BlogResource[]
+  isPinned   Boolean       @default(false)
   createdAt  DateTime      @default(now())
   updatedAt  DateTime      @updatedAt
 }

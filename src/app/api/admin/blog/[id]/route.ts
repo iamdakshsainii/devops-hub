@@ -37,7 +37,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
     const { 
       title, slug, excerpt, content, coverImage, 
-      category, icon, tags, readTime, status 
+      category, icon, tags, readTime, status, isPinned 
     } = await req.json();
 
     const existing = await prisma.blogPost.findUnique({ where: { id } });
@@ -57,6 +57,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         readTime: readTime ? Number(readTime) : existing.readTime,
         tags: tags || null,
         status: status || existing.status,
+        isPinned: isPinned !== undefined ? !!isPinned : existing.isPinned,
       }
     });
 

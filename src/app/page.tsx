@@ -1,11 +1,25 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import {
-  BookOpen, Layers, Calendar, ArrowRight,
-  GitBranch, Terminal, Zap, Users, Map, FileText, Search
+import { 
+  BookOpen, Layers, Calendar, ArrowRight, 
+  GitBranch, Terminal, Zap, Users, Map, FileText, Search 
 } from "lucide-react";
+import { prisma } from "@/lib/prisma";
+import { PinnedBlogs } from "@/components/pinned-blogs";
 
-export default function Home() {
+export default async function Home() {
+  const pinnedBlogsRaw = await prisma.$queryRaw`
+    SELECT * FROM "BlogPost" 
+    WHERE status = 'PUBLISHED' AND "isPinned" = true 
+    ORDER BY "updatedAt" DESC 
+    LIMIT 5
+  ` as any[];
+  
+  const pinnedBlogs = pinnedBlogsRaw.map((b: any) => ({
+      ...b,
+      createdAt: b.createdAt?.toISOString(),
+      updatedAt: b.updatedAt?.toISOString()
+  }));
   return (
     <div className="flex flex-col w-full overflow-x-hidden">
 
@@ -28,15 +42,6 @@ export default function Home() {
 
         <div className="relative z-10 container px-6 mx-auto max-w-5xl">
           <div className="flex flex-col items-center text-center space-y-8">
-
-            {/* Pill */}
-            <div className="inline-flex items-center gap-2 rounded-full border border-border
-              bg-background/80 backdrop-blur px-4 py-1.5 text-xs font-semibold
-              text-muted-foreground tracking-wide shadow-sm">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Free · Open · Community-built
-            </div>
-
             {/* Headline */}
             <div className="space-y-4 max-w-4xl">
               <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tighter leading-none">
@@ -73,9 +78,15 @@ export default function Home() {
                   {t}
                 </span>
               ))}
-            </div>
-
           </div>
+        </div>
+      </div>
+
+        {/* Pinned Blogs Floating Button - Top Right Extreme */}
+        <div className="absolute top-24 right-4 md:right-10 lg:right-16 z-40">
+           <div className="scale-75 md:scale-90 origin-top-right">
+              <PinnedBlogs blogs={pinnedBlogs} />
+           </div>
         </div>
 
         {/* Bottom fade */}

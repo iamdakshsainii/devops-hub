@@ -25,7 +25,7 @@ export default async function CheatsheetDetailPage({ params }: { params: Promise
   const session = await getServerSession(authOptions);
   const isAdmin = session?.user && ["ADMIN", "SUPER_ADMIN"].includes(session.user.role);
 
-  const cheatsheet = await prisma.cheatsheet.findUnique({
+  const cheatsheet = await (prisma.cheatsheet as any).findUnique({
     where: { slug },
     include: {
       author: { select: { fullName: true } },
@@ -35,7 +35,7 @@ export default async function CheatsheetDetailPage({ params }: { params: Promise
         include: { subsections: { orderBy: { order: "asc" } } }
       }
     }
-  }).catch(() => null);
+  });
 
   if (!cheatsheet || cheatsheet.status === "DELETED") {
     return notFound();
@@ -54,22 +54,22 @@ export default async function CheatsheetDetailPage({ params }: { params: Promise
   const tagList = cheatsheet.tags ? cheatsheet.tags.split(",").map((t: string) => t.trim()).filter(Boolean) : [];
 
   const dynamicResources = tagList.length > 0 ? await prisma.resource.findMany({
-    where: { status: "PUBLISHED", OR: tagList.map(tag => ({ tags: { contains: tag, mode: 'insensitive' } })) },
+    where: { status: "PUBLISHED", OR: tagList.map((tag: string) => ({ tags: { contains: tag, mode: 'insensitive' } })) },
     take: 3
   }) : [];
 
   const dynamicModules = tagList.length > 0 ? await prisma.roadmapStep.findMany({
-    where: { OR: tagList.map(tag => ({ tags: { contains: tag, mode: 'insensitive' } })) },
+    where: { OR: tagList.map((tag: string) => ({ tags: { contains: tag, mode: 'insensitive' } })) },
     take: 3
   }) : [];
 
   const dynamicCheatsheets = tagList.length > 0 ? await prisma.cheatsheet.findMany({
-    where: { status: "PUBLISHED", OR: tagList.map(tag => ({ tags: { contains: tag, mode: 'insensitive' } })), id: { not: cheatsheet.id } },
+    where: { status: "PUBLISHED", OR: tagList.map((tag: string) => ({ tags: { contains: tag, mode: 'insensitive' } })), id: { not: cheatsheet.id } },
     take: 3
   }) : [];
 
   const dynamicBlogs = tagList.length > 0 ? await prisma.blogPost.findMany({
-    where: { status: "PUBLISHED", OR: tagList.map(tag => ({ tags: { contains: tag, mode: 'insensitive' } })) },
+    where: { status: "PUBLISHED", OR: tagList.map((tag: string) => ({ tags: { contains: tag, mode: 'insensitive' } })) },
     take: 3
   }) : [];
 

@@ -12,7 +12,7 @@ export async function POST(req: Request) {
 
     const { 
       title, slug, excerpt, content, coverImage, 
-      category, tags, readTime, status 
+      category, tags, readTime, status, isPinned 
     } = await req.json();
 
     if (!title || !slug || !content || !category) {
@@ -36,6 +36,7 @@ export async function POST(req: Request) {
         readTime: readTime ? Number(readTime) : 5,
         tags: tags || null,
         status: status || "DRAFT",
+        isPinned: !!isPinned,
         authorId: session.user.id
       }
     });

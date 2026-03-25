@@ -39,6 +39,7 @@ export function BlogForm({ initialData }: { initialData?: any }) {
 
   const [tags, setTags] = useState(initialData?.tags || "");
   const [status, setStatus] = useState(initialData?.status || "DRAFT");
+  const [isPinned, setIsPinned] = useState(initialData?.isPinned || false);
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<"FORM" | "MARKDOWN">("FORM");
   const [markdownInput, setMarkdownInput] = useState("");
@@ -110,7 +111,8 @@ export function BlogForm({ initialData }: { initialData?: any }) {
       title, slug, excerpt, content, category,
       readTime: Number(readAmount) * (readUnit === "month" ? 43200 : readUnit === "days" ? 1440 : readUnit === "hours" ? 60 : 1),
       coverImage, tags,
-      status: submitStatus
+      status: submitStatus,
+      isPinned
     };
 
 
@@ -196,9 +198,19 @@ export function BlogForm({ initialData }: { initialData?: any }) {
                 </select>
               </div>
             </div>
-            <div className="col-span-2">
+            <div className="col-span-1">
               <label className="text-sm font-semibold text-foreground">Tags</label>
               <Input value={tags} onChange={e => setTags(e.target.value)} placeholder="comma, separated" />
+            </div>
+            <div className="flex items-center gap-2 pt-6">
+              <input 
+                type="checkbox" 
+                id="isPinned" 
+                checked={isPinned} 
+                onChange={e => setIsPinned(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+              />
+              <label htmlFor="isPinned" className="text-sm font-semibold text-foreground cursor-pointer">Pin to Home</label>
             </div>
           </div>
 

@@ -18,14 +18,14 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function BlogDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
 
-  const post = await prisma.blogPost.findUnique({
+  const post = await (prisma.blogPost as any).findUnique({
     where: { slug },
     include: {
       author: { select: { fullName: true, avatarUrl: true, bio: true, role: true, createdAt: true } },
       resources: { orderBy: { order: "asc" } },
       _count: { select: { comments: true } }
     }
-  }).catch(() => null);
+  });
 
 
 
@@ -61,19 +61,19 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
   const tagList = post.tags ? post.tags.split(",").map((t: string) => t.trim()).filter(Boolean) : [];
 
   const relatedResources = tagList.length > 0 ? await prisma.resource.findMany({
-    where: { status: "PUBLISHED", OR: tagList.map(tag => ({ tags: { contains: tag, mode: 'insensitive' } })) },
+    where: { status: "PUBLISHED", OR: tagList.map((tag: string) => ({ tags: { contains: tag, mode: 'insensitive' } })) },
     take: 3
   }) : [];
 
   const relatedModules = tagList.length > 0 ? await prisma.roadmapStep.findMany({
-    where: { OR: tagList.map(tag => ({ tags: { contains: tag, mode: 'insensitive' } })) },
+    where: { OR: tagList.map((tag: string) => ({ tags: { contains: tag, mode: 'insensitive' } })) },
     take: 3
   }) : [];
 
   // relatedTools removed - decommissioned
 
   const relatedCheatsheets = tagList.length > 0 ? await prisma.cheatsheet.findMany({
-    where: { status: "PUBLISHED", OR: tagList.map(tag => ({ tags: { contains: tag, mode: 'insensitive' } })) },
+    where: { status: "PUBLISHED", OR: tagList.map((tag: string) => ({ tags: { contains: tag, mode: 'insensitive' } })) },
     take: 3
   }) : [];
 
@@ -197,7 +197,7 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
               <Card className="bg-card/40 backdrop-blur-md rounded-2xl border border-border/10">
                   <CardHeader className="p-3 border-b border-border/10 flex items-center gap-1.5"><CardTitle className="text-xs font-bold flex items-center gap-1"><Tag className="h-3.5 w-3.5 text-primary" /> Topics Covered</CardTitle></CardHeader>
                   <CardContent className="p-3 flex flex-wrap gap-1.5">
-                     {tagList.map(t => (
+                     {tagList.map((t: string) => (
                          <Badge key={t} variant="secondary" className="px-2 py-0.5 text-[10px] font-bold bg-primary/5 text-primary border border-primary/20 hover:bg-primary/20 hover:scale-105 transition-all rounded-full cursor-pointer shadow-sm">
                               # {t}
                          </Badge>

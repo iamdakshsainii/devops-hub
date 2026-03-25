@@ -88,11 +88,16 @@ export function BlogList({ initialData }: { initialData: any[] }) {
                 </Badge>
               </div>
               <div className="hidden md:block">
-                <span className={`text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded ${
-                  item.status === "PUBLISHED" ? "bg-emerald-500/10 text-emerald-500" : "bg-amber-500/10 text-amber-500"
-                }`}>
-                   {item.status}
-                </span>
+                <div className="flex flex-col gap-1 items-start">
+                  <span className={`text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded ${
+                    item.status === "PUBLISHED" ? "bg-emerald-500/10 text-emerald-500" : "bg-amber-500/10 text-amber-500"
+                  }`}>
+                     {item.status}
+                  </span>
+                  {item.isPinned && (
+                    <Badge variant="outline" className="text-[9px] h-4 py-0 px-1 border-amber-500/30 text-amber-600 bg-amber-400/5">PINNED</Badge>
+                  )}
+                </div>
               </div>
               <div className="hidden md:block text-xs text-muted-foreground">
                 <span className="flex items-center gap-1"><Eye className="h-3.5 w-3.5" /> {item.viewCount}</span>
