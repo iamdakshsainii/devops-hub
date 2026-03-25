@@ -455,14 +455,46 @@ export function StepViewer({
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
             </div>
-            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground/60 mb-3 px-2">Table of Contents</p>
-            <nav className="space-y-1">
-              {step.topics.map((topic, i) => (
-                <button key={topic.id} onClick={() => navigate({ kind: "topic", topicId: topic.id })} className={`w-full flex items-start gap-3 px-3 py-2 text-sm text-left transition-all rounded-lg ${activeView.topicId === topic.id ? "bg-primary/5 text-primary font-bold border border-primary/10" : "text-muted-foreground hover:text-foreground"}`}>
-                  <span className="text-[10px] font-mono shrink-0 mt-0.5">{completedItems.includes(topic.id) ? <Check className="h-3 w-3 text-emerald-500 font-bold" /> : String(i + 1).padStart(2, "0")}</span>
-                  <span className="flex-1 truncate leading-snug">{topic.title}</span>
-                </button>
-              ))}
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/30 mb-5 px-4">Table of Contents</p>
+            <nav className="space-y-3">
+              {step.topics.map((topic, i) => {
+                const isActiveTopic = activeView.topicId === topic.id;
+                return (
+                  <div key={topic.id} className="space-y-2">
+                    <button 
+                      onClick={() => navigate({ kind: "topic", topicId: topic.id })} 
+                      className={`w-full flex items-center gap-4 px-4 py-3 text-[15px] md:text-base text-left rounded-2xl transition-all duration-300 group ${isActiveTopic ? "bg-primary/10 text-primary font-black shadow-sm ring-1 ring-inset ring-primary/20 backdrop-blur-sm" : "text-muted-foreground/70 hover:bg-muted/50 hover:text-foreground font-bold hover:translate-x-1"}`}
+                    >
+                      <span className={`text-[10px] font-mono shrink-0 px-2 py-0.5 rounded-md border transition-colors ${isActiveTopic ? "bg-primary/20 border-primary/20 text-primary" : "bg-muted border-border/10 text-muted-foreground/60 group-hover:bg-background"}`}>
+                        {completedItems.includes(topic.id) ? <Check className="h-3 w-3 text-emerald-500 stroke-[4px]" /> : String(i + 1).padStart(2, "0")}
+                      </span>
+                      <span className="flex-1 truncate tracking-tight">{topic.title}</span>
+                    </button>
+
+                    {/* Subtopics sidebar list */}
+                    {topic.subtopics && topic.subtopics.length > 0 && (
+                      <div className={`ml-8 pl-5 border-l-2 border-muted/50 space-y-1 overflow-hidden transition-all duration-500 ${isActiveTopic ? "max-h-[1000px] opacity-100 py-2" : "max-h-0 opacity-0 py-0"}`}>
+                        {topic.subtopics.sort((a,b) => a.order - b.order).map((sub) => (
+                           <button 
+                             key={sub.id} 
+                             onClick={() => {
+                               if (!isActiveTopic) navigate({ kind: "topic", topicId: topic.id });
+                               setTimeout(() => {
+                                  const el = document.getElementById(`subtopic-${sub.id}`);
+                                  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                               }, 100);
+                             }}
+                             className="w-full text-left py-2 px-3 text-[13px] md:text-sm text-muted-foreground/60 hover:text-primary transition-all rounded-lg hover:bg-primary/5 flex items-center gap-3 font-semibold group/sub"
+                           >
+                              <div className="w-1.5 h-1.5 rounded-full bg-muted/40 group-hover/sub:bg-primary/40 shrink-0" />
+                              <span className="truncate">{sub.title}</span>
+                           </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </nav>
           </div>
         </aside>
@@ -544,10 +576,6 @@ export function StepViewer({
                         </p>
                       )}
                     </div>
-                    <div className="flex items-center gap-3 mt-8">
-                      <Checkbox checked={completedItems.includes(activeTopic.id)} onCheckedChange={() => toggleComplete(activeTopic.id, activeTopic)} className="h-5 w-5 border-muted-foreground/40 rounded-md shrink-0 shadow-sm" />
-                      <h1 className="text-2xl md:text-3xl lg:text-4xl font-black tracking-tight leading-tight text-foreground/90">{activeTopic.title}</h1>
-                    </div>
                   </header>
 
                   {viewMode === "CONTINUOUS" ? (
@@ -559,12 +587,48 @@ export function StepViewer({
                             {topic.title}
                           </h2>
                           {topic.content && <div className={PROSE} dangerouslySetInnerHTML={{ __html: parseMarkdown(topic.content) }} />}
+                          
+                          {/* Render Subtopics in Continuous Mode with De-duplicacy */}
+                          {topic.subtopics && topic.subtopics.length > 0 && (
+                            <div className="space-y-20 mt-12">
+                              {topic.subtopics.sort((a,b) => a.order - b.order).map((sub) => (
+                                <section key={sub.id} id={`subtopic-${sub.id}`} className="scroll-mt-24 pl-6 md:pl-8 border-l-2 border-muted hover:border-primary/40 transition-colors group">
+                                  {sub.title.trim().toLowerCase() !== topic.title.trim().toLowerCase() && (
+                                    <h3 className="text-2xl md:text-3xl font-black tracking-tight mb-6 text-foreground/90 group-hover:text-primary transition-colors">{sub.title}</h3>
+                                  )}
+                                  <div className={PROSE} dangerouslySetInnerHTML={{ __html: parseMarkdown(sub.content) }} />
+                                </section>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
                   ) : (
-                    activeTopic.content && <div className={PROSE} dangerouslySetInnerHTML={{ __html: parseMarkdown(activeTopic.content) }} />
+                    <div className="space-y-12">
+                       <div className="flex items-center gap-3 mt-8 mb-8 pb-4 border-b">
+                         <Checkbox checked={completedItems.includes(activeTopic.id)} onCheckedChange={() => toggleComplete(activeTopic.id, activeTopic)} className="h-5 w-5 border-muted-foreground/40 rounded-md shrink-0 shadow-sm" />
+                         <h1 className="text-2xl md:text-3xl lg:text-4xl font-black tracking-tight leading-tight text-foreground/90">{activeTopic.title}</h1>
+                       </div>
+                       
+                       {activeTopic.content && <div className={PROSE} dangerouslySetInnerHTML={{ __html: parseMarkdown(activeTopic.content) }} />}
+
+                       {/* Render Subtopics in main area for scroll navigation with De-duplicacy */}
+                       {activeTopic.subtopics && activeTopic.subtopics.length > 0 && (
+                          <div className="space-y-20 mt-12">
+                            {activeTopic.subtopics.sort((a,b) => a.order - b.order).map((sub) => (
+                               <section key={sub.id} id={`subtopic-${sub.id}`} className="scroll-mt-24 pl-6 md:pl-8 border-l-2 border-muted hover:border-primary/40 transition-colors group">
+                                  {sub.title.trim().toLowerCase() !== activeTopic.title.trim().toLowerCase() && (
+                                     <h3 className="text-2xl md:text-3xl font-black tracking-tight mb-6 text-foreground/90 group-hover:text-primary transition-colors">{sub.title}</h3>
+                                  )}
+                                  <div className={PROSE} dangerouslySetInnerHTML={{ __html: parseMarkdown(sub.content) }} />
+                               </section>
+                            ))}
+                          </div>
+                       )}
+                    </div>
                   )}
+
 
                   <div className="mt-16 pt-10 border-t flex gap-6 border-border/40">
                     {currentNavIndex > 0 && (

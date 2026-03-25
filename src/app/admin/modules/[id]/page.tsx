@@ -272,6 +272,7 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
     try {
       const lines = markdownInput.split("\n");
       let currentTopic: TopicForm | null = null;
+      let currentSubtopic: SubtopicForm | null = null;
       const topics: TopicForm[] = [];
       
       let mTitle = form.title;
@@ -294,16 +295,43 @@ export default function EditModulePage({ params }: { params: Promise<{ id: strin
             };
             topics.push(currentTopic);
           }
-        } else if (trimmed.startsWith("## ") || trimmed.startsWith("### ")) {
+        } else if (trimmed.startsWith("## ")) {
           currentTopic = {
-            title: trimmed.replace(/^#+\s*/, "").trim(),
+            title: trimmed.replace(/^##\s*/, "").trim(),
             content: "",
             subtopics: [],
             expanded: false,
           };
           topics.push(currentTopic);
+          currentSubtopic = null;
+        } else if (trimmed.startsWith("### ")) {
+          if (!currentTopic) {
+            currentTopic = {
+              title: "General Overview",
+              content: "",
+              subtopics: [],
+              expanded: false,
+            };
+            topics.push(currentTopic);
+          }
+          currentSubtopic = {
+            title: trimmed.replace(/^###\s*/, "").trim(),
+            content: "",
+          };
+          currentTopic.subtopics.push(currentSubtopic);
+        } else if (currentSubtopic) {
+          currentSubtopic.content += line + "\n";
         } else if (currentTopic) {
           currentTopic.content += line + "\n";
+        } else if (trimmed.length > 0) {
+          // If content is found before any H2, create a default "General Overview" topic
+          currentTopic = {
+            title: "General Overview",
+            content: line + "\n",
+            subtopics: [],
+            expanded: false,
+          };
+          topics.push(currentTopic);
         } else if (!currentTopic && foundHeader1 && trimmed && !trimmed.startsWith("---")) {
           // Collect intro text before the first ## as Module Description
           mDesc += line + "\n";
