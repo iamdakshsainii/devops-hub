@@ -50,8 +50,8 @@ export default async function Home() {
             {/* Headline */}
             <div className="space-y-4 max-w-4xl">
               <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tighter leading-none">
-                <span className="block text-foreground">Learn DevOps.</span>
-                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary via-purple-500 to-amber-500">The right way.</span>
+                <span className="block text-foreground">Learn DevOps</span>
+                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary via-purple-500 to-amber-500">The right way</span>
               </h1>
               <p className="mx-auto max-w-2xl text-muted-foreground text-lg md:text-xl leading-relaxed">
                 Structured roadmaps, curated resources, and a community of engineers
