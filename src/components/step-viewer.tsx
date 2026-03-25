@@ -541,7 +541,11 @@ export function StepViewer({
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
             </div>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-zinc-600 mb-5 px-4">Table of Contents</p>
+            
+            <div className="flex items-center gap-2 mb-5 px-4">
+               <div className="h-3.5 w-[3px] rounded-full bg-primary/80" />
+               <p className="text-[13px] font-black uppercase tracking-[0.1em] text-slate-800 dark:text-zinc-200">Table of Contents</p>
+            </div>
             <nav className="space-y-2">
               {step.topics.map((topic, i) => {
                 const isActiveTopic = activeView.topicId === topic.id;

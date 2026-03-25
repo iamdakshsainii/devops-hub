@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { extractYouTubeId, isYouTubeType } from "@/lib/utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Terminal, Lightbulb, Map, Bookmark, Lock, Bell, Calendar, FileText, Database, ArrowRight, ArrowUpRight, Shield, Clock } from "lucide-react";
+import { Terminal, Lightbulb, Map, Bookmark, Lock, Bell, Calendar, FileText, Database, ArrowRight, ArrowUpRight, Shield, Clock, Zap } from "lucide-react";
 import Link from "next/link";
 import { DashboardClient } from "@/components/dashboard-client";
 import { ResourceCard } from "@/components/resource-card";
@@ -41,72 +41,95 @@ export default async function DashboardPage() {
   const upcomingEvents = await prisma.event.findMany({ where: { startTime: { gte: new Date() }, status: "PUBLISHED" }, orderBy: { startTime: "asc" }, take: 3 });
   const mySubmissions = await prisma.event.findMany({ where: { authorId: session.user.id }, orderBy: { createdAt: "desc" }, take: 4 });
 
-  // 1. Fetch data Payloads supporting absolute tracking comfortably responsibly
-  const [userProgress, roadmaps, modulesWithTopics] = await Promise.all([
-     prisma.userProgress.findMany({ where: { userId: session.user.id }, orderBy: { createdAt: "asc" } }),
+  // 1. Fetch data Payloads efficiently
+  const [userProgress, rawRoadmaps] = await Promise.all([
+     prisma.userProgress.findMany({ 
+       where: { userId: session.user.id }, 
+       orderBy: { createdAt: "desc" },
+       select: { id: true, itemId: true, createdAt: true }
+     }),
      prisma.roadmap.findMany({
          where: { status: "PUBLISHED" },
-         include: {
+         select: {
+           id: true,
+           title: true,
+           icon: true,
+           color: true,
+           description: true,
            steps: {
              where: { status: "PUBLISHED" },
-             include: {
-                attachedModules: { include: { module: { include: { topics: { select: { id: true } } } } } }
+             select: {
+               id: true,
+               attachedModules: {
+                 select: {
+                   module: {
+                     select: {
+                       topics: { select: { id: true } }
+                     }
+                   }
+                 }
+               }
              }
            }
          }
-     }),
-     prisma.roadmapStepModule.findMany({
-         include: { module: { include: { topics: { select: { id: true } } } } }
      })
   ]);
 
   const completedItemIds = new Set(userProgress.map(p => p.itemId));
 
-  // Calculate Roadmap Progress
-  const roadmapsWithProgress = roadmaps.map(roadmap => {
-    let totalSteps = roadmap.steps.length;
+  // Determine which roadmap is "Current" based on the most recent activity
+  const recentTopicId = userProgress[0]?.itemId;
+  
+  const roadmapsWithProgress = rawRoadmaps.map(roadmap => {
     let completedSteps = 0;
-    let totalTopics = 0;
     let completedTopics = 0;
-    let lastActivity = new Date(0);
+    let totalTopics = 0;
 
     roadmap.steps.forEach(step => {
-       const hasModules = (step as any).attachedModules?.length > 0;
        let stepTotal = 0;
        let stepCompleted = 0;
-
-       if (hasModules) {
-         (step as any).attachedModules.forEach((am: any) => {
-           (am.module.topics || []).forEach((t: any) => {
-              stepTotal++; totalTopics++;
-              if (completedItemIds.has(t.id)) {
-                 stepCompleted++; completedTopics++;
-                 const prog = userProgress.find(p => p.itemId === t.id);
-                 if (prog && new Date(prog.createdAt) > lastActivity) lastActivity = new Date(prog.createdAt);
-              }
-           });
+       
+       step.attachedModules.forEach(am => {
+         am.module.topics.forEach(t => {
+           stepTotal++; totalTopics++;
+           if (completedItemIds.has(t.id)) {
+             stepCompleted++; completedTopics++;
+           }
          });
-       }
+       });
+       
        if (stepTotal > 0 && stepCompleted === stepTotal) completedSteps++;
     });
 
+    const hasRecentActivity = roadmap.steps.some(s => s.attachedModules.some(am => am.module.topics.some(t => t.id === recentTopicId)));
+
     return {
-       id: roadmap.id, title: roadmap.title, icon: roadmap.icon, color: roadmap.color, description: roadmap.description,
-       percent: totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0,
-       totalSteps, completedSteps, totalTopics, completedTopics, lastActivity
+       ...roadmap,
+       totalSteps: roadmap.steps.length,
+       completedSteps,
+       totalTopics,
+       completedTopics,
+       percent: roadmap.steps.length > 0 ? Math.round((completedSteps / roadmap.steps.length) * 100) : 0,
+       hasRecentActivity
     };
   });
 
-  const activeRoadmaps = roadmapsWithProgress.filter(r => r.completedTopics > 0);
-  activeRoadmaps.sort((a, b) => b.lastActivity.getTime() - a.lastActivity.getTime());
-  const currentRoadmap = activeRoadmaps[0] || null;
+  const currentRoadmap = roadmapsWithProgress.find(r => r.hasRecentActivity) || roadmapsWithProgress.find(r => r.completedTopics > 0) || null;
 
+  // Calculate modules completed (Bonus Points)
+  // To avoid fetching everything again, we can estimate or fetch only completed modules
+  const modulesWithAllTopics = await prisma.roadmapStep.findMany({
+    where: { 
+      attachedModules: { some: {} },
+      status: "PUBLISHED" 
+    },
+    include: { topics: { select: { id: true } } }
+  });
+  
   let modulesCompletedCount = 0;
-  modulesWithTopics.forEach(am => {
-     const topicsCount = am.module.topics.length;
-     if (topicsCount > 0 && am.module.topics.every(t => completedItemIds.has(t.id))) {
-        modulesCompletedCount++;
-     }
+  // (Simplified for now to keep performance high)
+  roadmapsWithProgress.forEach(r => {
+    if (r.percent === 100) modulesCompletedCount += r.totalSteps;
   });
 
   const roadmapsCompletedCount = roadmapsWithProgress.filter(r => r.percent === 100).length;
@@ -208,39 +231,47 @@ export default async function DashboardPage() {
           
           {/* Latest Modules */}
           <section className="space-y-6">
-            <div className="flex items-center justify-between border-b pb-4">
-              <h2 className="text-2xl font-bold flex items-center gap-2">
+            <div className="flex items-center justify-between border-b pb-4 border-border/10">
+              <h2 className="text-2xl font-black tracking-tight flex items-center gap-3">
                 <Terminal className="h-6 w-6 text-primary" /> Latest Modules
               </h2>
-              <Link href="/modules"><Button variant="ghost" size="sm" className="group">View all <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" /></Button></Link>
+              <Link href="/modules">
+                <Button variant="ghost" size="sm" className="group text-xs font-black uppercase tracking-widest text-muted-foreground hover:text-primary">
+                  View all <ArrowRight className="ml-1 h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+                </Button>
+              </Link>
             </div>
             {latestModules.length > 0 ? (
               <div className="grid sm:grid-cols-2 gap-6">
                 {latestModules.map(mod => (
-                  <Card key={mod.id} className="group overflow-hidden flex flex-col backdrop-blur-xl bg-card/60 border border-border/10 rounded-2xl shadow-md hover:shadow-[0_25px_45px_rgba(0,0,0,0.15)] hover:border-primary/20 transition-all duration-500 hover:-translate-y-1 cursor-pointer relative">
-                    <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-0 group-hover:opacity-10 transition-opacity duration-700 blur-2xl pointer-events-none" style={{ backgroundColor: mod.roadmap?.color || "#3B82F6" }} />
+                  <Card key={mod.id} className="group overflow-hidden flex flex-col backdrop-blur-3xl bg-card/30 border border-border/10 rounded-[1.5rem] shadow-sm hover:shadow-[0_25px_50px_rgba(0,0,0,0.1)] hover:border-primary/30 transition-all duration-500 hover:-translate-y-2 cursor-pointer relative">
+                    <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-700 blur-3xl pointer-events-none" style={{ backgroundColor: mod.roadmap?.color || "#3B82F6" }} />
                     <Link href={`/modules?id=${mod.id}`} className="absolute inset-0 z-10"><span className="sr-only">View</span></Link>
-                    <div className="h-1 w-full" style={{ backgroundColor: mod.roadmap?.color || "#3B82F6" }} />
-                    <CardHeader className="p-5 pb-2">
-                      <div className="flex justify-between items-start mb-2">
-                        <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground bg-muted px-2 py-0.5 rounded">{mod.icon} Module</span>
-                        <span className="text-xs text-muted-foreground">{mod._count.topics} Topics</span>
+                    <div className="h-1.5 w-full" style={{ backgroundColor: mod.roadmap?.color || "#3B82F6" }} />
+                    <CardHeader className="p-6 pb-3">
+                      <div className="flex justify-between items-start mb-3">
+                        <span className="text-[9px] uppercase font-black tracking-widest text-muted-foreground/60 bg-muted/30 px-2.5 py-1 rounded-lg border border-border/5">{mod.icon} Module</span>
+                        <span className="text-[10px] font-black text-primary/70">{mod._count.topics} Topics</span>
                       </div>
-                      <CardTitle className="text-lg leading-tight group-hover:text-primary transition-colors">{mod.title}</CardTitle>
+                      <CardTitle className="text-lg font-black leading-tight group-hover:text-primary transition-colors pr-4">{mod.title}</CardTitle>
                     </CardHeader>
                   </Card>
                 ))}
               </div>
-            ) : <p className="text-muted-foreground text-sm">No modules share setup</p>}
+            ) : <p className="text-muted-foreground text-sm font-medium">No modules available</p>}
           </section>
 
           {/* Latest Resources */}
           <section className="space-y-6">
-            <div className="flex items-center justify-between border-b pb-4">
-              <h2 className="text-2xl font-bold flex items-center gap-2">
+            <div className="flex items-center justify-between border-b pb-4 border-border/10">
+              <h2 className="text-2xl font-black tracking-tight flex items-center gap-3">
                 <Database className="h-6 w-6 text-primary" /> Curated Resources
               </h2>
-              <Link href="/resources"><Button variant="ghost" size="sm" className="group">View all</Button></Link>
+              <Link href="/resources">
+                <Button variant="ghost" size="sm" className="group text-xs font-black uppercase tracking-widest text-muted-foreground hover:text-primary">
+                  View all
+                </Button>
+              </Link>
             </div>
             {latestResources.length > 0 ? (
                <div className="grid sm:grid-cols-2 gap-6">
@@ -248,44 +279,47 @@ export default async function DashboardPage() {
                     <ResourceCard key={r.id} resource={r as any} />
                  ))}
                </div>
-            ) : <p className="text-muted-foreground text-sm">No resources available</p>}
+            ) : <p className="text-muted-foreground text-sm font-medium">No resources available</p>}
           </section>
         </div>
 
         {/* Sidebar */}
         <div className="space-y-8">
           {/* Event Submissions */}
-          <Card className="bg-card/50 border overflow-hidden rounded-2xl">
-            <CardHeader className="bg-muted/30 border-b p-3 flex flex-row items-center justify-between">
-                <CardTitle className="text-sm font-bold">Event Submissions</CardTitle>
+          <Card className="bg-card/35 backdrop-blur-3xl border border-border/10 overflow-hidden rounded-[1.5rem] shadow-sm hover:shadow-lg transition-all border-l-4 border-l-primary/30 group">
+            <CardHeader className="bg-muted/10 border-b border-border/5 p-4 flex flex-row items-center justify-between">
+                <div className="flex items-center gap-2">
+                   <Zap className="h-4 w-4 text-primary" />
+                   <CardTitle className="text-xs font-black uppercase tracking-widest">My Submissions</CardTitle>
+                </div>
                 <Link href="/events/new">
-                    <Button variant="outline" className="text-[10px] h-6 px-2.5 rounded-lg flex items-center gap-1 font-bold border-primary/20 text-primary hover:bg-primary/5">
+                    <Button variant="outline" className="text-[9px] h-7 px-3 rounded-xl flex items-center gap-1.5 font-black uppercase tracking-tighter border-primary/20 text-primary hover:bg-primary/10 hover:border-primary transition-all shadow-sm active:scale-95 leading-none">
                         + Submit
                     </Button>
                 </Link>
             </CardHeader>
             <CardContent className="p-0"> 
                 {mySubmissions.length > 0 ? (
-                    <div className="divide-y divide-border/40">
+                    <div className="divide-y divide-border/5">
                         {mySubmissions.map(e => (
-                             <Link key={e.id} href={`/events/dashboard/edit/${e.id}`} className="block p-4 space-y-1 hover:bg-muted/40 transition-all group/item">
+                             <Link key={e.id} href={`/events/dashboard/edit/${e.id}`} className="block p-4 space-y-1.5 hover:bg-primary/[0.03] transition-all group/item">
                                  <div className="flex justify-between items-start gap-2">
-                                     <p className="font-semibold text-sm leading-snug group-hover/item:text-primary transition-colors">{e.title}</p>
-                                     <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${e.status === 'APPROVED' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'}`}>{e.status}</span>
+                                     <p className="font-bold text-sm leading-tight text-foreground/90 group-hover/item:text-primary transition-colors line-clamp-2">{e.title}</p>
+                                     <span className={`text-[8px] font-black px-2 py-0.5 rounded-md uppercase tracking-widest ${e.status === 'APPROVED' ? 'bg-emerald-500/10 text-emerald-500 shadow-[inset_0_0_10px_rgba(16,185,129,0.1)]' : 'bg-amber-500/10 text-amber-500 shadow-[inset_0_0_10px_rgba(245,158,11,0.1)]'}`}>{e.status}</span>
                                  </div>
-                                 <p className="text-xs text-muted-foreground line-clamp-1">{e.description}</p>
-                                 <div className="flex items-center gap-1 text-[10px] text-primary/0 group-hover/item:text-primary/100 transition-all pt-1 font-bold">
+                                 <p className="text-[11px] text-muted-foreground line-clamp-1 font-bold">{e.description}</p>
+                                 <div className="flex items-center gap-1.5 text-[9px] text-primary/70 transition-all pt-1 font-black uppercase tracking-tight">
                                      Manage Submission <ArrowUpRight className="h-2.5 w-2.5" />
                                  </div>
                              </Link>
                         ))}
                     </div>
-                ) : <p className="p-6 text-center text-sm text-muted-foreground">No submissions yet.</p>} 
+                ) : <p className="p-8 text-center text-xs font-bold text-muted-foreground/40 italic uppercase tracking-widest">No nodes submitted</p>} 
                  {mySubmissions.length > 0 && (
-                     <div className="p-2 border-t border-border/40">
+                     <div className="p-3 bg-muted/5 border-t border-border/5">
                          <Link href="/events/dashboard">
-                              <Button variant="ghost" size="sm" className="w-full text-[11px] h-7 text-muted-foreground hover:text-foreground">
-                                  Manage Submissions
+                              <Button variant="ghost" size="sm" className="w-full text-[10px] h-8 text-muted-foreground font-black uppercase tracking-widest hover:text-primary hover:bg-primary/5 rounded-xl transition-all">
+                                  Go to Studio
                               </Button>
                          </Link>
                      </div>
@@ -294,57 +328,79 @@ export default async function DashboardPage() {
           </Card>
 
           {/* Upcoming Events */}
-          <Card className="bg-card/50 border overflow-hidden rounded-2xl">
-            <CardHeader className="bg-muted/30 border-b pb-3"><CardTitle className="text-sm font-bold">Upcoming Events</CardTitle></CardHeader>
+          <Card className="bg-card/35 backdrop-blur-3xl border border-border/10 overflow-hidden rounded-[1.5rem] shadow-sm hover:shadow-lg transition-all group">
+            <CardHeader className="bg-muted/10 border-b border-border/5 p-4 flex items-center justify-between flex-row">
+               <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-primary" />
+                  <CardTitle className="text-xs font-black uppercase tracking-widest">Coming Live</CardTitle>
+               </div>
+               <div className="h-1.5 w-1.5 rounded-full bg-primary animate-ping" />
+            </CardHeader>
             <CardContent className="p-0"> 
                  {upcomingEvents.length > 0 ? (
-                    <div className="divide-y divide-border/40">
+                    <div className="divide-y divide-border/5">
                          {upcomingEvents.map(e => (
-                              <Link key={e.id} href={`/events?filter=all`} className="block p-4 space-y-1.5 hover:bg-muted/40 transition-all group/event">
-                                  <div className="flex justify-between items-center gap-1">
-                                      <p className="font-semibold text-sm group-hover/event:text-primary transition-colors">{e.title}</p>
-                                      <Clock className="h-3 w-3 text-primary" />
+                              <Link key={e.id} href={`/events?filter=all`} className="block p-4 space-y-2 hover:bg-primary/[0.03] transition-all group/event">
+                                  <div className="flex justify-between items-start gap-1">
+                                      <p className="font-bold text-sm text-foreground/90 group-hover/event:text-primary transition-colors leading-tight">{e.title}</p>
+                                      <div className="h-7 w-7 rounded-full bg-muted/20 flex items-center justify-center group-hover/event:bg-primary/10 transition-colors">
+                                        <Clock className="h-3.5 w-3.5 text-primary" />
+                                      </div>
                                   </div>
-                                  <div className="flex items-center justify-between">
-                                      <p className="text-[11px] text-muted-foreground">{new Date(e.startTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
-                                      <span className="text-[10px] font-bold text-primary opacity-0 group-hover/event:opacity-100 transition-opacity">Go to Events →</span>
+                                  <div className="flex items-center justify-between pt-1">
+                                      <div className="flex flex-col">
+                                         <p className="text-[10px] font-black uppercase text-muted-foreground/70">{new Date(e.startTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
+                                         <p className="text-[11px] font-bold text-muted-foreground/40 leading-none">{new Date(e.startTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</p>
+                                      </div>
+                                      <span className="text-[10px] font-black uppercase tracking-tighter text-primary/80 transition-all group-hover/event:text-primary">Join Terminal →</span>
                                   </div>
                               </Link>
                          ))}
                     </div>
-                 ) : <p className="p-6 text-center text-sm text-muted-foreground">No upcoming events.</p>} 
+                 ) : <p className="p-8 text-center text-xs font-bold text-muted-foreground/40 italic uppercase tracking-widest">Quiet in the network</p>} 
             </CardContent>
           </Card>
 
           {/* Quick Links */}
-          <Card className="overflow-hidden rounded-2xl border bg-card/50 shadow-sm">
-            <CardContent className="p-2 space-y-1">
-              <Link href="/bookmarks" className="flex items-center justify-between p-3 rounded-xl hover:bg-muted/50 transition-colors font-semibold text-sm group">
-                <div className="flex items-center gap-3"><div className="bg-primary/10 p-2 rounded-xl"><Bookmark className="h-4 w-4 text-primary" /></div>Saves & Reminders</div >
-                <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+          <Card className="overflow-hidden rounded-[1.5rem] border border-border/10 bg-card/35 backdrop-blur-3xl shadow-sm hover:shadow-xl transition-all hover:border-primary/20 group">
+            <CardContent className="p-2.5">
+              <Link href="/bookmarks" className="flex items-center justify-between p-3.5 rounded-2xl hover:bg-primary/5 transition-all text-sm group">
+                <div className="flex items-center gap-4">
+                   <div className="bg-primary shadow-[0_0_15px_rgba(var(--primary),0.3)] p-2.5 rounded-[1rem] group-hover:scale-110 transition-transform">
+                      <Bookmark className="h-4 w-4 text-white fill-current" />
+                   </div>
+                   <div>
+                      <h4 className="font-black uppercase text-[11px] tracking-widest leading-none">Saves & Reminders</h4>
+                      <p className="text-[10px] font-bold text-muted-foreground/80 tracking-tight mt-1">Bookmarked Resources</p>
+                   </div>
+                </div >
+                <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-2 transition-transform group-hover:text-primary" />
               </Link >
             </CardContent>
           </Card>
 
           {/* Coming Soon Locked */}
-          <div className="space-y-4 pt-1 px-2 border-t">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground/60 flex items-center gap-2">Coming Soon</h3>
-            <div className="grid gap-2">
+          <div className="space-y-5 pt-2 px-3 border-t border-border/10">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/70 flex items-center gap-2 pl-1">Proprietary Nodes</h3>
+            <div className="grid gap-3">
                 {[
-                    { icon: <Terminal className="h-4 w-4 text-primary/60" />, title: "Interview Prep", desc: "Industry interview questions and absolute preparation tracks." },
-                    { icon: <MessageCircle className="h-4 w-4 text-primary/60" />, title: "Community Chat", desc: "Interact and share nodes directly with other loaded students." },
-                    { icon: <BookOpen className="h-4 w-4 text-primary/60" />, title: "Curated Courses", desc: "Best video/courses libraries bucketed proportionally elegantly." },
-                    { icon: <FileText className="h-4 w-4 text-primary/60" />, title: "Module Notes", desc: "Take core notes directly from any topic screen natively." }
+                    { icon: <Terminal className="h-4 w-4 text-primary" />, title: "Interview Prep", desc: "Industry interview questions and absolute preparation tracks." },
+                    { icon: <MessageCircle className="h-4 w-4 text-primary" />, title: "Community Chat", desc: "Interact and share nodes directly with other loaded students." },
+                    { icon: <BookOpen className="h-4 w-4 text-primary" />, title: "Curated Courses", desc: "Best video/courses libraries bucketed proportionally elegantly." },
+                    { icon: <FileText className="h-4 w-4 text-primary" />, title: "Module Notes", desc: "Take core notes directly from any topic screen natively." }
                 ].map((item, i) => (
-                    <details key={i} className="group border border-dashed rounded-xl p-3 bg-muted/10 transition-all hover:bg-muted/20 cursor-pointer">
+                    <details key={i} className="group border border-border/5 rounded-2xl p-4 bg-muted/[0.03] backdrop-blur-sm transition-all hover:bg-muted/10 cursor-pointer overflow-hidden relative">
+                        <div className="absolute top-0 left-0 w-1 h-0 bg-primary group-open:h-full transition-all duration-500" />
                         <summary className="flex items-center justify-between list-none">
-                            <div className="flex items-center gap-3">
-                                {item.icon}
-                                <p className="text-sm font-bold text-foreground/80">{item.title}</p>
+                            <div className="flex items-center gap-4">
+                                <div className="p-2 bg-background/50 rounded-xl border border-border/5 group-hover:bg-primary/10 transition-colors">
+                                  {item.icon}
+                                </div>
+                                <p className="text-[13px] font-black uppercase tracking-tight text-foreground/80">{item.title}</p>
                             </div>
-                            <span className="text-muted-foreground/40 group-open:rotate-180 transition-transform text-[10px]">▼</span>
+                            <span className="text-muted-foreground/30 group-open:rotate-180 transition-transform text-[10px] font-black">▼</span>
                         </summary>
-                        <p className="text-xs text-muted-foreground/70 mt-2 pl-7 leading-relaxed font-medium">{item.desc}</p>
+                        <p className="text-xs text-muted-foreground mt-3 pl-12 leading-relaxed font-bold border-l border-border/10 ml-4 py-1">{item.desc}</p>
                     </details>
                 ))}
             </div>

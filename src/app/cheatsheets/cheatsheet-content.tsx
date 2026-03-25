@@ -114,21 +114,30 @@ export function CheatsheetContent({ sections, slug }: { sections: any[], slug?: 
   }, [sections, slug]);
 
   return (
-    <div id="devhub-cheatsheet-area" className="space-y-12">
+    <div id="devhub-cheatsheet-area" className="space-y-16">
       {sections.map((sec: any) => (
-        <section key={sec.id} className="space-y-6">
-          <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight pb-3 border-b border-border/60">
-            {sec.title}
-          </h2>
-          <div className="space-y-8 pl-1">
+        <section key={sec.id} className="space-y-8 relative">
+          {/* Main Section Header */}
+          <div className="flex items-center gap-3 pb-4 border-b border-border/40">
+            <div className="h-6 w-1.5 rounded-full bg-primary/80" />
+            <h2 className="text-3xl md:text-4xl font-black tracking-tight text-foreground/90">
+              {sec.title}
+            </h2>
+          </div>
+          
+          <div className="space-y-8 md:pl-3">
             {sec.subsections.map((sub: any) => (
-              <div key={sub.id} className="space-y-3 p-5 md:p-6 bg-card/40 rounded-2xl border border-border/10 shadow-sm">
-                <h3 className="text-xl font-bold tracking-tight text-foreground/90 flex items-center gap-2">
-                   <div className="w-1.5 h-1.5 rounded-full bg-primary mt-0.5" />
+              <div key={sub.id} className="relative group space-y-4 p-6 md:p-8 bg-background/50 backdrop-blur-xl rounded-[2rem] border border-border/40 shadow-[0_8px_30px_rgba(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.2)] hover:shadow-[0_15px_40px_rgba(59,130,246,0.1)] transition-all duration-500 overflow-hidden ring-1 ring-white/10 dark:ring-white/5">
+                {/* Decorative glowing orb inside the card */}
+                <div className="absolute -top-10 -right-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl group-hover:bg-primary/20 transition-all duration-700 pointer-events-none" />
+                
+                <h3 className="text-xl md:text-2xl font-black tracking-tight text-foreground flex items-center gap-3">
+                   <div className="w-2.5 h-2.5 rounded-full bg-primary shrink-0 shadow-[0_0_10px_rgba(59,130,246,0.8)]" />
                    {sub.title}
                 </h3>
+                
                 <div 
-                   className={PROSE}
+                   className={PROSE + " relative z-10"}
                    dangerouslySetInnerHTML={{ __html: parseMarkdown(sub.content) }}
                 />
               </div>

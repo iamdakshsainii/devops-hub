@@ -5,7 +5,8 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Bookmark, Bell } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Bookmark, Bell, User as UserIcon } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +28,6 @@ export default async function BookmarksPage({
   });
 
   // Separate by type
-
   const moduleBookmarkRows = rawBookmarks.filter((b) => b.itemType === "MODULE" && b.stepId);
   const topicBookmarkRows = rawBookmarks.filter((b) => b.itemType === "TOPIC" && b.topicId);
   const subtopicBookmarkRows = rawBookmarks.filter((b) => b.itemType === "SUBTOPIC" && b.subtopicId);
@@ -58,217 +58,222 @@ export default async function BookmarksPage({
   const moduleBookmarks = moduleBookmarkRows.map((b) => ({ ...b, step: stepMap[b.stepId!] })).filter((b) => b.step);
   const topicBookmarks = topicBookmarkRows.map((b) => ({ ...b, topic: topicMap[b.topicId!] })).filter((b) => b.topic);
   const subtopicBookmarks = subtopicBookmarkRows.map((b) => ({ ...b, subtopic: subtopicMap[b.subtopicId!] })).filter((b) => b.subtopic);
+  const resourceBookmarks = resourceBookmarkRows.map((b) => ({ ...b, resource: resourceMap[b.resourceId!] })).filter((b) => b.resource);
 
-  const resourceBookmarks = typeof resourceBookmarkRows !== "undefined" ? resourceBookmarkRows.map((b) => ({ ...b, resource: resourceMap[b.resourceId!] })).filter((b) => b.resource) : [];
-
-  // Split events into saved and remindMe
   const allEventBookmarks = eventBookmarkRows
     .map((b) => ({ ...b, event: eventMap[b.eventId!] }))
     .filter((b) => b.event);
 
-  // "Saved" = all bookmarked events (remindMe can also be saved)
-  // "Remind Me" = only those with remindMe: true
   const remindMeBookmarks = allEventBookmarks.filter((b) => b.remindMe === true);
-  const pureEventBookmarks = allEventBookmarks; // all saved events shown in Saved tab
+  const pureEventBookmarks = allEventBookmarks;
 
   const tabs = [
-    { label: "Modules", value: "modules", count: moduleBookmarks.length + (typeof topicBookmarks !== "undefined" ? topicBookmarks.length : 0) + (typeof subtopicBookmarks !== "undefined" ? subtopicBookmarks.length : 0) },
+    { label: "Modules", value: "modules", count: moduleBookmarks.length + topicBookmarks.length + subtopicBookmarks.length },
     { label: "Resources", value: "resources", count: resourceBookmarks.length },
     { label: "Events", value: "events", count: pureEventBookmarks.length },
     { label: "Remind Me", value: "reminders", count: remindMeBookmarks.length },
   ];
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-5xl space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Bookmarks</h1>
-        <p className="text-muted-foreground mt-1 text-sm font-medium">
+    <div className="container mx-auto px-4 py-12 max-w-5xl space-y-10">
+      <div className="space-y-2">
+        <h1 className="text-4xl font-black tracking-tight">Bookmarks</h1>
+        <p className="text-muted-foreground text-[15px] font-medium">
           Your saved modules, resources, events, and reminders.
         </p>
       </div>
 
-      {/* Tab bar */}
-      <div className="flex border-b overflow-x-auto">
+      <div className="flex border-b overflow-x-auto no-scrollbar">
         {tabs.map((t) => (
           <Link
             key={t.value}
             href={`/bookmarks?tab=${t.value}`}
-            className={`pb-3 px-4 font-medium transition-colors border-b-2 whitespace-nowrap flex items-center gap-1.5 ${activeTab === t.value
+            className={`pb-4 px-5 font-bold transition-all border-b-2 whitespace-nowrap flex items-center gap-2 text-sm ${activeTab === t.value
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
           >
-            {t.value === "reminders" && <Bell className="h-3.5 w-3.5" />}
+            {t.value === "reminders" && <Bell className="h-4 w-4" />}
             {t.label}
-            <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded font-mono">
+            <span className="text-[10px] bg-muted px-2 py-0.5 rounded-full font-black">
               {t.count}
             </span>
           </Link>
         ))}
       </div>
 
-      {/* Modules */}
-      {activeTab === "modules" && (
-        <div className="space-y-6">
-          {(moduleBookmarks.length > 0 || (typeof topicBookmarks !== "undefined" && topicBookmarks.length > 0) || (typeof subtopicBookmarks !== "undefined" && subtopicBookmarks.length > 0)) ? (
-            <div className="grid sm:grid-cols-2 gap-4">
-              {moduleBookmarks.map(({ step }) =>
-                step ? (
-                  <Card key={step.id} className="group flex flex-col backdrop-blur-xl border border-border/10 rounded-2xl overflow-hidden shadow-md hover:shadow-[0_20px_45px_rgba(0,0,0,0.15)] hover:border-primary/30 transition-all duration-500 hover:-translate-y-1 bg-card/60 relative">
-                     <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-0 group-hover:opacity-10 transition-all duration-700 blur-2xl pointer-events-none" style={{ backgroundColor: step.roadmap?.color || "#3B82F6" }} />
-                    <div className="h-1" style={{ backgroundColor: step.roadmap?.color || "#3B82F6" }} />
-                    <CardHeader className="p-5 pb-2">
-                      <div className="flex justify-between items-start mb-2">
-                        <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground bg-muted px-2 py-0.5 rounded">
-                          {step.icon} Module
-                        </span>
+      <div className="min-h-[400px]">
+        {activeTab === "modules" && (
+          <div className="space-y-6">
+            {(moduleBookmarks.length > 0 || topicBookmarks.length > 0 || subtopicBookmarks.length > 0) ? (
+              <div className="grid sm:grid-cols-2 lg:grid-cols-2 gap-6">
+                {moduleBookmarks.map(({ step }) =>
+                   step ? (
+                    <Card key={step.id} className="group flex flex-col backdrop-blur-3xl border border-border/10 rounded-[2rem] overflow-hidden shadow-lg hover:shadow-[0_25px_60px_rgba(0,0,0,0.15)] hover:border-primary/40 transition-all duration-500 hover:-translate-y-2 bg-card/40 relative">
+                       <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-0 group-hover:opacity-10 transition-all duration-700 blur-2xl pointer-events-none" style={{ backgroundColor: step.roadmap?.color || "#3B82F6" }} />
+                      <div className="h-1.5" style={{ backgroundColor: step.roadmap?.color || "#3B82F6" }} />
+                      <CardHeader className="p-6 pb-2">
+                        <div className="flex justify-between items-start mb-3">
+                           <Badge variant="secondary" className="px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-full bg-primary/10 text-primary border border-primary/20">
+                              {step.icon} Module
+                           </Badge>
+                        </div>
+                        <CardTitle className="text-xl font-bold tracking-tight leading-snug">{step.title}</CardTitle>
+                      </CardHeader>
+                      <CardContent className="px-6 pb-6 pt-1 mt-auto space-y-4 flex-grow flex flex-col justify-between">
+                        <p className="text-[13px] text-muted-foreground font-medium opacity-80 leading-relaxed line-clamp-2 mb-4">{step.description || "Standalone knowledge node."}</p>
+                        <Link href={`/modules?id=${step.id}`} className="mt-auto">
+                          <Button variant="secondary" className="w-full h-10 rounded-xl font-bold">View Module</Button>
+                        </Link>
+                      </CardContent>
+                    </Card>
+                  ) : null
+                )}
+                {topicBookmarks.map(({ topic }) => (
+                  <Card key={topic.id} className="group flex flex-col backdrop-blur-3xl border border-border/10 rounded-[2rem] overflow-hidden shadow-lg hover:shadow-[0_25px_60px_rgba(0,0,0,0.15)] hover:border-emerald-500/40 transition-all duration-500 hover:-translate-y-2 bg-card/40 relative">
+                    <CardHeader className="p-6 pb-2">
+                      <div className="flex justify-between items-start mb-3">
+                         <Badge variant="secondary" className="px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+                            Topic
+                         </Badge>
                       </div>
-                      <CardTitle className="text-lg leading-tight">{step.title}</CardTitle>
+                      <CardTitle className="text-xl font-bold tracking-tight leading-snug">{topic.title}</CardTitle>
+                      {topic.step && <p className="text-[11px] font-bold text-muted-foreground/60 uppercase tracking-wider mt-1">In {topic.step.title}</p>}
                     </CardHeader>
-                    <CardContent className="px-5 pb-5 pt-1 mt-auto space-y-4 flex-grow flex flex-col justify-between">
-                      <p className="text-xs text-muted-foreground line-clamp-2 mb-4">{step.description || "Standalone knowledge node."}</p>
-                      <Link href={`/modules?id=${step.id}`} className="mt-auto">
-                        <Button variant="secondary" className="w-full h-8">View Module</Button>
-                      </Link>
+                    <CardContent className="px-6 pb-6 pt-1 mt-auto space-y-2">
+                       <Link href={`/modules/${topic.stepId}`}>
+                         <Button variant="secondary" className="w-full h-10 rounded-xl font-bold mt-2">View Topic</Button>
+                       </Link>
                     </CardContent>
                   </Card>
-                ) : null
-              )}
-              {typeof topicBookmarks !== "undefined" && topicBookmarks.map(({ topic }) => (
-                <Card key={topic.id} className="hover:border-primary/50 transition-colors flex flex-col">
-                  <CardHeader className="p-5 pb-2">
-                    <div className="flex justify-between items-start mb-2">
-                      <span className="text-[10px] uppercase font-bold tracking-wider text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded">Topic</span>
-                    </div>
-                    <CardTitle className="text-lg leading-tight">{topic.title}</CardTitle>
-                    {topic.step && <p className="text-xs text-muted-foreground mt-1">In {topic.step.title}</p>}
-                  </CardHeader>
-                  <CardContent className="px-5 pb-5 pt-1 mt-auto space-y-2">
-                     <Link href={`/modules/${topic.stepId}`}>
-                       <Button variant="secondary" className="w-full h-8 mt-2">View Topic</Button>
-                     </Link>
-                  </CardContent>
-                </Card>
-              ))}
-              {typeof subtopicBookmarks !== "undefined" && subtopicBookmarks.map(({ subtopic }) => (
-                <Card key={subtopic.id} className="hover:border-primary/50 transition-colors flex flex-col">
-                  <CardHeader className="p-5 pb-2">
-                    <div className="flex justify-between items-start mb-2">
-                      <span className="text-[10px] uppercase font-bold tracking-wider text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded">Subtopic</span>
-                    </div>
-                    <CardTitle className="text-lg leading-tight">{subtopic.title}</CardTitle>
-                    {subtopic.topic?.step && <p className="text-xs text-muted-foreground mt-1">In {subtopic.topic.step.title}</p>}
-                  </CardHeader>
-                  <CardContent className="px-5 pb-5 pt-1 mt-auto space-y-2">
-                     <Link href={`/modules/${subtopic.topic?.stepId || ""}`}>
-                       <Button variant="secondary" className="w-full h-8 mt-2">View Subtopic</Button>
-                     </Link>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <EmptyState
-              icon={<Bookmark className="h-12 w-12 text-muted-foreground mb-4 opacity-50 mx-auto" />}
-              title="No modules saved"
-              description="When you find a helpful learning module, click the bookmark icon to save it here."
-              href="/modules"
-              linkLabel="Browse Modules"
-            />
-          )}
-        </div>
-      )}
-
-      {/* Resources */}
-      {activeTab === "resources" && (
-        <div className="space-y-6">
-          {resourceBookmarks.length > 0 ? (
-            <div className="grid sm:grid-cols-2 gap-4">
-              {resourceBookmarks.map(({ resource }) =>
-                resource ? (
-                  <Card key={resource.id} className="hover:border-primary/50 transition-colors">
-                    <CardHeader className="p-4 pb-2">
-                      <div className="flex justify-between items-start">
-                        <span className="text-[10px] uppercase font-bold tracking-wider text-primary bg-primary/10 px-2 py-0.5 rounded">
-                          {resource.type}
-                        </span>
+                ))}
+                {subtopicBookmarks.map(({ subtopic }) => (
+                  <Card key={subtopic.id} className="group flex flex-col backdrop-blur-3xl border border-border/10 rounded-[2rem] overflow-hidden shadow-lg hover:shadow-[0_25px_60px_rgba(0,0,0,0.15)] hover:border-blue-500/40 transition-all duration-500 hover:-translate-y-2 bg-card/40 relative">
+                    <CardHeader className="p-6 pb-2">
+                      <div className="flex justify-between items-start mb-3">
+                         <Badge variant="secondary" className="px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-full bg-blue-500/10 text-blue-500 border border-blue-500/20">
+                            Subtopic
+                         </Badge>
                       </div>
-                      <CardTitle className="text-lg mt-2 line-clamp-2 leading-tight">
-                        {resource.title}
-                      </CardTitle>
-                      <CardDescription className="line-clamp-2 text-sm mt-1">
-                        {resource.description}
-                      </CardDescription>
+                      <CardTitle className="text-xl font-bold tracking-tight leading-snug">{subtopic.title}</CardTitle>
+                      {subtopic.topic?.step && <p className="text-[11px] font-bold text-muted-foreground/60 uppercase tracking-wider mt-1">In {subtopic.topic.step.title}</p>}
                     </CardHeader>
-                    <CardContent className="p-4 pt-2 mt-auto">
-                      <Link href={`/resources/${resource.id}`}>
-                        <Button variant="secondary" className="w-full h-8 mt-2">View Resource</Button>
-                      </Link>
+                    <CardContent className="px-6 pb-6 pt-1 mt-auto space-y-2">
+                       <Link href={`/modules/${subtopic.topic?.stepId || ""}`}>
+                         <Button variant="secondary" className="w-full h-10 rounded-xl font-bold mt-2">View Subtopic</Button>
+                       </Link>
                     </CardContent>
                   </Card>
-                ) : null
-              )}
-            </div>
-          ) : (
-            <EmptyState
-              icon={<Bookmark className="h-12 w-12 text-muted-foreground mb-4 opacity-50 mx-auto" />}
-              title="No resources saved"
-              description="When you find a useful PDF, link, or video, click the bookmark icon to save it here."
-              href="/resources"
-              linkLabel="Browse Resources"
-            />
-          )}
-        </div>
-      )}
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                icon={<Bookmark className="h-12 w-12 text-muted-foreground mb-4 opacity-50 mx-auto transition-transform group-hover:scale-110" />}
+                title="No modules saved"
+                description="When you find a helpful learning module, click the bookmark icon to save it here."
+                href="/modules"
+                linkLabel="Browse Modules"
+              />
+            )}
+          </div>
+        )}
 
-      {/* Saved Events */}
-      {activeTab === "events" && (
-        <div className="space-y-6">
-          {pureEventBookmarks.length > 0 ? (
-            <div className="grid sm:grid-cols-2 gap-4">
-              {pureEventBookmarks.map(({ event, remindMe }) =>
-                event ? (
-                  <EventBookmarkCard key={event.id} event={event} remindMe={remindMe} />
-                ) : null
-              )}
-            </div>
-          ) : (
-            <EmptyState
-              icon={<Bookmark className="h-12 w-12 text-muted-foreground mb-4 opacity-50 mx-auto" />}
-              title="No events saved"
-              description='Click "Save" on any event to keep it here for quick access.'
-              href="/events"
-              linkLabel="Browse Events"
-            />
-          )}
-        </div>
-      )}
+        {activeTab === "resources" && (
+          <div className="space-y-6">
+            {resourceBookmarks.length > 0 ? (
+              <div className="grid sm:grid-cols-2 gap-6">
+                {resourceBookmarks.map(({ resource }) =>
+                  resource ? (
+                    <Card key={resource.id} className="group flex flex-col backdrop-blur-3xl border border-border/10 rounded-[2rem] overflow-hidden shadow-lg hover:shadow-[0_25px_60px_rgba(0,0,0,0.15)] hover:border-primary/40 transition-all duration-500 hover:-translate-y-2 bg-card/40 relative ring-1 ring-white/5 dark:ring-white/5">
+                       <div className="absolute top-0 right-0 w-40 h-40 rounded-full opacity-0 group-hover:opacity-10 transition-all duration-1000 blur-3xl pointer-events-none bg-primary" />
+                      
+                      <CardHeader className="p-6 pb-4">
+                        <div className="flex justify-between items-start mb-3">
+                           <Badge variant="secondary" className="px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-full bg-primary/10 text-primary border border-primary/20">
+                              {resource.type}
+                           </Badge>
+                        </div>
+                        <CardTitle className="text-xl font-bold tracking-tight leading-snug group-hover:text-primary transition-colors">
+                          {resource.title}
+                        </CardTitle>
+                        <p className="line-clamp-2 text-[13px] mt-2 font-medium opacity-80 leading-relaxed">
+                          {resource.description}
+                        </p>
+                      </CardHeader>
+                      <CardContent className="px-6 pb-6 pt-2 mt-auto">
+                        <div className="flex items-center gap-2 mb-4 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                           <UserIcon className="h-3.5 w-3.5" /> {resource.author?.fullName || "Admin"}
+                        </div>
+                        <Link href={`/resources/${resource.id}`}>
+                          <Button variant="secondary" className="w-full h-10 rounded-xl font-bold shadow-sm transition-all hover:bg-primary hover:text-white">
+                              View Deep Dive
+                          </Button>
+                        </Link>
+                      </CardContent>
+                    </Card>
+                  ) : null
+                )}
+              </div>
+            ) : (
+              <EmptyState
+                icon={<Bookmark className="h-12 w-12 text-muted-foreground mb-4 opacity-50 mx-auto" />}
+                title="No resources saved"
+                description="When you find a useful PDF, link, or video, click the bookmark icon to save it here."
+                href="/resources"
+                linkLabel="Browse Resources"
+              />
+            )}
+          </div>
+        )}
 
-      {/* Remind Me */}
-      {activeTab === "reminders" && (
-        <div className="space-y-6">
-          <p className="text-sm text-muted-foreground">
-            You'll receive a notification when you log in on the day of each event below.
-          </p>
-          {remindMeBookmarks.length > 0 ? (
-            <div className="grid sm:grid-cols-2 gap-4">
-              {remindMeBookmarks.map(({ event }) =>
-                event ? (
-                  <EventBookmarkCard key={event.id} event={event} remindMe={true} />
-                ) : null
-              )}
-            </div>
-          ) : (
-            <EmptyState
-              icon={<Bell className="h-12 w-12 text-muted-foreground mb-4 opacity-50 mx-auto" />}
-              title="No reminders set"
-              description="Click 'Remind Me' on any upcoming event and you'll be notified on event day."
-          href="/events"
-          linkLabel="Browse Events"
-            />
-          )}
-        </div>
-      )}
+        {activeTab === "events" && (
+          <div className="space-y-6">
+            {pureEventBookmarks.length > 0 ? (
+              <div className="grid sm:grid-cols-2 gap-6">
+                {pureEventBookmarks.map(({ event, remindMe }) =>
+                  event ? (
+                    <EventBookmarkCard key={event.id} event={event} remindMe={remindMe} />
+                  ) : null
+                )}
+              </div>
+            ) : (
+              <EmptyState
+                icon={<Bookmark className="h-12 w-12 text-muted-foreground mb-4 opacity-50 mx-auto" />}
+                title="No events saved"
+                description='Click "Save" on any event to keep it here for quick access.'
+                href="/events"
+                linkLabel="Browse Events"
+              />
+            )}
+          </div>
+        )}
+
+        {activeTab === "reminders" && (
+          <div className="space-y-6">
+             <div className="flex items-center gap-2 text-amber-500 bg-amber-500/10 p-4 rounded-2xl border border-amber-500/20 text-sm font-bold">
+                <Bell className="h-5 w-5" />
+                You'll receive a notification when you log in on the day of each event below.
+             </div>
+            {remindMeBookmarks.length > 0 ? (
+              <div className="grid sm:grid-cols-2 gap-6">
+                {remindMeBookmarks.map(({ event }) =>
+                  event ? (
+                    <EventBookmarkCard key={event.id} event={event} remindMe={true} />
+                  ) : null
+                )}
+              </div>
+            ) : (
+              <EmptyState
+                icon={<Bell className="h-12 w-12 text-muted-foreground mb-4 opacity-50 mx-auto" />}
+                title="No reminders set"
+                description="Click 'Remind Me' on any upcoming event and you'll be notified on event day."
+                href="/events"
+                linkLabel="Browse Events"
+              />
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -278,39 +283,39 @@ export default async function BookmarksPage({
 function EventBookmarkCard({ event, remindMe }: { event: any; remindMe: boolean }) {
   const isPast = new Date(event.startTime) < new Date();
   return (
-    <Card className="hover:border-primary/50 transition-colors flex flex-col overflow-hidden">
+    <Card className="group hover:border-primary/40 transition-all duration-500 flex flex-col overflow-hidden rounded-[2rem] bg-card/40 border-border/10 shadow-lg">
       {event.imageUrls && (
-        <div className="h-40 overflow-hidden relative border-b bg-muted/20">
+        <div className="h-44 overflow-hidden relative border-b bg-muted/20">
           <img
             src={event.imageUrls.split(",")[0]}
             alt={event.title}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
           />
         </div>
       )}
-      <CardHeader className="p-4 pb-2">
+      <CardHeader className="p-6 pb-2">
         <div className="flex justify-between items-start">
-          <span className="text-[10px] uppercase font-bold tracking-wider text-primary bg-primary/10 px-2 py-0.5 rounded">
-            {event.type}
-          </span>
+           <Badge variant="secondary" className="px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-full bg-primary/10 text-primary border border-primary/20">
+              {event.type}
+           </Badge>
           {remindMe && (
-            <span className="text-[10px] uppercase font-bold tracking-wider text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded flex items-center gap-1">
-              <Bell className="h-3 w-3" /> Reminder set
+            <span className="text-[10px] uppercase font-bold tracking-wider text-amber-500 bg-amber-500/10 px-3 py-1 rounded-full flex items-center gap-1.5 animate-pulse">
+              <Bell className="h-3 w-3" /> Reminder active
             </span>
           )}
         </div>
-        <CardTitle className="text-lg mt-2 line-clamp-2 leading-tight">{event.title}</CardTitle>
-        <p className="text-xs text-muted-foreground mt-1">
+        <CardTitle className="text-xl mt-3 line-clamp-2 leading-tight font-black">{event.title}</CardTitle>
+        <p className="text-[13px] text-muted-foreground mt-2 font-bold font-mono">
           {new Date(event.startTime).toLocaleDateString(undefined, {
             weekday: "short", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
           })}
-          {isPast && <span className="ml-2 text-muted-foreground/60">(Past)</span>}
+          {isPast && <span className="ml-2 opacity-50">(Past)</span>}
         </p>
       </CardHeader>
-      <CardContent className="p-4 pt-2 mt-auto">
-        <p className="text-xs text-muted-foreground line-clamp-1 mb-3">{event.description}</p>
-        <Link href="/events">
-          <Button variant="secondary" className="w-full h-8">View Event</Button>
+      <CardContent className="p-6 pt-2 mt-auto">
+        <p className="text-[13px] text-muted-foreground line-clamp-2 mb-4 font-medium leading-relaxed">{event.description}</p>
+        <Link href={`/events`}>
+          <Button variant="secondary" className="w-full h-10 rounded-xl font-bold">View Event Space</Button>
         </Link>
       </CardContent>
     </Card>
@@ -327,12 +332,14 @@ function EmptyState({
   linkLabel: string;
 }) {
   return (
-    <div className="text-center py-16 border border-dashed rounded-lg bg-muted/10">
-      {icon}
-      <h3 className="text-lg font-medium mb-2">{title}</h3>
-      <p className="text-muted-foreground max-w-sm mx-auto mb-6">{description}</p>
+    <div className="text-center py-20 border-2 border-dashed rounded-[2.5rem] bg-muted/5 border-border/20 group">
+      <div className="bg-muted/10 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 border border-border/20 shadow-inner group-hover:scale-110 transition-transform duration-500">
+         {icon}
+      </div>
+      <h3 className="text-2xl font-black mb-3">{title}</h3>
+      <p className="text-muted-foreground max-w-sm mx-auto mb-8 font-medium leading-relaxed">{description}</p>
       <Link href={href}>
-        <Button variant="outline">{linkLabel}</Button>
+        <Button variant="outline" className="h-12 px-8 rounded-full font-bold shadow-sm">{linkLabel}</Button>
       </Link>
     </div>
   );

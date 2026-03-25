@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Calendar, Clock, ExternalLink, MapPin, Radio, Edit } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { EventActions } from "@/components/event-actions";
 import { getServerSession } from "next-auth";
@@ -145,110 +146,96 @@ function EventCard({ event, badge, isAdmin }: { event: any; badge: "ongoing" | "
 
   return (
     <Card
-      className={`group flex flex-col backdrop-blur-xl border border-border/10 rounded-2xl overflow-hidden shadow-md hover:shadow-[0_25px_50px_rgba(0,0,0,0.15)] hover:border-primary/30 transition-all duration-500 hover:-translate-y-1 ${
-        isPast ? "bg-muted/5 dark:bg-muted/5 opacity-80" : "bg-card/60"
+      className={`group flex flex-col backdrop-blur-xl border border-border/10 rounded-xl overflow-hidden shadow-sm hover:shadow-lg hover:border-primary/40 transition-all duration-500 hover:-translate-y-0.5 ${
+        isPast ? "bg-muted/5 opacity-80" : "bg-card/50"
       }`}
     >
       {images.length > 0 && (
         <div
-          className={`grid gap-0.5 w-full bg-muted border-b ${images.length === 1
-            ? "grid-cols-1 h-48"
+          className={`grid gap-0.5 w-full bg-muted border-b overflow-hidden relative ${images.length === 1
+            ? "grid-cols-1 aspect-video lg:aspect-[21/9]"
             : images.length === 2
-              ? "grid-cols-2 h-40"
-              : "grid-cols-3 h-32"
+              ? "grid-cols-2 h-32"
+              : "grid-cols-3 h-24"
             }`}
         >
           {images.slice(0, 3).map((url: string, idx: number) => (
-            <div key={idx} className="overflow-hidden h-full w-full">
-              <img
+            <div key={idx} className="overflow-hidden h-full w-full relative">
+               <div className="absolute inset-0 bg-cover bg-center blur-xl opacity-50 scale-110" style={{ backgroundImage: `url(${url})` }} />
+               <img
                 src={url}
                 alt="Event"
-                className="w-full h-full object-cover transition-all duration-500"
+                className="relative w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
               />
             </div>
           ))}
         </div>
       )}
 
-      <CardHeader className="pb-3">
-        <div className="flex justify-between items-start mb-2">
-          <div className="flex items-center gap-1.5">
-            <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground bg-muted px-2 py-0.5 rounded">
+      <CardHeader className="p-4 pb-0">
+        <div className="flex justify-between items-start">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <Badge variant="outline" className="text-[9px] font-black uppercase tracking-tight py-0 h-4 bg-muted/50">
               {event.type}
-            </span>
+            </Badge>
             {isOngoing && (
-              <span className="text-[10px] uppercase font-bold text-red-500 bg-red-500/10 px-2 py-0.5 rounded flex items-center gap-1 shadow-[0_0_12px_rgba(239,68,68,0.2)] border border-red-500/20">
-                <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse inline-block shadow-[0_0_8px_rgba(239,68,68,0.8)]" /> Live
+              <span className="text-[9px] uppercase font-black text-red-500 bg-red-500/10 px-1.5 py-0 h-4 rounded flex items-center gap-1 border border-red-500/20 shadow-xs">
+                <span className="h-1 w-1 rounded-full bg-red-500 animate-pulse" /> Live
               </span>
             )}
             {!isPast && !isOngoing && diffDays > 0 && diffDays <= 4 && (
-              <span className="text-[10px] uppercase font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded flex items-center gap-1">
-                <Clock className="h-3 w-3 animate-pulse" /> in {diffHours <= 23 ? `${diffHours}h` : `${diffDays}d`}
+              <span className="text-[9px] uppercase font-black text-amber-500 bg-amber-500/10 px-1.5 py-0 h-4 rounded flex items-center gap-1">
+                <Clock className="h-2.5 w-2.5 animate-pulse" /> in {diffHours <= 23 ? `${diffHours}h` : `${diffDays}d`}
               </span>
             )}
           </div>
-          <div className="flex flex-col items-end text-right">
-            <span className="text-sm font-semibold text-primary">
+          <div className="flex flex-col items-end text-right leading-none">
+            <span className="text-xs font-black text-primary uppercase">
               {date.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
             </span>
-            <span className="text-xs text-muted-foreground">
+            <span className="text-[10px] text-muted-foreground font-bold mt-1">
               {date.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}
             </span>
-            {isAdmin && (
-               <Link href={`/events/dashboard/edit/${event.id}`}>
-                 <Button variant="ghost" size="icon" className="h-7 w-7 mt-1 text-muted-foreground hover:text-primary" title="Edit Event">
-                    <Edit className="h-3.5 w-3.5" />
-                 </Button>
-               </Link>
-            )}
           </div>
         </div>
-        <CardTitle className="text-xl line-clamp-2 leading-tight group-hover:text-primary transition-colors">
+        <CardTitle className="text-lg font-black tracking-tight line-clamp-1 mt-3 group-hover:text-primary transition-colors">
           {event.title}
         </CardTitle>
       </CardHeader>
 
-      <CardContent className="flex flex-col flex-grow">
-        <CardDescription className="line-clamp-3 mb-4 flex-grow">
+      <CardContent className="p-4 flex flex-col flex-grow pt-2">
+        <CardDescription className="text-xs font-medium line-clamp-2 mb-3 leading-relaxed">
           {event.description}
         </CardDescription>
         
-        {event.tags && (
-          <div className="flex flex-wrap gap-1 mb-4">
-            {event.tags.split(",").filter(Boolean).map((t: string) => (
-              <span key={t} className="text-[10px] items-center px-2 py-0.5 rounded-full font-semibold bg-primary/10 text-primary border border-primary/20">
-                #{t.trim()}
-              </span>
-            ))}
-          </div>
-        )}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mt-auto pt-4 border-t">
-          <div className="flex items-center text-xs font-medium text-muted-foreground">
-            <MapPin className="h-3 w-3 mr-1" />
+        <div className="flex items-center justify-between gap-3 pt-3 border-t border-border/40 mt-auto">
+          <div className="flex items-center text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+            <MapPin className="h-2.5 w-2.5 mr-1" />
             {event.type === "MEETUP" ? "In-person" : "Online"}
           </div>
-          <div className="flex items-center flex-wrap gap-2 sm:justify-end">
+          <div className="flex items-center gap-1.5">
             {!isPast && (
               <a href={googleCalendarUrl} target="_blank" rel="noopener noreferrer">
-                <Button variant="outline" size="icon" className="h-8 w-8 text-foreground/80 hover:text-foreground" title="Add to Google Calendar">
-                  <Calendar className="h-3.5 w-3.5" />
+                <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg hover:bg-primary/10 hover:text-primary transition-colors">
+                   <Calendar className="h-3.5 w-3.5" />
                 </Button>
               </a>
             )}
-            {/* Save + Remind Me — client component */}
             <EventActions eventId={event.id} isPast={isPast} />
-
-            {event.externalLink ? (
-              <a href={event.externalLink} target="_blank" rel="noopener noreferrer">
-                <Button variant={isPast ? "outline" : "default"} size="sm" className="h-8">
-                  {isPast ? "View Recording" : isOngoing ? "Join Now" : "Register / View"}
-                  <ExternalLink className="ml-1 h-3 w-3" />
+            {event.externalLink && (
+              <a href={event.externalLink} target="_blank" rel="noopener noreferrer" className="ml-1">
+                <Button variant={isOngoing ? "default" : "outline"} size="sm" className="h-7 px-3 text-[10px] font-black uppercase rounded-lg">
+                  {isPast ? "Watch" : isOngoing ? "Join" : "Enter"}
+                  <ExternalLink className="ml-1.5 h-3 w-3" />
                 </Button>
               </a>
-            ) : (
-              <Button variant="outline" size="sm" className="h-8" disabled>
-                Link coming soon
-              </Button>
+            )}
+            {isAdmin && (
+              <Link href={`/events/dashboard/edit/${event.id}`}>
+                <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg text-amber-500 hover:bg-amber-500/10">
+                  <Edit className="h-3.5 w-3.5" />
+                </Button>
+              </Link>
             )}
           </div>
         </div>

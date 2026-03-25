@@ -127,7 +127,7 @@ export function ResourceCard({ resource, isAdmin }: ResourceCardProps) {
          <CardTitle className="text-lg line-clamp-2 font-bold leading-tight group-hover:text-primary transition-colors duration-300">
           {resource.title}
         </CardTitle>
-        <CardDescription className="line-clamp-2 h-10 mt-1.5 text-xs text-muted-foreground/80 leading-relaxed font-medium">
+        <CardDescription className="line-clamp-2 h-10 mt-1.5 text-xs text-muted-foreground leading-relaxed font-semibold">
           {mainDesc}
         </CardDescription>
 
@@ -146,7 +146,7 @@ export function ResourceCard({ resource, isAdmin }: ResourceCardProps) {
       
       <CardContent className="p-4 pt-2 mt-auto relative z-10">
          <div className="flex items-center justify-between text-xs text-muted-foreground/80 mb-3 border-t border-border/10 pt-3">
-          <span className="font-medium">By {resource.author?.fullName || "Member"}</span>
+          <span className="font-bold">By {resource.author?.fullName || "Member"}</span>
           <button 
              type="button"
              onClick={handleUpvote} 

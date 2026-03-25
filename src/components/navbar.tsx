@@ -91,8 +91,8 @@ export function Navbar() {
           <span className="font-bold inline-block leading-none tracking-tight">DevOps Network</span>
         </Link>
 
-        <div className="flex-1 hidden md:flex items-center justify-between mr-4 space-x-8">
-          <nav className="flex items-center space-x-5 text-sm font-medium">
+        <div className="flex-1 hidden md:flex items-center justify-between ml-8 mr-4 space-x-6">
+          <nav className="flex items-center space-x-7 text-[15px] font-semibold">
             <Link href="/" className={getLinkClass("/")} title="Homepage">Home</Link>
             
             <Link href="/modules" className={getLinkClass("/modules")} title="Detailed Learning Modules">Learn</Link>
@@ -130,22 +130,24 @@ export function Navbar() {
             <Link href="/events" className={getLinkClass("/events")} title="Webinars and Workshops">Events</Link>
             <Link href="/blog" className={getLinkClass("/blog")} title="Clear your doubts and solve issues faced by every DevOps engineer">Blog</Link>
           </nav>
-          <div className="w-full max-w-sm relative group/search">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <div onClick={() => setCmdkOpen(true)} title="Search across building blocks, modules, & roadmaps (Ctrl+K)" className="flex items-center justify-between w-full bg-muted/40 border border-border/40 rounded-md h-9 pl-9 pr-2 text-sm text-muted-foreground cursor-pointer hover:bg-muted/60 hover:text-foreground hover:border-foreground/10 hover:shadow-[0_0_15px_rgba(255,255,255,0.02)] transition-all duration-300">
-              <span className="flex items-center gap-0.5">
+          <div className="flex-1 max-w-lg relative group/search">
+            <Search className="absolute left-3 top-2.5 h-[18px] w-[18px] text-muted-foreground group-hover/search:text-primary transition-colors z-10" />
+            <div onClick={() => setCmdkOpen(true)} title="Search across building blocks, modules, & roadmaps (Ctrl+K)" className="flex items-center justify-between w-full bg-muted/40 border border-border/40 rounded-xl h-10 pl-10 pr-3.5 text-[14px] font-medium text-muted-foreground cursor-pointer hover:bg-muted/60 hover:text-foreground hover:border-border transition-all duration-300 shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+              <span className="flex items-center gap-1.5">
                 Search everything...
               </span>
-              <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-background px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
-                <span className="text-xs">⌘</span>K
-              </kbd>
+              <div className="flex items-center gap-1">
+                <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-background px-1.5 font-mono text-[10px] font-black opacity-80 sm:flex shadow-sm">
+                   <span className="text-xs">⌘</span>K
+                </kbd>
+              </div>
             </div>
           </div>
 
           <Dialog open={cmdkOpen} onOpenChange={setCmdkOpen}>
-            <DialogContent className="sm:max-w-[600px] p-0 gap-0 bg-background/90 backdrop-blur-2xl border-border/40 shadow-[0_20px_50px_rgba(0,0,0,0.15)] rounded-2xl overflow-hidden ring-1 ring-white/10 dark:ring-white/5">
+            <DialogContent className="sm:max-w-[600px] p-0 gap-0 bg-background/95 backdrop-blur-3xl border-border/40 shadow-2xl rounded-[1.5rem] overflow-hidden ring-1 ring-foreground/5 dark:ring-white/5 outline-none focus:outline-none">
               <DialogTitle className="sr-only">Search Command Palette</DialogTitle>
-              <div className="flex items-center border-b border-border/40 px-4 h-16 bg-muted/10">
+              <div className="flex items-center border-b border-border/20 px-4 h-16 bg-background/50">
                 <Search className="h-5 w-5 text-muted-foreground mr-3 shrink-0" />
                 <input 
                    autoFocus

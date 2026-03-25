@@ -59,6 +59,9 @@ model Note {
 
   bookmarks   Bookmark[]
   upvotes     Upvote[]
+
+  @@index([status])
+  @@index([authorId])
 }
 
 model Resource {
@@ -78,6 +81,10 @@ model Resource {
 
   bookmarks   Bookmark[]
   upvotes     Upvote[]
+
+  @@index([status])
+  @@index([type])
+  @@index([authorId])
 }
 
 model Event {
@@ -121,6 +128,10 @@ model Notification {
   createdAt DateTime @default(now())
 
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([createdAt])
+  @@index([isRead])
 }
 
 
@@ -164,6 +175,15 @@ model Bookmark {
   event      Event?          @relation(fields: [eventId], references: [id], onDelete: Cascade)
   topic      RoadmapTopic?   @relation(fields: [topicId], references: [id], onDelete: Cascade)
   subtopic   RoadmapSubTopic? @relation(fields: [subtopicId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([itemType])
+  @@index([noteId])
+  @@index([resourceId])
+  @@index([stepId])
+  @@index([eventId])
+  @@index([topicId])
+  @@index([subtopicId])
 }
 
 model Upvote {
@@ -180,6 +200,12 @@ model Upvote {
   note       Note?        @relation(fields: [noteId], references: [id], onDelete: Cascade)
   resource   Resource?    @relation(fields: [resourceId], references: [id], onDelete: Cascade)
   step       RoadmapStep? @relation(fields: [stepId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([itemType])
+  @@index([noteId])
+  @@index([resourceId])
+  @@index([stepId])
 }
 
 model AdminRequest {
@@ -224,6 +250,9 @@ model Roadmap {
   updatedAt   DateTime @updatedAt
 
   steps       RoadmapStep[]
+
+  @@index([status])
+  @@index([order])
 }
 
 model RoadmapStep {
@@ -254,6 +283,10 @@ model RoadmapStep {
   introContent String? @db.Text
   attachedModules RoadmapStepModule[] @relation("StepToModule")
   moduleAttachments RoadmapStepModule[] @relation("ModuleToStep")
+
+  @@index([status])
+  @@index([roadmapId])
+  @@index([order])
 }
 
 model RoadmapStepModule {
@@ -281,6 +314,9 @@ model RoadmapTopic {
 
   subtopics RoadmapSubTopic[]
   bookmarks Bookmark[]
+
+  @@index([stepId])
+  @@index([order])
 }
 
 model RoadmapSubTopic {
@@ -295,6 +331,9 @@ model RoadmapSubTopic {
   topic     RoadmapTopic @relation(fields: [topicId], references: [id], onDelete: Cascade)
 
   bookmarks Bookmark[]
+
+  @@index([topicId])
+  @@index([order])
 }
 
 model RoadmapResource {
@@ -334,6 +373,10 @@ model Cheatsheet {
   resources   CheatsheetResource[]
   createdAt   DateTime            @default(now())
   updatedAt   DateTime            @updatedAt
+
+  @@index([status])
+  @@index([category])
+  @@index([authorId])
 }
 
 model CheatsheetSection {
@@ -389,6 +432,10 @@ model BlogPost {
   isPinned   Boolean       @default(false)
   createdAt  DateTime      @default(now())
   updatedAt  DateTime      @updatedAt
+
+  @@index([status])
+  @@index([category])
+  @@index([isPinned])
 }
 
 model BlogComment {
@@ -430,4 +477,6 @@ model UserProgress {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, itemId])
+  @@index([userId])
+  @@index([itemId])
 }

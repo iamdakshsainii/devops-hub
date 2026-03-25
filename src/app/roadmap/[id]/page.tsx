@@ -181,56 +181,65 @@ export default async function RoadmapDetailPage({ params }: { params: Promise<{ 
                 href={`/roadmap/${roadmap.id}/${step.id}`}
                 className="block relative z-10"
               >
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 sm:gap-8 relative">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-6 sm:gap-10 relative">
                   {i < roadmap.steps.length - 1 && (
                      <div 
-                        className={`absolute top-16 bottom-[-24px] left-8 w-1 hidden sm:block -z-10 transition-all duration-500`}
-                        style={{ backgroundColor: isCompleted ? '#10b981' : `${roadmap.color}35` }}
+                        className={`absolute top-16 bottom-[-24px] left-8 w-1.5 hidden sm:block -z-10 transition-all duration-700 rounded-full`}
+                        style={{ backgroundColor: isCompleted ? '#10b981' : `${roadmap.color}25` }}
                      />
                   )}
                   
                 {/* Station Node */}
-                <div className="flex items-center gap-4 shrink-0 sm:w-16">
+                <div className="flex items-center gap-4 shrink-0 sm:w-16 relative z-20">
                   <div
-                    className={`hidden sm:flex w-16 h-16 rounded-2xl border shadow-sm items-center justify-center relative z-20 group-hover:scale-110 transition-transform duration-300 ${isCompleted ? "shadow-[0_0_15px_rgba(16,185,129,0.4)] bg-card border-emerald-500 scale-105" : "bg-card"}`}
-                    style={{ borderColor: isCompleted ? '#10b981' : `${roadmap.color}50` }}
+                    className={`hidden sm:flex w-16 h-16 rounded-[1.25rem] border-[1.5px] items-center justify-center relative transition-all duration-500 bg-background/90 backdrop-blur-md group-hover:scale-110 shadow-lg`}
+                    style={{ 
+                        borderColor: isCompleted ? '#10b981' : `${roadmap.color}40`,
+                        boxShadow: isCompleted ? `0 0 30px rgba(16,185,129,0.3)` : `0 10px 30px ${roadmap.color}15`
+                    }}
                   >
-                    <span className="text-xl font-black" style={{ color: isCompleted ? '#10b981' : roadmap.color }}>
+                    <span className="text-xl font-black drop-shadow-sm" style={{ color: isCompleted ? '#10b981' : roadmap.color }}>
                       {String(i + 1).padStart(2, "0")}
                     </span>
                   </div>
                   <div
-                    className={`sm:hidden w-10 h-10 rounded-xl border flex items-center justify-center font-bold text-sm shrink-0 ${isCompleted ? "bg-emerald-500/10 border-emerald-500" : "bg-card"}`}
-                    style={{ borderColor: isCompleted ? '#10b981' : `${roadmap.color}50`, color: isCompleted ? '#10b981' : roadmap.color }}
+                    className={`sm:hidden w-10 h-10 rounded-[1rem] border flex items-center justify-center font-black text-sm shrink-0 bg-background/95 backdrop-blur-md shadow-sm`}
+                    style={{ borderColor: isCompleted ? '#10b981' : `${roadmap.color}40`, color: isCompleted ? '#10b981' : roadmap.color }}
                   >
                     {String(i + 1).padStart(2, "0")}
                   </div>
                 </div>
 
                 {/* Card */}
-                <div className="flex-1 bg-card border rounded-2xl p-6 hover:shadow-xl hover:border-foreground/30 transition-all duration-300 relative overflow-hidden">
+                <div className="flex-1 bg-background/50 backdrop-blur-2xl border border-border/30 rounded-[2rem] p-6 lg:p-8 hover:shadow-[0_15px_40px_rgba(0,0,0,0.06)] hover:border-border/60 transition-all duration-500 relative overflow-hidden ring-1 ring-white/10 dark:ring-white/5 group hover:-translate-y-1">
+                  {/* Card Indicator Strip */}
                   <div
-                    className={`absolute top-0 left-0 w-1.5 h-full transition-opacity ${isCompleted ? "opacity-100 bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)]" : "opacity-0 group-hover:opacity-100"}`}
+                    className={`absolute top-0 left-0 w-2 h-full transition-all duration-500 ${isCompleted ? "opacity-100 bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.8)]" : "opacity-0 group-hover:opacity-100"}`}
                     style={{ backgroundColor: isCompleted ? undefined : roadmap.color }}
                   />
 
-                  <div className="sm:flex justify-between items-start gap-4">
-                    <div>
-                      <div className="flex items-center gap-3 mb-2">
-                        <span className="text-2xl">{step.icon}</span>
-                        <h3 className="text-2xl font-bold tracking-tight group-hover:text-primary transition-colors">
+                  {/* Internal Glow Overlay */}
+                  <div className="absolute -top-24 -right-24 w-64 h-64 rounded-full blur-[80px] opacity-0 group-hover:opacity-40 transition-all duration-700 pointer-events-none" style={{ backgroundColor: roadmap.color }} />
+
+                  <div className="sm:flex justify-between items-start gap-4 relative z-10">
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-card shadow-sm border border-border/40 text-2xl shrink-0 group-hover:rotate-6 transition-transform duration-300">
+                           {step.icon}
+                        </div>
+                        <h3 className="text-2xl lg:text-3xl font-black tracking-tight group-hover:text-primary transition-colors">
                           {step.title}
                         </h3>
                       </div>
-                      <p className="text-muted-foreground text-sm sm:text-base leading-relaxed line-clamp-2 md:line-clamp-none max-w-2xl">
+                      <p className="text-muted-foreground text-[15px] sm:text-[17px] leading-relaxed line-clamp-2 md:line-clamp-none max-w-2xl font-medium">
                         {step.description}
                       </p>
                     </div>
-                    <ArrowRight className="h-6 w-6 text-muted-foreground/30 sm:mt-2 group-hover:text-primary group-hover:translate-x-1 sm:group-hover:translate-x-2 transition-all shrink-0 hidden sm:block" />
+                    <ArrowRight className="h-6 w-6 text-muted-foreground/30 sm:mt-3 group-hover:text-primary group-hover:translate-x-3 transition-transform duration-500 shrink-0 hidden sm:block" style={{ color: roadmap.color }} />
                   </div>
 
-                  <div className="flex items-center gap-4 mt-6 pt-4 border-t border-border/50 text-xs sm:text-sm font-medium text-muted-foreground">
-                    <div className="flex items-center gap-1.5 bg-muted/40 px-3 py-1.5 rounded-md">
+                  <div className="flex items-center gap-4 mt-8 pt-5 border-t border-border/20 text-xs sm:text-[13px] font-black uppercase tracking-widest text-muted-foreground relative z-10">
+                    <div className="flex items-center gap-2 bg-muted/40 px-3.5 py-1.5 rounded-lg border border-border/10">
                       <Library className="h-4 w-4" style={{ color: roadmap.color }} />
                       <span>{(step as any).attachedModules?.length || 0} Modules</span>
                     </div>

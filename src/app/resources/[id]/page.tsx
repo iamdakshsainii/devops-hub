@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { NoteActions } from "@/components/note-actions";
 import { Calendar, User as UserIcon, Link as LinkIcon, ExternalLink, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -39,86 +40,106 @@ export default async function ResourceDetailPage({ params }: { params: Promise<{
   }
 
   return (
-    <article className="container mx-auto px-4 py-12 max-w-3xl">
+    <article className="container mx-auto px-4 py-16 max-w-4xl space-y-12">
       {resource.imageUrl && (
-        <div className="w-full aspect-video md:max-h-[420px] bg-muted/30 rounded-xl bg-card overflow-hidden mb-8 border relative flex items-center justify-center">
-          <img 
+        <div className="relative group w-full aspect-video md:aspect-[21/9] rounded-[2.5rem] overflow-hidden shadow-2xl border border-white/10 ring-1 ring-black/5 bg-muted">
+           <img 
             src={resource.imageUrl} 
             alt={resource.title || "Resource Cover"} 
-            className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-40 scale-105 pointer-events-none" 
+            className="absolute inset-0 w-full h-full object-cover scale-110 group-hover:scale-125 transition-all duration-1000 blur-3xl opacity-60" 
           />
-          <img 
-            src={resource.imageUrl} 
-            alt={resource.title || "Resource Cover"} 
-            className="relative max-w-full max-h-full object-contain" 
-          />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-black/20 to-transparent opacity-80" />
+          <div className="relative w-full h-full flex items-center justify-center p-6 md:p-12 overflow-hidden">
+             <img 
+               src={resource.imageUrl} 
+               alt={resource.title || "Resource Cover"} 
+               className="w-full h-full object-cover rounded-2xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] transform-gpu group-hover:scale-[1.02] transition-transform duration-700 ring-1 ring-white/20" 
+             />
+          </div>
         </div>
       )}
-      <header className="mb-8 space-y-6 bg-card border rounded-xl p-8 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-           <div className="flex flex-wrap gap-2">
-            <span className="text-xs uppercase tracking-wider bg-primary/10 text-primary font-bold px-2 py-1 rounded">
-              {resource.type}
-            </span>
-            {resource.tags.split(',').map(t => (
-              <span key={t} className="text-xs uppercase tracking-wider bg-secondary text-secondary-foreground font-semibold px-2 py-1 rounded">
-                {t.trim()}
-              </span>
-            ))}
-            {resource.status === "PENDING" && (
-              <span className="text-xs uppercase tracking-wider bg-destructive/10 text-destructive font-semibold px-2 py-1 rounded">
-                Pending Review
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            {session?.user?.role === "ADMIN" && (
-                <Link href={`/admin/resources?search=${encodeURIComponent(resource.title)}`} target="_blank">
-                    <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs font-semibold">
-                       <Edit className="h-3.5 w-3.5" /> Edit
-                    </Button>
-                </Link>
-            )}
-            <NoteActions 
-              itemId={resource.id} 
-              itemType="RESOURCE" 
-              initialUpvoteCount={resource._count.upvotes} 
-              hasUpvoted={hasUpvoted} 
-              hasBookmarked={hasBookmarked} 
-            />
-          </div>
+
+      <div className="max-w-3xl mx-auto space-y-8">
+        <header className="space-y-6 text-center">
+            <div className="flex flex-wrap items-center justify-center gap-2">
+                <Badge variant="secondary" className="px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-full bg-primary/10 text-primary border border-primary/20">
+                    {resource.type}
+                </Badge>
+                {resource.status === "PENDING" && (
+                    <Badge variant="destructive" className="px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-full">
+                        Pending Review
+                    </Badge>
+                )}
+            </div>
+
+            <h1 className="text-4xl md:text-6xl font-black tracking-tighter leading-[1.05] drop-shadow-sm">
+                {resource.title}
+            </h1>
+
+            <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-bold text-muted-foreground bg-muted/30 w-fit mx-auto px-5 py-2.5 rounded-full border border-border/40">
+                <div className="flex items-center gap-2 text-foreground">
+                    <div className="h-6 w-6 rounded-full bg-primary/20 flex items-center justify-center overflow-hidden">
+                        <UserIcon className="h-3.5 w-3.5 text-primary" />
+                    </div>
+                    {resource.author.fullName || "Community Member"}
+                </div>
+                <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/30" />
+                <div className="flex items-center gap-1.5">
+                    <Calendar className="h-3.5 w-3.5" />
+                    {new Date(resource.createdAt).toLocaleDateString()}
+                </div>
+            </div>
+
+            <div className="flex items-center justify-center gap-3 pt-2">
+                <NoteActions 
+                    itemId={resource.id} 
+                    itemType="RESOURCE" 
+                    initialUpvoteCount={resource._count.upvotes} 
+                    hasUpvoted={hasUpvoted} 
+                    hasBookmarked={hasBookmarked} 
+                />
+                {session?.user?.role === "ADMIN" && (
+                    <Link href={`/admin/resources?search=${encodeURIComponent(resource.title)}`} target="_blank">
+                        <Button variant="outline" size="sm" className="h-9 px-4 rounded-full font-bold gap-2 hover:bg-amber-500/10 hover:text-amber-600 transition-all">
+                           <Edit className="h-4 w-4" /> Edit Mode
+                        </Button>
+                    </Link>
+                )}
+            </div>
+        </header>
+
+        <div className="prose prose-neutral dark:prose-invert max-w-none">
+            <div className="text-lg md:text-xl leading-relaxed text-foreground/80 font-medium text-center italic opacity-90">
+                "{resource.description}"
+            </div>
         </div>
 
-        <h1 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight">{resource.title}</h1>
-
-        <div className="flex items-center gap-4 text-sm text-muted-foreground pb-6 border-b">
-          <div className="flex items-center gap-1.5 text-foreground font-medium">
-            <div className="bg-primary/20 p-1 rounded-full"><UserIcon className="h-4 w-4 text-primary" /></div>
-            {resource.author.fullName || "Community Member"}
-          </div>
-          <div className="flex items-center gap-1">
-            <Calendar className="h-4 w-4" />
-            {new Date(resource.createdAt).toLocaleDateString()}
-          </div>
+        <div className="bg-card/40 backdrop-blur-xl p-10 rounded-[2.5rem] border border-border/40 shadow-xl flex flex-col items-center justify-center text-center space-y-6 relative overflow-hidden group/link mt-12">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover/link:opacity-100 transition-opacity duration-700 pointer-events-none" />
+            <div className="w-20 h-20 rounded-3xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-inner group-hover/link:scale-110 group-hover/link:rotate-6 transition-all duration-500">
+                <LinkIcon className="h-10 w-10 text-primary shadow-sm" />
+            </div>
+            <div className="space-y-2">
+                <h3 className="font-black text-2xl tracking-tight">Access the Resource</h3>
+                <p className="text-sm text-muted-foreground font-mono bg-muted/60 px-4 py-2 rounded-lg border max-w-sm truncate mx-auto">{resource.url}</p>
+            </div>
+            <a href={resource.url} target="_blank" rel="noopener noreferrer" className="relative z-10">
+                <Button size="lg" className="h-14 px-10 rounded-full font-black text-lg shadow-2xl hover:scale-105 transition-transform bg-primary hover:bg-primary/90">
+                    Open Resource <ExternalLink className="ml-2 h-5 w-5" />
+                </Button>
+            </a>
         </div>
-
-        <div className="pt-2 pb-6 text-lg leading-relaxed text-foreground/90">
-          {resource.description}
-        </div>
-
-        <div className="bg-muted/50 p-6 rounded-lg border border-primary/20 flex flex-col items-center justify-center text-center space-y-4">
-          <LinkIcon className="h-8 w-8 text-primary opacity-80" />
-          <div>
-            <h3 className="font-semibold text-lg">Ready to explore?</h3>
-            <p className="text-sm text-muted-foreground mt-1 px-4 truncate max-w-[500px]">{resource.url}</p>
-          </div>
-          <a href={resource.url} target="_blank" rel="noopener noreferrer">
-             <Button size="lg" className="mt-2">
-               Open Resource <ExternalLink className="ml-2 h-4 w-4" />
-             </Button>
-          </a>
-        </div>
-      </header>
+        
+        {resource.tags && (
+            <div className="flex flex-wrap justify-center gap-2 pt-8">
+                {resource.tags.split(",").map(t => (
+                    <span key={t} className="text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-full bg-muted/50 text-muted-foreground border border-border/20 shadow-sm hover:bg-primary/5 transition-colors">
+                        #{t.trim()}
+                    </span>
+                ))}
+            </div>
+        )}
+      </div>
     </article>
   );
 }
