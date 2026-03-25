@@ -9,23 +9,22 @@ import {
   PlusCircle, Edit, Search, ExternalLink, Trash2,
   Eye, EyeOff, Loader2, FileText, Video, List,
   FileType2, BookOpen, LayoutGrid, Wrench,
+  Book, FileCode, PenTool, GraduationCap, Mic, Twitter
 } from "lucide-react";
 
 // Must match values stored in DB (from module editor + admin resource form)
 const TYPE_FILTERS = [
   { label: "All Types", value: "ALL", icon: LayoutGrid },
-  { label: "Article", value: "ARTICLE", icon: FileText },
+  { label: "Documentation", value: "DOCUMENTATION", icon: Book },
   { label: "Video", value: "VIDEO", icon: Video },
   { label: "Playlist", value: "PLAYLIST", icon: List },
-
   { label: "Notes", value: "NOTES", icon: BookOpen },
 ];
 
 const TYPE_ICON_MAP: Record<string, React.ElementType> = {
-  ARTICLE: FileText,
+  DOCUMENTATION: Book,
   VIDEO: Video,
   PLAYLIST: List,
-
   NOTES: BookOpen,
 };
 

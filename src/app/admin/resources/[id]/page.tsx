@@ -13,7 +13,7 @@ export default function EditResourceAdminPage({ params }: { params: Promise<{ id
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [resourceId, setResourceId] = useState("");
-  const [form, setForm] = useState({ title: "", description: "", type: "ARTICLE", url: "", tags: "", imageUrl: "", status: "PUBLISHED", linkedStepId: "" });
+  const [form, setForm] = useState({ title: "", description: "", type: "DOCUMENTATION", url: "", tags: "", imageUrl: "", status: "PUBLISHED", linkedStepId: "" });
 
   const [mode, setMode] = useState<"FORM" | "JSON">("FORM");
   const [jsonInput, setJsonInput] = useState("");
@@ -48,7 +48,7 @@ export default function EditResourceAdminPage({ params }: { params: Promise<{ id
           setForm({
             title: data.title || "",
             description: data.description || "",
-            type: data.type || "ARTICLE",
+            type: data.type || "DOCUMENTATION",
             url: data.url || "",
             tags: data.tags || "",
             imageUrl: data.imageUrl || "",
@@ -146,7 +146,12 @@ export default function EditResourceAdminPage({ params }: { params: Promise<{ id
             <div className="grid grid-cols-2 gap-4">
                <div className="space-y-1.5">
                   <label className="text-sm font-medium">Type</label>
-                  <select value={form.type} onChange={e => setForm({...form, type: e.target.value})} className="border h-10 px-2 rounded-md w-full bg-background"><option value="ARTICLE">Article</option><option value="VIDEO">Video</option></select>
+                  <select value={form.type} onChange={e => setForm({...form, type: e.target.value})} className="border h-10 px-2 rounded-md w-full bg-background font-medium">
+                    <option value="DOCUMENTATION">Documentation</option>
+                    <option value="VIDEO">Video</option>
+                    <option value="PLAYLIST">Playlist</option>
+                    <option value="NOTES">Notes</option>
+                  </select>
                </div>
                <div className="space-y-1.5">
                   <label className="text-sm font-medium">Tags (comma separated)</label>

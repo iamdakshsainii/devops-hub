@@ -4,17 +4,16 @@ import { authOptions } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ResourceCard } from "@/components/resource-card";
-import { Search, FileText, Video, List, BookOpen, Wrench, LayoutGrid, PlusCircle, Database } from "lucide-react";
+import { Search, FileText, Video, List, BookOpen, Wrench, LayoutGrid, PlusCircle, Database, Book, FileCode, PenTool, GraduationCap, Mic, Twitter, Settings } from "lucide-react";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
 const FILTERS = [
   { label: "All", value: "ALL", icon: LayoutGrid },
-  { label: "Article", value: "ARTICLE", icon: FileText },
+  { label: "Documentation", value: "DOCUMENTATION", icon: Book },
   { label: "Video", value: "VIDEO", icon: Video },
   { label: "Playlist", value: "PLAYLIST", icon: List },
-
   { label: "Notes", value: "NOTES", icon: BookOpen },
 ];
 

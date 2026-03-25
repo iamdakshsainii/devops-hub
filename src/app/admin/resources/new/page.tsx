@@ -11,7 +11,7 @@ export default function NewResourceAdminPage() {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [form, setForm] = useState({ title: "", description: "", type: "ARTICLE", url: "", tags: "", imageUrl: "", linkedStepId: "" });
+  const [form, setForm] = useState({ title: "", description: "", type: "DOCUMENTATION", url: "", tags: "", imageUrl: "", linkedStepId: "" });
 
   const [mode, setMode] = useState<"FORM" | "JSON">("FORM");
   const [jsonInput, setJsonInput] = useState("");
@@ -110,7 +110,12 @@ export default function NewResourceAdminPage() {
             <div className="grid grid-cols-2 gap-4">
                <div className="space-y-1.5">
                   <label className="text-sm font-medium">Type</label>
-                  <select value={form.type} onChange={e => setForm({...form, type: e.target.value})} className="border h-10 px-2 rounded-md w-full bg-background"><option value="ARTICLE">Article</option><option value="VIDEO">Video</option></select>
+                  <select value={form.type} onChange={e => setForm({...form, type: e.target.value})} className="border h-10 px-2 rounded-md w-full bg-background font-medium">
+                    <option value="DOCUMENTATION">Documentation</option>
+                    <option value="VIDEO">Video</option>
+                    <option value="PLAYLIST">Playlist</option>
+                    <option value="NOTES">Notes</option>
+                  </select>
                </div>
                <div className="space-y-1.5">
                   <label className="text-sm font-medium">Tags (comma separated)</label>
