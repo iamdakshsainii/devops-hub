@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { FileUp, Loader2, Save, Github, Twitter, Linkedin, Award, User, FileText } from "lucide-react";
+import { Loader2, Save, Github, Twitter, Linkedin, Award, User, FileText } from "lucide-react";
 
 export function ProfileForm({ initialData }: { initialData: any }) {
   const router = useRouter();
+  const { update } = useSession();
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({
     fullName: initialData.fullName || "",
@@ -63,8 +65,11 @@ export function ProfileForm({ initialData }: { initialData: any }) {
 
       if (!res.ok) throw new Error("Save failed");
       
+      // Force NextAuth to re-run the session callback (which now fetches fresh from DB)
+      await update();
+      
       alert("Profile updated successfully!");
-      router.refresh(); // Refresh the Server Component to grab new data
+      router.refresh(); 
     } catch (error) {
       console.error(error);
       alert("Failed to save profile. Please try again.");

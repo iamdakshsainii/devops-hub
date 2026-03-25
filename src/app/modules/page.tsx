@@ -135,7 +135,7 @@ export default async function ModulesPage() {
     }
   }
 
-  const allModules = Array.from(moduleMap.values());
-
+  const allModules = Array.from(moduleMap.values()).sort((a, b) => (b.order || 0) - (a.order || 0));
+ 
   return <ModulesPageClient data={allModules} />;
-}
+}

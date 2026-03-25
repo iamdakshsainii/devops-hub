@@ -196,6 +196,10 @@ export default function ModulesPageClient({ data }: { data: any[] }) {
                     onChange={(e) => setSearch(e.target.value)}
                   />
                 </div>
+                <p className="text-[10px] leading-tight text-muted-foreground/70 px-1 italic">
+                  <span className="text-primary font-bold not-italic mr-1">💡 Pro Tip:</span>
+                  We break modules into small, focused topics for direct access to specific concepts. Don't be overwhelmed by the count!
+                </p>
               </div>
 
               <div className="space-y-2">

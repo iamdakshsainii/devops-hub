@@ -63,9 +63,16 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (token && session.user) {
         session.user.id = token.id as string;
-        session.user.role = (token.role as string) || "MEMBER";
-        session.user.name = token.name as string;
-        session.user.image = token.image as string;
+        
+        // Fetch fresh identity from DB to ensure Navbar sync after profile updates
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.id as string },
+          select: { role: true, avatarUrl: true, fullName: true }
+        });
+        
+        session.user.role = dbUser?.role || (token.role as string) || "MEMBER";
+        session.user.name = dbUser?.fullName || token.name as string;
+        session.user.image = dbUser?.avatarUrl || token.image as string;
       }
       return session;
     }

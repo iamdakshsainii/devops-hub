@@ -177,8 +177,8 @@ function EventCard({ event, badge, isAdmin }: { event: any; badge: "ongoing" | "
               {event.type}
             </span>
             {isOngoing && (
-              <span className="text-[10px] uppercase font-bold text-red-500 bg-red-500/10 px-2 py-0.5 rounded flex items-center gap-1">
-                <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse inline-block" /> Live
+              <span className="text-[10px] uppercase font-bold text-red-500 bg-red-500/10 px-2 py-0.5 rounded flex items-center gap-1 shadow-[0_0_12px_rgba(239,68,68,0.2)] border border-red-500/20">
+                <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse inline-block shadow-[0_0_8px_rgba(239,68,68,0.8)]" /> Live
               </span>
             )}
             {!isPast && !isOngoing && diffDays > 0 && diffDays <= 4 && (

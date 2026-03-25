@@ -130,17 +130,17 @@ export function RoadmapViewer({ roadmap }: { roadmap: Roadmap }) {
             <Home className="h-4 w-4" />
           </Link>
           <ChevronRight className="h-3 w-3 text-muted-foreground" />
-          <span className="text-sm font-medium truncate" style={{ color: roadmap.color }}>{roadmap.icon} {roadmap.title}</span>
+          <span className="text-sm font-medium underline decoration-primary/20 underline-offset-4 decoration-2 truncate" style={{ color: roadmap.color }}>{roadmap.icon} {roadmap.title}</span>
           {activeStep && (
             <>
-              <ChevronRight className="h-3 w-3 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground truncate hidden sm:inline">{activeStep.title}</span>
+              <ChevronRight className="h-3 w-3 text-muted-foreground shrink-0" />
+              <span className="text-sm text-muted-foreground truncate hidden sm:inline max-w-[120px]">{activeStep.title}</span>
             </>
           )}
           {activeTopic && (
             <>
-              <ChevronRight className="h-3 w-3 text-muted-foreground hidden sm:block" />
-              <span className="text-sm text-foreground font-medium truncate hidden md:inline">{activeTopic.title}</span>
+              <ChevronRight className="h-3 w-3 text-muted-foreground hidden sm:block shrink-0" />
+              <span className="text-sm text-foreground font-bold truncate hidden md:inline max-w-[200px]">{activeTopic.title}</span>
             </>
           )}
         </div>

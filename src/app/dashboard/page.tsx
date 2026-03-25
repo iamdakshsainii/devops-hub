@@ -268,13 +268,16 @@ export default async function DashboardPage() {
                 {mySubmissions.length > 0 ? (
                     <div className="divide-y divide-border/40">
                         {mySubmissions.map(e => (
-                             <div key={e.id} className="p-4 space-y-1">
+                             <Link key={e.id} href={`/events/dashboard/edit/${e.id}`} className="block p-4 space-y-1 hover:bg-muted/40 transition-all group/item">
                                  <div className="flex justify-between items-start gap-2">
-                                     <p className="font-semibold text-sm leading-snug">{e.title}</p>
+                                     <p className="font-semibold text-sm leading-snug group-hover/item:text-primary transition-colors">{e.title}</p>
                                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${e.status === 'APPROVED' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'}`}>{e.status}</span>
                                  </div>
                                  <p className="text-xs text-muted-foreground line-clamp-1">{e.description}</p>
-                             </div>
+                                 <div className="flex items-center gap-1 text-[10px] text-primary/0 group-hover/item:text-primary/100 transition-all pt-1 font-bold">
+                                     Manage Submission <ArrowUpRight className="h-2.5 w-2.5" />
+                                 </div>
+                             </Link>
                         ))}
                     </div>
                 ) : <p className="p-6 text-center text-sm text-muted-foreground">No submissions yet.</p>} 
@@ -297,13 +300,16 @@ export default async function DashboardPage() {
                  {upcomingEvents.length > 0 ? (
                     <div className="divide-y divide-border/40">
                          {upcomingEvents.map(e => (
-                              <div key={e.id} className="p-4 space-y-1.5 hover:bg-muted/30 transition-colors">
+                              <Link key={e.id} href={`/events?filter=all`} className="block p-4 space-y-1.5 hover:bg-muted/40 transition-all group/event">
                                   <div className="flex justify-between items-center gap-1">
-                                      <p className="font-semibold text-sm">{e.title}</p>
+                                      <p className="font-semibold text-sm group-hover/event:text-primary transition-colors">{e.title}</p>
                                       <Clock className="h-3 w-3 text-primary" />
                                   </div>
-                                  <p className="text-[11px] text-muted-foreground">{new Date(e.startTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
-                              </div>
+                                  <div className="flex items-center justify-between">
+                                      <p className="text-[11px] text-muted-foreground">{new Date(e.startTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                                      <span className="text-[10px] font-bold text-primary opacity-0 group-hover/event:opacity-100 transition-opacity">Go to Events →</span>
+                                  </div>
+                              </Link>
                          ))}
                     </div>
                  ) : <p className="p-6 text-center text-sm text-muted-foreground">No upcoming events.</p>} 
