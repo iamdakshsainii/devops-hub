@@ -116,8 +116,8 @@ function wireCopyButtons(containerId: string) {
 const PROSE = [
   "devhub-prose",
   "prose prose-base md:prose-lg dark:prose-invert max-w-none",
-  "prose-headings:font-bold prose-headings:tracking-tight prose-headings:scroll-mt-24",
-  "prose-p:leading-relaxed prose-p:mb-5",
+  "prose-headings:font-bold prose-headings:tracking-tight prose-headings:scroll-mt-40",
+  "prose-p:leading-relaxed prose-p:mb-5 prose-p:text-slate-600 dark:prose-p:text-zinc-400",
   "prose-ul:mb-5 prose-ol:mb-5 prose-li:mb-1.5",
   "prose-a:text-primary prose-a:no-underline prose-a:font-medium hover:prose-a:underline prose-a:underline-offset-4",
   "prose-blockquote:not-italic prose-blockquote:border-l-4 prose-blockquote:border-primary prose-blockquote:bg-primary/5 prose-blockquote:py-3 prose-blockquote:px-5 prose-blockquote:rounded-r-xl",
@@ -363,17 +363,32 @@ export function StepViewer({
     return step.topics.flatMap((topic, tIdx) => {
       const matches: any[] = [];
       const sTerm = localSearch.toLowerCase();
+      
       if (topic.title.toLowerCase().includes(sTerm)) {
-        matches.push({ kind: "topic", topicId: topic.id, title: topic.title, topicLabel: `Topic ${tIdx + 1}` });
+        matches.push({ kind: "topic", topicId: topic.id, title: topic.title, parentTitle: null });
+      }
+      
+      if (topic.subtopics) {
+        topic.subtopics.forEach(sub => {
+          if (sub.title.toLowerCase().includes(sTerm) && sub.title.toLowerCase() !== topic.title.toLowerCase()) {
+            matches.push({ 
+              kind: "subtopic", 
+              topicId: topic.id, 
+              subId: sub.id, 
+              title: sub.title, 
+              parentTitle: topic.title 
+            });
+          }
+        });
       }
       return matches;
     });
   }, [localSearch, step.topics]);
 
   useEffect(() => {
-    const t = setTimeout(() => wireCopyButtons("devhub-content-area"), 150);
+    const t = setTimeout(() => wireCopyButtons("devhub-content-area"), 200);
     return () => clearTimeout(t);
-  }, [activeView]);
+  }, [activeView, viewMode, step.topics]);
 
   const navigate = useCallback((view: ActiveView) => {
     setExpandedTopics((prev) => {
@@ -411,42 +426,113 @@ export function StepViewer({
       <div className={`sticky ${isStandalone ? 'top-0' : 'top-16'} z-40 bg-background/95 backdrop-blur border-b shadow-sm`}>
         {completionPercentage === 100 && (
           <div className="bg-emerald-500/10 border-b border-emerald-500/20 text-emerald-500 text-xs font-bold py-1.5 px-4 text-center">
-            🎉 Awesome! You've mastered all topics in this step. Keep the momentum going!
+            ðŸŽ‰ Awesome! You've mastered all topics in this step. Keep the momentum going!
           </div>
         )}
-        <div className="flex items-center h-14 gap-2 px-4 overflow-x-auto whitespace-nowrap scrollbar-hide text-sm transition-all duration-300 w-full">
-          <button className="md:hidden p-1.5 rounded-md hover:bg-muted shrink-0" onClick={() => setSidebarOpen(!sidebarOpen)}>
+        <div className="flex items-center h-14 gap-4 px-6 overflow-visible text-sm transition-all duration-300 w-full relative">
+          <button className="md:hidden p-2 rounded-xl hover:bg-muted shrink-0" onClick={() => setSidebarOpen(!sidebarOpen)}>
             {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
-          <button className="hidden md:flex p-1.5 rounded-md hover:bg-muted shrink-0 text-muted-foreground hover:text-foreground" onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}>
-            <Menu className="h-4 w-4" />
-          </button>
-          {!isStandalone ? (
-            <>
-              <Link href="/roadmap" className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground shrink-0 font-medium"><Map className="h-4 w-4" /> All Roadmaps</Link>
-              <span className="text-muted-foreground/40">/</span>
-              <Link href={`/roadmap/${roadmap.id}`} className="text-muted-foreground hover:text-foreground truncate max-w-[130px] md:max-w-xs">{roadmap.title}</Link>
-            </>
-          ) : (
-            <Link href="/modules" className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground shrink-0 font-medium"><Library className="h-4 w-4" /> All Modules</Link>
-          )}
-          <span className="text-muted-foreground/40">/</span>
-          <span className="font-bold shrink-0" style={{ color: themeColor }}>{step.icon} {step.title}</span>
-          {activeTopic && (
-            <>
-              <span className="text-muted-foreground/40">/</span>
-              <span className="text-foreground/70 font-medium truncate">{activeTopic.title}</span>
-            </>
-          )}
+
+          <div className="flex items-center gap-3 shrink-0">
+            <button className="hidden md:flex p-2 rounded-xl hover:bg-muted shrink-0 text-muted-foreground hover:text-foreground transition-all" onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}>
+              <Menu className="h-4 w-4" />
+            </button>
+            <div className="flex items-center gap-2 text-[15px] font-bold tracking-tight">
+              {!isStandalone ? (
+                <>
+                  <Link href="/roadmap" className="text-muted-foreground/60 hover:text-foreground transition-colors">Roadmaps</Link>
+                  <span className="text-muted-foreground/20 font-light mx-1">/</span>
+                  <Link href={`/roadmap/${roadmap.id}`} className="text-muted-foreground/60 hover:text-foreground truncate max-w-[120px] transition-colors">{roadmap.title}</Link>
+                </>
+              ) : (
+                <Link href="/modules" className="text-muted-foreground/60 hover:text-foreground transition-colors flex items-center gap-1.5"><Library className="h-4 w-4" /> Modules</Link>
+              )}
+              <span className="text-muted-foreground/20 font-light mx-1">/</span>
+              <span className="truncate max-w-[150px] md:max-w-xs transition-all" style={{ color: themeColor }}>{step.title}</span>
+              {activeTopic && (
+                <>
+                  <span className="text-muted-foreground/30 font-light mx-1">/</span>
+                  <span className="text-slate-700 dark:text-zinc-100 font-extrabold truncate max-w-[200px]">{activeTopic.title}</span>
+                </>
+              )}
+            </div>
+          </div>
+
+          <div className="flex-1 min-w-[300px] flex items-center justify-end gap-3 ml-auto overflow-visible h-14">
+            <div className="flex items-center gap-3 w-full justify-end overflow-visible">
+              <div className="relative group max-w-sm w-full hidden sm:block">
+                <Search className="h-4 w-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/40 group-focus-within:text-primary transition-colors" />
+                <input
+                  type="text"
+                  placeholder="Search lessons..."
+                  value={localSearch || ""}
+                  onChange={(e) => setLocalSearch(e.target.value)}
+                  onFocus={() => setLocalSearchOpen(true)}
+                  onBlur={() => setTimeout(() => setLocalSearchOpen(false), 200)}
+                  className="h-9 w-full pl-10 pr-4 rounded-xl bg-muted/30 dark:bg-muted/60 border border-border/20 dark:border-border/40 focus:border-primary/40 text-[13px] focus:ring-4 focus:ring-primary/5 focus:bg-white dark:focus:bg-zinc-900 transition-all shadow-sm"
+                />
+
+                {localSearchOpen && localSearch && searchResults.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-zinc-950 border border-border/40 rounded-xl shadow-2xl z-50 overflow-hidden ring-1 ring-black/5">
+                    <div className="p-1 space-y-0.5">
+                      {searchResults.slice(0, 6).map((item, idx) => (
+                        <button key={idx} onClick={() => { 
+                          setLocalSearch(""); 
+                          
+                          if (viewMode === "CONTINUOUS") {
+                            const elId = item.kind === "subtopic" ? `subtopic-${item.subId}` : `topic-${item.topicId}`;
+                            const el = document.getElementById(elId);
+                            if (el) {
+                              const y = el.getBoundingClientRect().top + window.scrollY - 100;
+                              window.scrollTo({ top: y, behavior: 'smooth' });
+                            }
+                          } else {
+                            if (activeView.topicId !== item.topicId) navigate({ kind: "topic", topicId: item.topicId });
+                            
+                            if (item.kind === "subtopic") {
+                               setTimeout(() => {
+                                 const el = document.getElementById(`subtopic-${item.subId}`);
+                                 if (el) {
+                                    const y = el.getBoundingClientRect().top + window.scrollY - 100;
+                                    window.scrollTo({ top: y, behavior: 'smooth' });
+                                 }
+                               }, 150);
+                            }
+                          }
+                        }} className="w-full text-left px-3 py-2.5 rounded-lg text-[13px] hover:bg-primary/5 dark:hover:bg-primary/10 transition-all flex flex-col items-start gap-1 font-semibold tracking-tight">
+                          <span className="flex items-center gap-2"><div className={`w-1.5 h-1.5 rounded-full ${item.kind === 'subtopic' ? 'bg-muted-foreground/40' : 'bg-primary/50'}`} /> {item.title}</span>
+                          {item.parentTitle && <span className="text-[10px] text-muted-foreground ml-3.5 uppercase tracking-wider">{item.parentTitle}</span>}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {activeTopic && (
+                <button onClick={() => toggleBookmark(activeTopic.id)} className={`p-2.5 rounded-xl border transition-all shrink-0 ${bookmarkedItems.includes(activeTopic.id) ? "bg-primary/10 border-primary/30 text-primary shadow-sm ring-1 ring-primary/20" : "bg-muted/20 border-border/10 text-muted-foreground/40 hover:text-foreground"}`}>
+                  <Bookmark className={`h-4 w-4 ${bookmarkedItems.includes(activeTopic.id) ? "fill-current" : ""}`} />
+                </button>
+              )}
+
+              {!isBlog && (
+                <div className="flex !bg-slate-100/95 dark:!bg-zinc-900/90 p-1.5 rounded-2xl items-center gap-1.5 h-11 ring-1 ring-inset ring-slate-200/40 dark:ring-border/5 transition-all duration-300 shadow-sm border border-border/10">
+                  <button onClick={() => setViewMode("PAGINATED")} className={`px-5 h-full rounded-xl text-[12px] font-black transition-all ${viewMode === "PAGINATED" ? "bg-blue-600 dark:bg-zinc-800 text-white dark:text-white shadow-lg ring-1 ring-blue-500/10 dark:ring-black/5" : "text-slate-500 dark:text-muted-foreground/40 hover:text-blue-600 dark:hover:text-foreground"}`}>Step-by-Step</button>
+                  <button onClick={() => setViewMode("CONTINUOUS")} className={`px-5 h-full rounded-xl text-[12px] font-black transition-all ${viewMode === "CONTINUOUS" ? "bg-blue-600 dark:bg-zinc-800 text-white dark:text-white shadow-lg ring-1 ring-blue-500/10 dark:ring-black/5" : "text-slate-500 dark:text-muted-foreground/40 hover:text-blue-600 dark:hover:text-foreground"}`}>Continuous</button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-        <div className="relative h-[5px] w-full bg-muted/40">
-          <div className="absolute inset-y-0 left-0 bg-emerald-500 transition-all duration-500" style={{ width: `${completionPercentage}%` }} />
+        <div className="relative h-[5px] w-full bg-muted/20">
+          <div className="absolute inset-y-0 left-0 bg-emerald-500 transition-all duration-700" style={{ width: `${completionPercentage}%` }} />
         </div>
       </div>
 
       <div className="flex flex-1 relative w-full px-4 md:px-6 font-sans">
         {sidebarOpen && <div className="fixed inset-0 bg-black/50 z-30 md:hidden" onClick={() => setSidebarOpen(false)} />}
-        <aside className={`fixed md:sticky top-32 left-0 z-40 md:z-auto bg-background md:bg-transparent border-r md:border-r-0 transform transition-transform md:transform-none shadow-2xl md:shadow-none ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"} ${isSidebarCollapsed ? "md:w-0 md:opacity-0 md:pointer-events-none md:p-0" : "w-72 md:w-72 lg:w-80 px-4 py-8"} shrink-0 transition-all duration-300`}>
+        <aside className={`fixed md:sticky top-28 left-0 z-40 md:z-auto bg-background md:bg-transparent border-r md:border-r-0 transform transition-transform md:transform-none shadow-2xl md:shadow-none ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"} ${isSidebarCollapsed ? "md:w-0 md:opacity-0 md:pointer-events-none md:p-0" : "w-72 md:w-72 lg:w-80 px-4 py-8"} shrink-0 transition-all duration-300`}>
           <div className={isSidebarCollapsed ? "hidden" : "block"}>
             <div className="mb-8 pb-6 border-b">
               <div className="flex items-center gap-3 mb-3">
@@ -455,40 +541,61 @@ export function StepViewer({
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
             </div>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/30 mb-5 px-4">Table of Contents</p>
-            <nav className="space-y-3">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-zinc-600 mb-5 px-4">Table of Contents</p>
+            <nav className="space-y-2">
               {step.topics.map((topic, i) => {
                 const isActiveTopic = activeView.topicId === topic.id;
                 return (
-                  <div key={topic.id} className="space-y-2">
-                    <button 
-                      onClick={() => navigate({ kind: "topic", topicId: topic.id })} 
-                      className={`w-full flex items-center gap-4 px-4 py-3 text-[15px] md:text-base text-left rounded-2xl transition-all duration-300 group ${isActiveTopic ? "bg-primary/10 text-primary font-black shadow-sm ring-1 ring-inset ring-primary/20 backdrop-blur-sm" : "text-muted-foreground/70 hover:bg-muted/50 hover:text-foreground font-bold hover:translate-x-1"}`}
+                  <div key={topic.id} className="space-y-1">
+                    <button
+                      onClick={() => {
+                        if (viewMode === "CONTINUOUS") {
+                          const el = document.getElementById(`topic-${topic.id}`);
+                          if (el) {
+                            const y = el.getBoundingClientRect().top + window.scrollY - 100;
+                            window.scrollTo({ top: y, behavior: 'smooth' });
+                          }
+                        } else {
+                          navigate({ kind: "topic", topicId: topic.id });
+                        }
+                      }}
+                      className={`w-full flex items-center gap-4 px-4 py-3.5 text-base md:text-[17px] text-left rounded-2xl transition-all duration-300 group ${isActiveTopic ? "bg-primary/10 text-primary font-black shadow-sm ring-1 ring-inset ring-primary/20 backdrop-blur-sm" : "text-slate-700 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800/80 hover:text-foreground font-bold hover:translate-x-1"}`}
                     >
-                      <span className={`text-[10px] font-mono shrink-0 px-2 py-0.5 rounded-md border transition-colors ${isActiveTopic ? "bg-primary/20 border-primary/20 text-primary" : "bg-muted border-border/10 text-muted-foreground/60 group-hover:bg-background"}`}>
-                        {completedItems.includes(topic.id) ? <Check className="h-3 w-3 text-emerald-500 stroke-[4px]" /> : String(i + 1).padStart(2, "0")}
+                      <span className={`w-8 h-8 flex items-center justify-center text-[13px] font-black shrink-0 rounded-xl transition-all duration-300 shadow-sm ${isActiveTopic ? "bg-primary text-primary-foreground shadow-md scale-105" : "bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-slate-500 dark:text-zinc-400 group-hover:border-primary/30 group-hover:text-primary group-hover:bg-primary/10"}`}>
+                        {completedItems.includes(topic.id) ? <Check className="h-4 w-4 text-emerald-500 dark:text-emerald-400 stroke-[4px]" /> : String(i + 1).padStart(2, "0")}
                       </span>
-                      <span className="flex-1 truncate tracking-tight">{topic.title}</span>
+                      <span className="flex-1 leading-snug tracking-tight">{topic.title}</span>
                     </button>
 
                     {/* Subtopics sidebar list */}
                     {topic.subtopics && topic.subtopics.length > 0 && (
-                      <div className={`ml-8 pl-5 border-l-2 border-muted/50 space-y-1 overflow-hidden transition-all duration-500 ${isActiveTopic ? "max-h-[1000px] opacity-100 py-2" : "max-h-0 opacity-0 py-0"}`}>
-                        {topic.subtopics.sort((a,b) => a.order - b.order).map((sub) => (
-                           <button 
-                             key={sub.id} 
-                             onClick={() => {
-                               if (!isActiveTopic) navigate({ kind: "topic", topicId: topic.id });
-                               setTimeout(() => {
+                      <div className={`ml-8 pl-6 border-l-2 border-slate-200 dark:border-zinc-800 space-y-1 overflow-hidden transition-all duration-500 ${(isActiveTopic || viewMode === "CONTINUOUS") ? "max-h-[1000px] opacity-100 py-2.5" : "max-h-0 opacity-0 py-0"}`}>
+                        {topic.subtopics.sort((a, b) => a.order - b.order).map((sub) => (
+                          <button
+                            key={sub.id}
+                            onClick={() => {
+                              if (viewMode === "CONTINUOUS") {
+                                const el = document.getElementById(`subtopic-${sub.id}`);
+                                if (el) {
+                                  const y = el.getBoundingClientRect().top + window.scrollY - 100;
+                                  window.scrollTo({ top: y, behavior: 'smooth' });
+                                }
+                              } else {
+                                if (!isActiveTopic) navigate({ kind: "topic", topicId: topic.id });
+                                setTimeout(() => {
                                   const el = document.getElementById(`subtopic-${sub.id}`);
-                                  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                               }, 100);
-                             }}
-                             className="w-full text-left py-2 px-3 text-[13px] md:text-sm text-muted-foreground/60 hover:text-primary transition-all rounded-lg hover:bg-primary/5 flex items-center gap-3 font-semibold group/sub"
-                           >
-                              <div className="w-1.5 h-1.5 rounded-full bg-muted/40 group-hover/sub:bg-primary/40 shrink-0" />
-                              <span className="truncate">{sub.title}</span>
-                           </button>
+                                  if (el) {
+                                    const y = el.getBoundingClientRect().top + window.scrollY - 100;
+                                    window.scrollTo({ top: y, behavior: 'smooth' });
+                                  }
+                                }, 100);
+                              }
+                            }}
+                            className="w-full text-left py-2.5 px-4 text-[14px] md:text-[15px] text-slate-600 dark:text-zinc-400 hover:text-primary transition-all rounded-xl hover:bg-primary/5 flex items-center gap-3.5 font-semibold group/sub"
+                          >
+                            <div className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-zinc-600 group-hover/sub:bg-primary group-hover/sub:scale-150 transition-all shrink-0" />
+                            <span className="truncate">{sub.title}</span>
+                          </button>
                         ))}
                       </div>
                     )}
@@ -499,102 +606,33 @@ export function StepViewer({
           </div>
         </aside>
 
-        <main className={`flex-1 min-w-0 px-4 ${isSidebarCollapsed ? "md:px-16" : "md:px-10"} py-8 lg:py-12 ${isSidebarCollapsed ? "" : "md:border-l"} transition-all duration-300`}>
+        <main className={`flex-1 min-w-0 px-4 ${isSidebarCollapsed ? "md:px-16" : "md:px-10"} py-4 md:py-6 ${isSidebarCollapsed ? "" : "md:border-l"} transition-all duration-300`}>
           {activeTopic ? (
             <article id="devhub-content-area" className="w-full max-w-none">
-              <div className="flex flex-col lg:flex-row gap-14 items-start w-full">
+              <div className="flex flex-col lg:flex-row gap-8 items-start w-full">
                 <div className="flex-1 min-w-0 max-w-4xl">
-                  <header className="mb-10 pb-8 border-b space-y-6">
-                    <div className="flex flex-col gap-3">
-                      <div className="flex items-center gap-2">
-                        {isSidebarCollapsed && (
-                          <button onClick={() => setIsSidebarCollapsed(false)} className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg border bg-background hover:bg-muted text-xs font-semibold text-muted-foreground shadow-sm transition-all"><ChevronRight className="h-3.5 w-3.5" /> Table of Contents</button>
-                        )}
-
-                        {/* Search Bar - Restored Row Style */}
-                        <div className="relative flex-1 group">
-                          <Search className="h-3.5 w-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/60 group-focus-within:text-primary" />
-                          <input
-                            type="text"
-                            placeholder="Search subtopics / content..."
-                            value={localSearch || ""}
-                            onChange={(e) => setLocalSearch(e.target.value)}
-                            onFocus={() => setLocalSearchOpen(true)}
-                            onBlur={() => setTimeout(() => setLocalSearchOpen(false), 200)}
-                            className="h-10 pl-9 pr-3 rounded-xl bg-muted/40 border text-xs w-full focus:outline-none focus:ring-1 focus:ring-primary/20 focus:bg-background transition-all"
-                          />
-
-                          {localSearchOpen && localSearch && (
-                            <div className="absolute top-full left-0 right-0 mt-2 bg-popover/95 backdrop-blur-xl border rounded-xl shadow-2xl z-50 overflow-hidden max-h-60 overflow-y-auto">
-                              <div className="p-1.5 space-y-0.5">
-                                {searchResults.length > 0 ? (
-                                  searchResults.map((item, idx) => (
-                                    <button
-                                      key={`${item.topicId}-${idx}`}
-                                      onClick={() => { setLocalSearch(""); navigate({ kind: "topic", topicId: item.topicId }); }}
-                                      className="w-full text-left px-3 py-2.5 rounded-lg text-xs hover:bg-primary/10 hover:text-primary transition-all flex flex-col gap-0.5 group/item"
-                                    >
-                                      <span className="truncate font-bold flex items-center gap-2">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-primary/20 group-hover/item:bg-primary shrink-0" />
-                                        {item.title}
-                                      </span>
-                                      <span className="text-[10px] text-muted-foreground/60 ml-3.5">{item.topicLabel}</span>
-                                    </button>
-                                  ))
-                                ) : (
-                                  <p className="p-4 text-[11px] text-muted-foreground text-center italic">No matches found for "{localSearch}"</p>
-                                )}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Bookmark Button - Restored Position */}
-                        {activeTopic && (
-                          <button
-                            onClick={() => toggleBookmark(activeTopic.id)}
-                            className={`p-2.5 rounded-xl border transition-all shadow-sm shrink-0 ${bookmarkedItems.includes(activeTopic.id) ? "bg-primary/10 border-primary text-primary" : "bg-muted/30 border-border/10 text-muted-foreground hover:text-foreground"}`}
-                          >
-                            <Bookmark className={`h-4 w-4 ${bookmarkedItems.includes(activeTopic.id) ? "fill-current" : ""}`} />
-                          </button>
-                        )}
-
-                        {!isBlog && (
-                          <div className="flex bg-muted/50 p-1.5 rounded-2xl w-fit gap-1 text-[11px] font-black border border-border/10 shadow-sm h-10 items-center shrink-0">
-                            <button onClick={() => setViewMode("PAGINATED")} className={`px-4 h-full rounded-xl transition-all flex items-center ${viewMode === "PAGINATED" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>Step-by-Step</button>
-                            <button onClick={() => setViewMode("CONTINUOUS")} className={`px-4 h-full rounded-xl transition-all flex items-center ${viewMode === "CONTINUOUS" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>Continuous</button>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Guidance Text Below Row */}
-                      {!isBlog && (
-                        <p className="text-[10px] text-muted-foreground/60 px-1 font-semibold italic text-right leading-tight animate-in fade-in duration-300">
-                          {viewMode === "CONTINUOUS"
-                            ? " Prefer topic-wise focus? Switch back to Step-by-Step"
-                            : " Want to read it all at once? Switch to Continuous"}
-                        </p>
-                      )}
-                    </div>
-                  </header>
+                  {/* Removed redundant header row to avoid gap */}
 
                   {viewMode === "CONTINUOUS" ? (
-                    <div className="space-y-20">
+                    <div className="space-y-16">
                       {step.topics.map((topic, topicIdx) => (
-                        <div key={topic.id} id={`topic-${topic.id}`} className="scroll-mt-24 pt-12 border-t first:pt-0 first:border-0 border-border/40">
-                          <h2 className="text-2xl font-black tracking-tight flex items-center gap-3 mb-8" style={{ color: themeColor }}>
-                            <span className="text-muted-foreground/20 font-mono text-base">{String(topicIdx + 1).padStart(2, "0")}</span>
-                            {topic.title}
-                          </h2>
+                        <div key={topic.id} id={`topic-${topic.id}`} className="scroll-mt-40 pt-8 border-t first:pt-0 first:border-0 border-border/40">
+                          <div className="flex items-center gap-3 mb-8 pb-4 border-b">
+                            <Checkbox checked={completedItems.includes(topic.id)} onCheckedChange={() => toggleComplete(topic.id, topic)} className="h-5 w-5 border-muted-foreground/40 rounded-md shrink-0 shadow-sm" />
+                            <h2 className="text-2xl md:text-3xl lg:text-4xl font-black tracking-tight leading-tight flex items-center gap-3 !text-slate-950 dark:!text-zinc-100">
+                              <span className="text-muted-foreground/20 font-mono text-base md:text-lg">{String(topicIdx + 1).padStart(2, "0")}</span>
+                              {topic.title}
+                            </h2>
+                          </div>
                           {topic.content && <div className={PROSE} dangerouslySetInnerHTML={{ __html: parseMarkdown(topic.content) }} />}
-                          
+
                           {/* Render Subtopics in Continuous Mode with De-duplicacy */}
                           {topic.subtopics && topic.subtopics.length > 0 && (
-                            <div className="space-y-20 mt-12">
-                              {topic.subtopics.sort((a,b) => a.order - b.order).map((sub) => (
-                                <section key={sub.id} id={`subtopic-${sub.id}`} className="scroll-mt-24 pl-6 md:pl-8 border-l-2 border-muted hover:border-primary/40 transition-colors group">
+                            <div className="space-y-16 mt-8">
+                              {topic.subtopics.sort((a, b) => a.order - b.order).map((sub) => (
+                                <section key={sub.id} id={`subtopic-${sub.id}`} className="scroll-mt-40 pl-0 transition-colors group">
                                   {sub.title.trim().toLowerCase() !== topic.title.trim().toLowerCase() && (
-                                    <h3 className="text-2xl md:text-3xl font-black tracking-tight mb-6 text-foreground/90 group-hover:text-primary transition-colors">{sub.title}</h3>
+                                    <h3 className="text-2xl md:text-3xl font-black tracking-tight mb-6 !text-slate-950 dark:!text-zinc-100 group-hover:text-primary transition-colors">{sub.title}</h3>
                                   )}
                                   <div className={PROSE} dangerouslySetInnerHTML={{ __html: parseMarkdown(sub.content) }} />
                                 </section>
@@ -605,27 +643,29 @@ export function StepViewer({
                       ))}
                     </div>
                   ) : (
-                    <div className="space-y-12">
-                       <div className="flex items-center gap-3 mt-8 mb-8 pb-4 border-b">
-                         <Checkbox checked={completedItems.includes(activeTopic.id)} onCheckedChange={() => toggleComplete(activeTopic.id, activeTopic)} className="h-5 w-5 border-muted-foreground/40 rounded-md shrink-0 shadow-sm" />
-                         <h1 className="text-2xl md:text-3xl lg:text-4xl font-black tracking-tight leading-tight text-foreground/90">{activeTopic.title}</h1>
-                       </div>
-                       
-                       {activeTopic.content && <div className={PROSE} dangerouslySetInnerHTML={{ __html: parseMarkdown(activeTopic.content) }} />}
+                    <div className="space-y-8">
+                      <div className="flex items-center gap-3 mb-8 pb-4 border-b">
+                        <Checkbox checked={completedItems.includes(activeTopic.id)} onCheckedChange={() => toggleComplete(activeTopic.id, activeTopic)} className="h-5 w-5 border-muted-foreground/40 rounded-md shrink-0 shadow-sm" />
+                        <h1 className="text-2xl md:text-3xl lg:text-4xl font-black tracking-tight leading-tight !text-slate-950 dark:!text-zinc-100" suppressHydrationWarning>
+                          {activeTopic.title}
+                        </h1>
+                      </div>
 
-                       {/* Render Subtopics in main area for scroll navigation with De-duplicacy */}
-                       {activeTopic.subtopics && activeTopic.subtopics.length > 0 && (
-                          <div className="space-y-20 mt-12">
-                            {activeTopic.subtopics.sort((a,b) => a.order - b.order).map((sub) => (
-                               <section key={sub.id} id={`subtopic-${sub.id}`} className="scroll-mt-24 pl-6 md:pl-8 border-l-2 border-muted hover:border-primary/40 transition-colors group">
-                                  {sub.title.trim().toLowerCase() !== activeTopic.title.trim().toLowerCase() && (
-                                     <h3 className="text-2xl md:text-3xl font-black tracking-tight mb-6 text-foreground/90 group-hover:text-primary transition-colors">{sub.title}</h3>
-                                  )}
-                                  <div className={PROSE} dangerouslySetInnerHTML={{ __html: parseMarkdown(sub.content) }} />
-                               </section>
-                            ))}
-                          </div>
-                       )}
+                      {activeTopic.content && <div className={PROSE} dangerouslySetInnerHTML={{ __html: parseMarkdown(activeTopic.content) }} />}
+
+                      {/* Render Subtopics in main area with De-duplicacy and NO left line */}
+                      {activeTopic.subtopics && activeTopic.subtopics.length > 0 && (
+                        <div className="space-y-16 mt-8">
+                          {activeTopic.subtopics.sort((a, b) => a.order - b.order).map((sub) => (
+                            <section key={sub.id} id={`subtopic-${sub.id}`} className="scroll-mt-40 pl-0 transition-colors group">
+                              {sub.title.trim().toLowerCase() !== activeTopic.title.trim().toLowerCase() && (
+                                <h3 className="text-2xl md:text-3xl font-black tracking-tight mb-6 !text-slate-950 dark:!text-zinc-100 group-hover:text-primary transition-colors">{sub.title}</h3>
+                              )}
+                              <div className={PROSE} dangerouslySetInnerHTML={{ __html: parseMarkdown(sub.content) }} />
+                            </section>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -717,28 +757,34 @@ export function StepViewer({
                   })()}
 
                   {/* Disclaimer / Updates Note */}
-                  <div className="p-5 bg-amber-500/5 rounded-2xl border border-dashed border-amber-500/10 text-xs text-muted-foreground leading-relaxed flex items-start gap-3.5 shadow-sm">
-                    <div className="flex flex-col items-center gap-1.5 shrink-0">
+                  <div className="p-5 mt-6 bg-slate-50 dark:bg-zinc-900/40 rounded-3xl border border-slate-200/60 dark:border-zinc-800/60 text-[13.5px] text-slate-600 dark:text-zinc-400 leading-relaxed flex items-start gap-4 shadow-sm relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -mr-10 -mt-10" />
+                    <div className="flex flex-col items-center gap-2.5 shrink-0 relative z-10">
                       {step.author?.avatarUrl ? (
                         <img
                           src={step.author.avatarUrl}
                           alt={step.author.fullName || "Admin"}
-                          className="w-10 h-10 rounded-full border-2 border-primary/20 bg-background/50 backdrop-blur-md object-cover"
+                          className="w-11 h-11 rounded-full border-2 border-background shadow-md object-cover bg-muted/20"
                         />
                       ) : (
                         <img
                           src="https://api.dicebear.com/7.x/miniavs/svg?seed=Admin"
-                          className="w-10 h-10 rounded-full border-2 border-primary/20 bg-background/50 backdrop-blur-md object-cover"
+                          className="w-11 h-11 rounded-full border-2 border-background shadow-md object-cover bg-muted/20"
                           alt="Admin"
                         />
                       )}
-                      <span className="text-[9px] font-black uppercase text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded-md border border-amber-500/20 shadow-sm font-mono">Admin</span>
+                      <span className="text-[9px] font-black uppercase text-primary bg-primary/10 px-2 py-0.5 rounded-md tracking-wider">Admin</span>
                     </div>
-                    <div className="flex-1 space-y-2">
-                      <p className="font-black text-amber-500 text-sm">Welcome Onboard!</p>
-                      <p className="leading-snug">All the content on this platform is <span className="font-bold text-foreground">carefully handpicked and created by me</span> to give you the best possible quality and clarity for your learning.</p>
-                      <p className="leading-snug">I’m continuously <span className="font-bold text-foreground">refining and improving</span> everything to make it even more simple, practical, and valuable.</p>
-                      <p className="font-bold text-foreground border-t border-border/10 pt-2 mt-2 leading-relaxed">My goal: provide you with <span className="text-primary">high-quality, reliable notes</span> that genuinely help you grow.</p>
+                    <div className="flex-1 space-y-2.5 relative z-10">
+                      <p className="font-black text-foreground text-[15px] flex items-center gap-2">
+                        <span className="text-xl">👋</span> Welcome to the Module!
+                      </p>
+                      <p className="tracking-tight">
+                        All content here is handpicked and intelligently structured to give you the best possible clarity. I am continuously refining these materials to make them simpler and more practical.
+                      </p>
+                      <p className="pt-3 border-t border-border/40 font-semibold text-slate-700 dark:text-zinc-300 tracking-tight">
+                        My ultimate goal is to provide <span className="text-primary font-bold">high-quality, reliable building blocks</span> for your engineering career.
+                      </p>
                     </div>
                   </div>
                 </div>

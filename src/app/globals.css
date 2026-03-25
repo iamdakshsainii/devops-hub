@@ -1,6 +1,8 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
@@ -85,7 +87,7 @@
     @apply text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
     background-color: hsl(var(--background));
-    background-image: 
+    background-image:
       radial-gradient(ellipse 60% 50% at 50% -20%, rgba(120, 119, 198, 0.15), transparent),
       radial-gradient(ellipse 60% 50% at 80% 0%, rgba(59, 130, 246, 0.1), transparent),
       radial-gradient(ellipse 50% 50% at 0% 0%, rgba(139, 92, 246, 0.1), transparent);
@@ -93,7 +95,7 @@
   }
 
   .dark body {
-    background-image: 
+    background-image:
       radial-gradient(ellipse 60% 50% at 50% -20%, rgba(120, 119, 198, 0.15), transparent),
       radial-gradient(ellipse 60% 50% at 80% 0%, rgba(59, 130, 246, 0.15), transparent),
       radial-gradient(ellipse 50% 50% at 0% 0%, rgba(139, 92, 246, 0.15), transparent);
@@ -154,26 +156,26 @@
 ════════════════════════════════════════════════════════════════════ */
 
 .devhub-prose {
-  color: #111827 !important;
+  color: #0f172a;
 }
 
 .devhub-prose p,
 .devhub-prose li,
 .devhub-prose ul,
 .devhub-prose ol {
-  color: #111827 !important;
+  color: #0f172a;
 }
 
 .devhub-prose h1,
 .devhub-prose h2,
 .devhub-prose h3,
 .devhub-prose h4 {
-  color: #030712 !important;
+  color: #020617;
 }
 
 .devhub-prose strong,
 .devhub-prose b {
-  color: #030712 !important;
+  color: #020617;
   font-weight: 700;
 }
 
@@ -191,19 +193,19 @@
 .dark .devhub-prose li,
 .dark .devhub-prose ul,
 .dark .devhub-prose ol {
-  color: #e4e4e7 !important;
+  color: #e4e4e7;
 }
 
 .dark .devhub-prose h1,
 .dark .devhub-prose h2,
 .dark .devhub-prose h3,
 .dark .devhub-prose h4 {
-  color: #fafafa !important;
+  color: #fafafa;
 }
 
 .dark .devhub-prose strong,
 .dark .devhub-prose b {
-  color: #ffffff !important;
+  color: #ffffff;
 }
 
 .dark .devhub-prose a {
@@ -212,7 +214,7 @@
 
 .dark .devhub-prose blockquote,
 .dark .devhub-prose blockquote p {
-  color: #e4e4e7 !important;
+  color: #e4e4e7;
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -239,14 +241,14 @@
   text-align: left;
   border-bottom: 1px solid hsl(var(--border));
   font-size: 0.85em;
-  color: #111827 !important;
+  color: #0f172a;
 }
 
 .devhub-prose td {
   padding: 0.75rem 1rem !important;
   border-bottom: 1px solid hsl(var(--border));
   vertical-align: top;
-  color: #111827 !important;
+  color: #0f172a;
 }
 
 .dark .devhub-prose th {
@@ -254,7 +256,7 @@
 }
 
 .dark .devhub-prose td {
-  color: #e4e4e7 !important;
+  color: #e4e4e7;
 }
 
 .devhub-prose tbody tr:last-child td {
@@ -271,7 +273,7 @@
 
 .devhub-prose :not(pre)>code {
   background: #f3f4f6 !important;
-  color: #111827 !important;
+  color: #0f172a;
   border: 1px solid #e5e7eb !important;
   padding: 0.15em 0.45em !important;
   border-radius: 0.3rem !important;
@@ -349,7 +351,8 @@
 }
 
 .dark .devhub-code-block {
-  background: rgba(15, 23, 42, 0.4); /* slate glass */
+  background: rgba(15, 23, 42, 0.4);
+  /* slate glass */
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
   border-color: rgba(255, 255, 255, 0.08);
 }
@@ -667,6 +670,7 @@
 .dark .devhub-pre .language-plaintext {
   color: #8b949e !important;
 }
+
 /* ════════════════════════════════════════════════════════════════════
    ASCII DIAGRAMS / TERMINAL BLOCKS — Distinctive contrast
 ════════════════════════════════════════════════════════════════════ */
@@ -675,13 +679,13 @@
   border-style: solid !important;
   border-color: rgba(3, 102, 214, 0.3) !important;
   background: #f0f4f8 !important;
-  box-shadow: inset 0 0 20px rgba(0,0,0,0.03);
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.03);
 }
 
 .dark .devhub-code-block--terminal {
   border-color: rgba(56, 189, 248, 0.3) !important;
   background: #0a0f1c !important;
-  box-shadow: inset 0 0 30px rgba(0,0,0,0.6), 0 4px 20px rgba(56, 189, 248, 0.05);
+  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.6), 0 4px 20px rgba(56, 189, 248, 0.05);
 }
 
 /* Override that faint opacity lookup */
@@ -694,13 +698,15 @@
 }
 
 .devhub-code-block--terminal .language-plaintext {
-  color: #111827 !important; /* Force high contrast dark for line art */
+  color: #0f172a;
+  /* Force high contrast dark for line art */
   font-weight: 600 !important;
   letter-spacing: 0.01em;
 }
 
 .dark .devhub-code-block--terminal .language-plaintext {
-  color: #f4f4f5 !important; /* Force high contrast bright for line art */
+  color: #f4f4f5 !important;
+  /* Force high contrast bright for line art */
 }
 
 .devhub-code-block--terminal .devhub-pre {

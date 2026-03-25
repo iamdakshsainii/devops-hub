@@ -4,17 +4,18 @@ import { authOptions } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ResourceCard } from "@/components/resource-card";
-import { Search, FileText, Video, List, BookOpen, Wrench, LayoutGrid, PlusCircle, Database, Book, FileCode, PenTool, GraduationCap, Mic, Twitter, Settings } from "lucide-react";
+import { Search, FileText, Video, List, BookOpen, Database, Book, PlusCircle, Layers } from "lucide-react";
 import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
 
 export const dynamic = "force-dynamic";
 
 const FILTERS = [
-  { label: "All", value: "ALL", icon: LayoutGrid },
+  { label: "All Items", value: "ALL", icon: Layers },
   { label: "Documentation", value: "DOCUMENTATION", icon: Book },
-  { label: "Video", value: "VIDEO", icon: Video },
-  { label: "Playlist", value: "PLAYLIST", icon: List },
-  { label: "Notes", value: "NOTES", icon: BookOpen },
+  { label: "Videos", value: "VIDEO", icon: Video },
+  { label: "Playlists", value: "PLAYLIST", icon: List },
+  { label: "Notes & Cheatsheets", value: "NOTES", icon: BookOpen },
 ];
 
 export default async function ResourcesPage({
@@ -51,60 +52,66 @@ export default async function ResourcesPage({
   });
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl space-y-8">
-      <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
-        <div>
-          <h1 className="text-3xl font-extrabold tracking-tight">
-            Community Resources ({resources.length})
+    <div className="container mx-auto px-4 py-12 max-w-6xl space-y-10 relative">
+      <div className="absolute top-0 right-1/4 w-96 h-96 bg-primary/5 rounded-full blur-[100px] -z-10 pointer-events-none" />
+      
+      {/* Premium Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 pb-8 border-b border-border/40">
+        <div className="max-w-xl">
+          <Badge variant="outline" className="mb-4 text-primary bg-primary/10 border-primary/20 tracking-[0.15em] font-extrabold text-[10px] uppercase shadow-sm">
+             Curated Library
+          </Badge>
+          <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-4 text-slate-900 dark:text-white">
+            Community Resources
           </h1>
-          <p className="text-muted-foreground mt-1 text-sm md:text-base">
-            Curated links, PDFs, tools, and videos published by modern Admins.
+          <p className="text-muted-foreground text-[15px] md:text-base leading-relaxed max-w-lg">
+            A handpicked collection of high-quality tools, documentation, videos, and cheat sheets carefully organized to accelerate your learning.
           </p>
         </div>
+        
         {isAdmin && (
-           <Link href="/admin/resources/new" target="_blank" className="shrink-0 w-full sm:w-auto">
-               <Button className="font-bold gap-1.5 h-9 text-xs w-full sm:w-auto bg-amber-500 hover:bg-amber-600 text-black">
-                   + Create Resource
+           <Link href="/admin/resources/new" target="_blank" className="shrink-0 w-full md:w-auto mt-2 md:mt-0">
+               <Button className="font-extrabold gap-2 h-11 px-6 bg-amber-500 hover:bg-amber-600 text-black rounded-xl shadow-[0_5px_15px_rgba(245,158,11,0.25)] hover:-translate-y-0.5 transition-all w-full md:w-auto">
+                   <PlusCircle className="h-4 w-4" /> Add Resource
                </Button>
            </Link>
         )}
       </div>
 
-      {/* Search + Filter bar */}
-      <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-muted/30 p-4 rounded-xl border">
-        {/* Search — submits as GET so type param is preserved via hidden input */}
-        <form method="GET" action="/resources" className="relative w-full md:max-w-md">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+      {/* Modern Search & Filter Bar */}
+      <div className="flex flex-col lg:flex-row gap-4 lg:items-center justify-between bg-card/60 p-2 md:p-3 rounded-2xl border shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl">
+        <form method="GET" action="/resources" className="relative w-full lg:max-w-md">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
           <Input
             name="q"
-            placeholder="Search resources..."
+            placeholder="Search thousands of resources..."
             defaultValue={q}
-            className="pl-9 bg-background"
+            className="pl-10 h-11 bg-background/50 border-0 shadow-inner rounded-xl focus-visible:ring-1 focus-visible:ring-primary/30 text-[14px] font-medium placeholder:text-muted-foreground/50 transition-all font-sans"
           />
           {activeType && <input type="hidden" name="type" value={activeType} />}
         </form>
 
-        {/* Filter pills with icons */}
-        <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 flex-nowrap">
+        <div className="flex flex-wrap items-center gap-1.5 md:gap-2 w-full lg:w-auto">
           {FILTERS.map((f) => {
             const Icon = f.icon;
-            const isActive =
-              f.value === "ALL"
-                ? !activeType
-                : activeType === f.value;
+            const isActive = f.value === "ALL" ? !activeType : activeType === f.value;
 
             return (
               <Link
                 key={f.value}
                 href={`/resources?type=${f.value}${q ? `&q=${encodeURIComponent(q)}` : ""}`}
+                className="flex-shrink-0"
               >
                 <Button
-                  variant={isActive ? "secondary" : "ghost"}
+                  variant={isActive ? "default" : "secondary"}
                   size="sm"
-                  className={`gap-1.5 whitespace-nowrap h-8 text-xs font-medium ${isActive ? "font-semibold" : "text-muted-foreground"
-                    }`}
+                  className={`gap-2 h-9 px-4 rounded-xl text-[12px] font-bold transition-all duration-300 ${
+                    isActive 
+                      ? "shadow-md scale-105" 
+                      : "bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground border border-transparent hover:border-border/50"
+                  }`}
                 >
-                  <Icon className="h-3.5 w-3.5" />
+                  <Icon className={`h-3.5 w-3.5 ${isActive ? "opacity-100" : "opacity-50"}`} />
                   {f.label}
                 </Button>
               </Link>
@@ -113,18 +120,20 @@ export default async function ResourcesPage({
         </div>
       </div>
 
-      {/* Resource grid */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Grid Layout */}
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
         {resources.length > 0 ? (
           resources.map((resource) => (
             <ResourceCard key={resource.id} resource={resource} isAdmin={isAdmin} />
           ))
         ) : (
-          <div className="col-span-full flex flex-col items-center justify-center p-12 text-center border rounded-xl border-dashed bg-muted/10">
-            <Database className="h-10 w-10 text-muted-foreground mb-4 opacity-50" />
-            <h3 className="text-lg font-medium mb-2">No resources found</h3>
-            <p className="text-muted-foreground max-w-sm mx-auto">
-              Try adjusting your search filters.
+          <div className="col-span-full flex flex-col items-center justify-center py-20 px-4 text-center border-2 rounded-3xl border-dashed bg-muted/5">
+            <div className="w-16 h-16 bg-muted/50 rounded-full flex items-center justify-center mb-6">
+               <Database className="h-8 w-8 text-muted-foreground/40" />
+            </div>
+            <h3 className="text-xl font-bold mb-2 tracking-tight">No resources found</h3>
+            <p className="text-muted-foreground max-w-sm mx-auto text-[15px]">
+              We couldn't find anything matching your search. Try different keywords or clear your filters.
             </p>
           </div>
         )}

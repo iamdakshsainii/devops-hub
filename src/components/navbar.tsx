@@ -143,80 +143,128 @@ export function Navbar() {
           </div>
 
           <Dialog open={cmdkOpen} onOpenChange={setCmdkOpen}>
-            <DialogContent className="sm:max-w-[550px] p-0 gap-0 bg-background/95 backdrop-blur-xl border-border/40 shadow-2xl rounded-xl">
+            <DialogContent className="sm:max-w-[600px] p-0 gap-0 bg-background/90 backdrop-blur-2xl border-border/40 shadow-[0_20px_50px_rgba(0,0,0,0.15)] rounded-2xl overflow-hidden ring-1 ring-white/10 dark:ring-white/5">
               <DialogTitle className="sr-only">Search Command Palette</DialogTitle>
-              <div className="flex items-center border-b px-3 h-12">
-                <Search className="h-4 w-4 text-muted-foreground mr-2 shrink-0" />
+              <div className="flex items-center border-b border-border/40 px-4 h-16 bg-muted/10">
+                <Search className="h-5 w-5 text-muted-foreground mr-3 shrink-0" />
                 <input 
-                   placeholder="Type to search everything..." 
-                   className="flex-1 bg-transparent outline-none border-none text-sm placeholder:text-muted-foreground/60 w-full"
+                   autoFocus
+                   placeholder="What do you want to learn today?" 
+                   className="flex-1 bg-transparent outline-none border-none text-[15px] md:text-[17px] font-medium placeholder:text-muted-foreground/50 w-full"
                    value={searchQuery}
                    onChange={(e) => setSearchQuery(e.target.value)}
                 />
-                {searching && <div className="h-4 w-4 animate-spin border-2 border-primary border-t-transparent rounded-full" />}
+                {searching && <div className="h-4 w-4 animate-spin border-[3px] border-primary border-t-transparent flex-shrink-0 rounded-full ml-3" />}
+                <div className="hidden sm:flex items-center ml-3 px-2 py-0.5 rounded-md bg-muted/50 border text-[10px] text-muted-foreground font-mono font-bold uppercase tracking-widest">
+                  ESC
+                </div>
               </div>
-              <div className="max-h-[350px] overflow-y-auto p-2 space-y-3">
+
+              <div className="max-h-[400px] overflow-y-auto p-3 space-y-4 pb-4">
                 {searchQuery.length < 2 ? (
-                  <p className="p-4 text-center text-xs text-muted-foreground">Type at least 2 characters to search across blogs, modules, & tools.</p>
+                  <div className="flex flex-col items-center justify-center py-10 text-center opacity-60">
+                     <Search className="h-10 w-10 text-muted-foreground mb-4" />
+                     <p className="text-sm text-muted-foreground font-medium w-3/4 mx-auto">Type at least 2 characters to instantly search across modules, roadmaps, blogs, cheatsheets, and events.</p>
+                  </div>
                 ) : (
                   <>
                     {/* Roadmaps */}
                     {searchResults.roadmaps?.length > 0 && (
-                      <div>
-                        <p className="text-[10px] font-bold text-muted-foreground/60 uppercase px-2 mb-1">Roadmaps</p>
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-bold text-muted-foreground/60 uppercase px-3 py-1.5 tracking-wider">Learning Paths</p>
                         {searchResults.roadmaps.map((r: any) => (
-                          <Link key={r.id} href={`/roadmap`} onClick={() => setCmdkOpen(false)} className="flex items-center text-xs font-semibold p-2 hover:bg-muted/80 rounded-md transition-colors"><Map className="h-3.5 w-3.5 mr-2 text-emerald-500" /> {r.title}</Link>
+                          <Link key={r.id} href={`/roadmap`} onClick={() => setCmdkOpen(false)} className="group flex items-center p-2.5 hover:bg-emerald-500/10 outline-none rounded-xl transition-all cursor-pointer">
+                             <div className="bg-emerald-500/10 p-2 rounded-lg mr-3 group-hover:bg-emerald-500/20 transition-colors shrink-0">
+                               <Map className="h-4 w-4 text-emerald-500 shadow-sm" />
+                             </div>
+                             <span className="text-[13.5px] font-semibold text-foreground group-hover:text-emerald-600 dark:group-hover:text-emerald-400">{r.title}</span>
+                          </Link>
                         ))}
                       </div>
                     )}
+
                     {/* Modules */}
                     {searchResults.modules?.length > 0 && (
-                      <div>
-                        <p className="text-[10px] font-bold text-muted-foreground/60 uppercase px-2 mb-1">Modules</p>
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-bold text-muted-foreground/60 uppercase px-3 py-1.5 tracking-wider">Modules</p>
                         {searchResults.modules.map((m: any) => (
-                          <Link key={m.id} href={`/modules/${m.id}`} onClick={() => setCmdkOpen(false)} className="flex items-center text-xs font-semibold p-2 hover:bg-muted/80 rounded-md transition-colors"><Terminal className="h-3.5 w-3.5 mr-2 text-purple-500" /> {m.title}</Link>
+                          <Link key={m.id} href={`/modules/${m.id}`} onClick={() => setCmdkOpen(false)} className="group flex items-center p-2.5 hover:bg-purple-500/10 outline-none rounded-xl transition-all cursor-pointer">
+                             <div className="bg-purple-500/10 p-2 rounded-lg mr-3 group-hover:bg-purple-500/20 transition-colors shrink-0">
+                               <Terminal className="h-4 w-4 text-purple-500 shadow-sm" />
+                             </div>
+                             <span className="text-[13.5px] font-semibold text-foreground group-hover:text-purple-600 dark:group-hover:text-purple-400">{m.title}</span>
+                          </Link>
                         ))}
                       </div>
                     )}
+
                     {/* Blogs */}
                     {searchResults.blogs?.length > 0 && (
-                      <div>
-                        <p className="text-[10px] font-bold text-muted-foreground/60 uppercase px-2 mb-1">Blogs</p>
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-bold text-muted-foreground/60 uppercase px-3 py-1.5 tracking-wider">Articles</p>
                         {searchResults.blogs.map((b: any) => (
-                          <Link key={b.id} href={`/blog/${b.slug}`} onClick={() => setCmdkOpen(false)} className="flex items-center text-xs font-semibold p-2 hover:bg-muted/80 rounded-md transition-colors"><FileText className="h-3.5 w-3.5 mr-2 text-blue-500" /> {b.title}</Link>
+                          <Link key={b.id} href={`/blog/${b.slug}`} onClick={() => setCmdkOpen(false)} className="group flex items-center p-2.5 hover:bg-blue-500/10 outline-none rounded-xl transition-all cursor-pointer">
+                             <div className="bg-blue-500/10 p-2 rounded-lg mr-3 group-hover:bg-blue-500/20 transition-colors shrink-0">
+                               <FileText className="h-4 w-4 text-blue-500 shadow-sm" />
+                             </div>
+                             <span className="text-[13.5px] font-semibold text-foreground group-hover:text-blue-600 dark:group-hover:text-blue-400">{b.title}</span>
+                          </Link>
                         ))}
                       </div>
                     )}
+
                     {/* Cheatsheets */}
                     {searchResults.cheatsheets?.length > 0 && (
-                      <div>
-                        <p className="text-[10px] font-bold text-muted-foreground/60 uppercase px-2 mb-1">Cheatsheets</p>
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-bold text-muted-foreground/60 uppercase px-3 py-1.5 tracking-wider">Cheatsheets</p>
                         {searchResults.cheatsheets.map((b: any) => (
-                          <Link key={b.id} href={`/cheatsheets/${b.slug}`} onClick={() => setCmdkOpen(false)} className="flex items-center text-xs font-semibold p-2 hover:bg-muted/80 rounded-md transition-colors"><FileText className="h-3.5 w-3.5 mr-2 text-green-500" /> {b.title}</Link>
+                          <Link key={b.id} href={`/cheatsheets/${b.slug}`} onClick={() => setCmdkOpen(false)} className="group flex items-center p-2.5 hover:bg-primary/10 outline-none rounded-xl transition-all cursor-pointer">
+                             <div className="bg-primary/10 p-2 rounded-lg mr-3 group-hover:bg-primary/20 transition-colors shrink-0">
+                               <Bookmark className="h-4 w-4 text-primary shadow-sm" />
+                             </div>
+                             <span className="text-[13.5px] font-semibold text-foreground group-hover:text-primary">{b.title}</span>
+                          </Link>
                         ))}
                       </div>
                     )}
-                    {/* Events */}
 
+                    {/* Events */}
                     {searchResults.events?.length > 0 && (
-                      <div>
-                        <p className="text-[10px] font-bold text-muted-foreground/60 uppercase px-2 mb-1">Events</p>
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-bold text-muted-foreground/60 uppercase px-3 py-1.5 tracking-wider">Live Events</p>
                         {searchResults.events.map((e: any) => (
-                          <Link key={e.id} href={`/events`} onClick={() => setCmdkOpen(false)} className="flex items-center text-xs font-semibold p-2 hover:bg-muted/80 rounded-md transition-colors"><Calendar className="h-3.5 w-3.5 mr-2 text-pink-500" /> {e.title}</Link>
+                          <Link key={e.id} href={`/events`} onClick={() => setCmdkOpen(false)} className="group flex items-center p-2.5 hover:bg-pink-500/10 outline-none rounded-xl transition-all cursor-pointer">
+                             <div className="bg-pink-500/10 p-2 rounded-lg mr-3 group-hover:bg-pink-500/20 transition-colors shrink-0">
+                               <Calendar className="h-4 w-4 text-pink-500 shadow-sm" />
+                             </div>
+                             <span className="text-[13.5px] font-semibold text-foreground group-hover:text-pink-600 dark:group-hover:text-pink-400">{e.title}</span>
+                          </Link>
                         ))}
                       </div>
                     )}
+
                     {/* Resources */}
                     {searchResults.resources?.length > 0 && (
-                      <div>
-                        <p className="text-[10px] font-bold text-muted-foreground/60 uppercase px-2 mb-1">Resources</p>
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-bold text-muted-foreground/60 uppercase px-3 py-1.5 tracking-wider">Shared Links</p>
                         {searchResults.resources.map((r: any) => (
-                          <Link key={r.id} href={`/resources?id=${r.id}`} onClick={() => setCmdkOpen(false)} className="flex items-center text-xs font-semibold p-2 hover:bg-muted/80 rounded-md transition-colors"><LinkIcon className="h-3.5 w-3.5 mr-2 text-indigo-500" /> {r.title}</Link>
+                          <Link key={r.id} href={`/resources?id=${r.id}`} onClick={() => setCmdkOpen(false)} className="group flex items-center p-2.5 hover:bg-amber-500/10 outline-none rounded-xl transition-all cursor-pointer">
+                             <div className="bg-amber-500/10 p-2 rounded-lg mr-3 group-hover:bg-amber-500/20 transition-colors shrink-0">
+                               <LinkIcon className="h-4 w-4 text-amber-500 shadow-sm" />
+                             </div>
+                             <span className="text-[13.5px] font-semibold text-foreground group-hover:text-amber-600 dark:group-hover:text-amber-400">{r.title}</span>
+                          </Link>
                         ))}
                       </div>
                     )}
+
+                    {/* No Matches */}
                     {Object.values(searchResults).every((arr: any) => !arr || arr.length === 0) && !searching && (
-                      <p className="p-4 text-center text-xs text-muted-foreground">No matches found for "{searchQuery}"</p>
+                      <div className="flex flex-col items-center justify-center py-10 text-center">
+                         <Search className="h-8 w-8 text-muted-foreground/30 mb-3" />
+                         <p className="text-[15px] text-foreground font-semibold tracking-tight">No results found for "{searchQuery}"</p>
+                         <p className="text-[13px] text-muted-foreground mt-1">Check spelling or try more general keywords.</p>
+                      </div>
                     )}
                   </>
                 )}
