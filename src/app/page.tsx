@@ -46,12 +46,16 @@ export default async function Home() {
         <div className="absolute bottom-1/4 right-1/4 w-72 h-72 rounded-full bg-purple-500/15 blur-[100px] animate-pulse duration-[6s] pointer-events-none" />
 
         <div className="relative z-10 container px-6 mx-auto max-w-5xl">
-          <div className="flex flex-col items-center text-center space-y-7 transition-all duration-700">
-            {/* Interactive Announcement Portal */}
-            <PinnedBlogs blogs={pinnedBlogs} />
+          <div className="flex flex-col items-center text-center space-y-7 animate-in fade-in slide-in-from-bottom-6 duration-1000">
+            {/* Mission Activation Badge - Above Title */}
+            <div className="group relative flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-primary/8 hover:bg-primary/12 border border-primary/20 hover:border-primary/40 shadow-sm transition-all duration-300">
+               <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+               <span className="text-[10px] font-black uppercase tracking-[0.15em] text-foreground/80 dark:text-foreground/90">Always Free & Open Access</span>
+               <ArrowRight className="h-2.5 w-2.5 text-primary group-hover:translate-x-0.5 transition-transform" />
+            </div>
 
             {/* Headline */}
-            <div className="space-y-4 max-w-4xl">
+            <div className="space-y-4 max-w-4xl relative">
               <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tighter leading-none">
                 <span className="block text-foreground transition-colors duration-500">Learn DevOps</span>
                 <span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary via-purple-500 to-amber-500">The right way</span>
@@ -91,6 +95,15 @@ export default async function Home() {
       </div>
 
         {/* Pinned Blogs Floating Button - Top Right Extreme */}
+        {/* ── HIGH-VISIBILITY FLOATING INTERACTION PLANE ── */}
+
+        {/* 1. Pinned Content Achievement Node - Desktop Only Focal Zone */}
+        <div className="hidden md:block absolute top-[40px] right-10 lg:right-14 z-40 pointer-events-auto transition-all duration-1000 animate-in fade-in slide-in-from-right-6 shadow-2xl">
+           <div className="scale-95 origin-top-right">
+              <PinnedBlogs blogs={pinnedBlogs} />
+           </div>
+        </div>
+
         {/* Bottom fade */}
         <div className="absolute bottom-0 left-0 right-0 h-32
           bg-gradient-to-t from-background/80 to-transparent pointer-events-none" />

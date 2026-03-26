@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation"
 import { useSession, signOut } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Search, Terminal, User as UserIcon, Settings, LogOut, UserCircle, Shield, Bookmark, Calendar, PlusCircle, FileText, Wrench, Map, Link as LinkIcon } from "lucide-react"
+import { Search, Terminal, User as UserIcon, Settings, LogOut, UserCircle, Shield, Bookmark, Calendar, PlusCircle, FileText, Wrench, Map, Link as LinkIcon, Menu, X as CloseIcon, ArrowRight } from "lucide-react"
 import { ThemeToggle } from "./theme-toggle"
 import { NotificationsDropdown } from "./notifications-dropdown"
 import {
@@ -19,6 +19,7 @@ export function Navbar() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const pathname = usePathname()
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const getLinkClass = (href: string) => {
     const isActive = href === "/" ? pathname === "/" : pathname.startsWith(href)
     return `relative py-1 transition-colors hover:text-foreground md:text-xs lg:text-sm tracking-tight ${isActive ? "text-primary font-bold after:absolute after:-bottom-1.5 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:rounded-full after:shadow-[0_0_8px_rgba(59,130,246,0.6)]" : "text-foreground/70 font-medium"}`
@@ -85,12 +86,13 @@ export function Navbar() {
 
   return (
     <nav className={`border-b sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-all ${session?.user?.role && ["ADMIN", "SUPER_ADMIN"].includes(session.user.role) ? "border-amber-500/20 shadow-[0_4px_12px_-6px_rgba(245,158,11,0.08)]" : "border-border/40"}`}>
-      <div className="container mx-auto flex h-16 items-center px-4 sm:px-8">
-        <Link href="/" className="flex items-center space-x-2 mr-6 hover:opacity-80 transition-opacity">
+      <div className="container mx-auto flex h-16 items-center px-4 md:px-8">
+        <Link href="/" className="flex items-center space-x-2 mr-2 md:mr-6 hover:opacity-80 transition-opacity shrink-0">
           <Terminal className="h-6 w-6 text-primary" />
-          <span className="font-bold inline-block leading-none tracking-tight">DevOps Network</span>
+          <span className="font-extrabold inline-block leading-none tracking-tighter text-[15px] md:text-lg">DevOps Network</span>
         </Link>
 
+        {/* Desktop Nav Links */}
         <div className="flex-1 hidden md:flex items-center justify-between ml-8 mr-4 space-x-6">
           <nav className="flex items-center space-x-7 text-[15px] font-semibold">
             <Link href="/" className={getLinkClass("/")} title="Homepage">Home</Link>
@@ -275,20 +277,42 @@ export function Navbar() {
           </Dialog>
         </div>
 
-        <div className="flex items-center space-x-2 ml-auto">
-          <ThemeToggle />
+        <div className="flex items-center space-x-2 md:space-x-2.5 ml-auto">
+          {/* Responsive Search Switcher */}
+          <button 
+            onClick={() => setCmdkOpen(true)}
+            className="md:hidden flex h-9 w-9 items-center justify-center rounded-lg bg-muted/40 hover:bg-muted/60 transition-all text-foreground/80"
+            title="Global Search"
+          >
+            <Search className="h-4 w-4" />
+          </button>
+
+          <div className="hidden md:block">
+            <ThemeToggle />
+          </div>
+
+          {/* Mini-Admin Shield - Exposed Handle for Quick Moderation */}
+          {["ADMIN", "SUPER_ADMIN"].includes(session?.user?.role) && (
+            <Link href="/admin" className="md:hidden flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 border border-amber-500/20 transition-all hover:bg-amber-500/15" title="Moderation Panel">
+               <Shield className="h-4 w-4" />
+            </Link>
+          )}
 
           {status === "loading" ? (
             <div className="h-9 w-20 animate-pulse bg-muted rounded ml-2" />
           ) : session ? (
             <div className="flex items-center space-x-2 pl-2 border-l ml-2">
               {["ADMIN", "SUPER_ADMIN"].includes(session.user.role) ? (
-                <Link href="/admin" title="Admin Control Panel">
-                  <Button variant="ghost" title="Manage Administrative dashboard" size="sm" className="hidden sm:inline-flex hover:bg-amber-500/10 hover:text-amber-500 border border-transparent hover:border-amber-500/20 transition-all duration-300 shadow-sm">Admin Panel</Button>
+                <Link href="/admin" title="Log into Management Dashboard">
+                  <Button variant="ghost" size="sm" className="hidden xs:inline-flex hover:bg-amber-500/10 hover:text-amber-500 border border-transparent hover:border-amber-500/20 text-xs font-bold transition-all px-2 md:px-3 h-8 md:h-9">
+                    <Shield className="h-3.5 w-3.5 md:hidden" />
+                    <span className="hidden md:inline">Admin Panel</span>
+                    <span className="md:hidden ml-1">Admin</span>
+                  </Button>
                 </Link>
               ) : (
-                <Link href="/dashboard" title="View your dashboard">
-                  <Button variant="ghost" size="sm" className="hidden sm:inline-flex">Dashboard</Button>
+                <Link href="/dashboard" title="Learner Dashboard">
+                  <Button variant="ghost" size="sm" className="hidden xs:inline-flex text-xs font-bold h-8 md:h-9">Dashboard</Button>
                 </Link>
               )}
                {["ADMIN", "SUPER_ADMIN"].includes(session.user.role) && (
@@ -392,13 +416,78 @@ export function Navbar() {
               <Link href="/login">
                 <Button variant="ghost" size="sm">Sign In</Button>
               </Link>
-              <Link href="/signup">
-                <Button size="sm">Get Started</Button>
-              </Link>
             </div>
           )}
+
+          {/* Mobile Hamburger Trigger - Relocated to Right Hub */}
+          <button 
+            className="md:hidden flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary hover:bg-primary/15 transition-colors border border-primary/20 ml-2"
+            onClick={() => setMobileMenuOpen(true)}
+          >
+            <Menu className="h-4 w-4" />
+          </button>
         </div>
       </div>
+
+      {/* ── MOBILE SLIDE-OUT MENU - RIGHT FOCAL PLANE ── */}
+      <Dialog open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+        <DialogContent className="fixed right-0 top-0 h-screen w-[280px] p-0 border-l border-border/40 bg-background/95 backdrop-blur-3xl shadow-2xl overflow-hidden ring-1 ring-white/5 outline-none focus:outline-none flex flex-col data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:slide-in-from-right data-[state=closed]:slide-out-to-right duration-300 translate-x-0 translate-y-0 sm:translate-x-0 sm:translate-y-0 sm:right-0 sm:top-0">
+           <DialogTitle className="sr-only">Mobile Navigation Menu</DialogTitle>
+           <div className="flex flex-col h-full w-full">
+             <div className="p-5 border-b border-border/10 flex items-center justify-between bg-muted/20">
+                <Link href="/" className="flex items-center space-x-2" onClick={() => setMobileMenuOpen(false)}>
+                  <Terminal className="h-5 w-5 text-primary" />
+                  <span className="font-black text-sm tracking-tighter leading-none text-foreground">DevOps Network</span>
+                </Link>
+             </div>
+
+             <nav className="flex-1 overflow-y-auto p-4 space-y-1.5 custom-scrollbar">
+                {/* Achievement Highlight in Menu */}
+                <div className="mb-4 px-1">
+                   <Link href="/blog?pinned=true" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-600 shadow-[0_2px_10px_rgba(245,158,11,0.1)] transition-all active:scale-[0.98]">
+                      <Bookmark className="h-4 w-4" />
+                      <div className="flex flex-col leading-tight">
+                         <span className="text-[11px] font-black uppercase tracking-wider">Perspectives</span>
+                         <span className="text-[9px] font-bold opacity-70 uppercase tracking-widest mt-0.5">Industry Blueprint</span>
+                      </div>
+                   </Link>
+                </div>
+
+                <p className="text-[9px] font-black uppercase tracking-[0.25em] text-muted-foreground/50 px-4 py-2">Mission Control</p>
+                
+                <Link href="/" onClick={() => setMobileMenuOpen(false)} className={`flex items-center gap-3.5 px-4 py-3.5 rounded-xl transition-all ${pathname === "/" ? "bg-primary/10 text-primary font-bold shadow-sm ring-1 ring-primary/20" : "text-foreground/70 font-semibold hover:bg-muted/50 hover:text-foreground"}`}>
+                   <UserIcon className="h-4 w-4" /> <span className="text-[14px]">Home</span>
+                </Link>
+                <Link href="/modules" onClick={() => setMobileMenuOpen(false)} className={`flex items-center gap-3.5 px-4 py-3.5 rounded-xl transition-all ${pathname.startsWith("/modules") ? "bg-primary/10 text-primary font-bold shadow-sm ring-1 ring-primary/20" : "text-foreground/70 font-semibold hover:bg-muted/50 hover:text-foreground"}`}>
+                   <Terminal className="h-4 w-4" /> <span className="text-[14px]">Learn</span>
+                </Link>
+                <Link href="/roadmap" onClick={() => setMobileMenuOpen(false)} className={`flex items-center gap-3.5 px-4 py-3.5 rounded-xl transition-all ${pathname.startsWith("/roadmap") ? "bg-primary/10 text-primary font-bold shadow-sm ring-1 ring-primary/20" : "text-foreground/70 font-semibold hover:bg-muted/50 hover:text-foreground"}`}>
+                   <Map className="h-4 w-4" /> <span className="text-[14px]">Roadmap</span>
+                </Link>
+                <Link href="/cheatsheets" onClick={() => setMobileMenuOpen(false)} className={`flex items-center gap-3.5 px-4 py-3.5 rounded-xl transition-all ${pathname.startsWith("/cheatsheets") ? "bg-primary/10 text-primary font-bold shadow-sm ring-1 ring-primary/20" : "text-foreground/70 font-semibold hover:bg-muted/50 hover:text-foreground"}`}>
+                   <Bookmark className="h-4 w-4" /> <span className="text-[14px]">Cheatsheet</span>
+                </Link>
+                <Link href="/blog" onClick={() => setMobileMenuOpen(false)} className={`flex items-center gap-3.5 px-4 py-3.5 rounded-xl transition-all ${pathname.startsWith("/blog") ? "bg-primary/10 text-primary font-bold shadow-sm ring-1 ring-primary/20" : "text-foreground/70 font-semibold hover:bg-muted/50 hover:text-foreground"}`}>
+                   <FileText className="h-4 w-4" /> <span className="text-[14px]">Blog</span>
+                </Link>
+
+                {["ADMIN", "SUPER_ADMIN"].includes(session?.user?.role) && (
+                  <Link href="/admin" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3.5 px-4 py-3.5 rounded-xl transition-all bg-amber-500/5 text-amber-600 font-bold border border-amber-500/10 hover:bg-amber-500/10 mt-2">
+                     <Shield className="h-4 w-4" /> <span className="text-[13px]">Admin Dashboard</span>
+                  </Link>
+                )}
+             </nav>
+
+             <div className="p-5 border-t border-border/10 bg-muted/20 mt-auto">
+                <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 mb-3 px-1">Community Hub</p>
+                <Link href="/events" onClick={() => setMobileMenuOpen(false)} className="flex items-center justify-between w-full p-4 rounded-xl bg-background border border-border/40 text-xs font-bold hover:border-primary/40 transition-all text-foreground shadow-sm">
+                   <span>Webinars & Workshops</span>
+                   <ArrowRight className="h-3.5 w-3.5 text-primary" />
+                </Link>
+             </div>
+           </div>
+        </DialogContent>
+      </Dialog>
     </nav>
   )
 }
