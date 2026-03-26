@@ -25,11 +25,11 @@ export default function RootLayout({
       <body className={`${inter.className} min-h-screen bg-background text-foreground selection:bg-primary/30 selection:text-primary`}>
         <Providers>
           <div className="flex flex-col min-h-screen relative overflow-hidden">
-            {/* Ambient Background Mesh Gradient */}
-            <div className="fixed inset-0 pointer-events-none -z-10">
-              <div className="absolute top-[-10%] left-[-10%] h-[500px] w-[500px] rounded-full bg-blue-600/10 dark:bg-blue-600/20 blur-[120px]" />
-              <div className="absolute top-[20%] right-[-10%] h-[400px] w-[400px] rounded-full bg-purple-600/10 dark:bg-purple-600/20 blur-[120px]" />
-              <div className="absolute bottom-[-20%] left-[20%] h-[600px] w-[600px] rounded-full bg-teal-500/10 dark:bg-teal-500/15 blur-[150px]" />
+            {/* Ambient Background Mesh Gradient - Optimized for Light/Dark Emotional Contrast */}
+            <div className="fixed inset-0 pointer-events-none -z-10 bg-background transition-colors duration-500">
+              <div className="absolute top-[-10%] left-[-10%] h-[500px] w-[500px] rounded-full bg-blue-400/20 dark:bg-blue-600/20 blur-[120px] mix-blend-multiply dark:mix-blend-normal opacity-70" />
+              <div className="absolute top-[20%] right-[-10%] h-[400px] w-[400px] rounded-full bg-indigo-400/15 dark:bg-purple-600/20 blur-[120px] mix-blend-multiply dark:mix-blend-normal opacity-70" />
+              <div className="absolute bottom-[-10%] left-[20%] h-[600px] w-[600px] rounded-full bg-emerald-400/15 dark:bg-teal-500/15 blur-[150px] mix-blend-multiply dark:mix-blend-normal opacity-70" />
             </div>
             <Navbar />
             <main className="flex-grow">

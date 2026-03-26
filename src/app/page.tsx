@@ -49,11 +49,11 @@ export default async function Home() {
           <div className="flex flex-col items-center text-center space-y-8">
             {/* Headline */}
             <div className="space-y-4 max-w-4xl">
-              <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tighter leading-none">
-                <span className="block text-foreground">Learn DevOps</span>
+              <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tighter leading-none">
+                <span className="block text-foreground transition-colors duration-500">Learn DevOps</span>
                 <span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary via-purple-500 to-amber-500">The right way</span>
               </h1>
-              <p className="mx-auto max-w-2xl text-muted-foreground text-lg md:text-xl leading-relaxed">
+              <p className="mx-auto max-w-2xl text-muted-foreground text-base md:text-xl leading-relaxed font-bold opacity-80">
                 Structured roadmaps, curated resources, and a community of engineers
                 sharing what actually works in production — not just what looks good in a tutorial.
               </p>
@@ -62,13 +62,13 @@ export default async function Home() {
             {/* CTAs */}
             <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
               <Link href="/roadmap">
-                <Button size="lg" className="w-full sm:w-auto h-12 px-8 rounded-full text-base gap-2 group bg-primary hover:bg-primary/95 hover:shadow-[0_15px_35px_rgba(59,130,246,0.3)] hover:-translate-y-1 transition-all duration-300">
+                <Button size="lg" className="w-full sm:w-auto h-12 px-8 rounded-full text-base gap-2 group bg-primary hover:bg-primary/95 md:hover:shadow-[0_15px_35px_rgba(59,130,246,0.3)] md:hover:-translate-y-1 transition-all duration-300">
                   Start the Roadmap
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </Button>
               </Link>
               <Link href="/modules">
-                <Button variant="outline" size="lg" className="w-full sm:w-auto h-12 px-8 rounded-full text-base hover:bg-background hover:shadow-[0_15px_35px_rgba(0,0,0,0.1)] hover:-translate-y-1 transition-all duration-300 border-border/60">
+                <Button variant="outline" size="lg" className="w-full sm:w-auto h-12 px-8 rounded-full text-base hover:bg-background md:hover:shadow-[0_15px_35px_rgba(0,0,0,0.1)] md:hover:-translate-y-1 transition-all duration-300 border-border/60">
                   Browse Modules
                 </Button>
               </Link>
@@ -88,8 +88,9 @@ export default async function Home() {
       </div>
 
         {/* Pinned Blogs Floating Button - Top Right Extreme */}
-        <div className="absolute top-24 right-4 md:right-10 lg:right-16 z-40">
-           <div className="scale-75 md:scale-90 origin-top-right">
+        {/* Pinned Blogs Floating Button - Optimized Positioning & Scalability */}
+        <div className="absolute top-16 right-2 md:top-24 md:right-10 lg:right-16 z-40 transition-all duration-700 animate-in fade-in slide-in-from-top-6">
+           <div className="scale-[0.6] md:scale-90 origin-top-right">
               <PinnedBlogs blogs={pinnedBlogs} />
            </div>
         </div>
