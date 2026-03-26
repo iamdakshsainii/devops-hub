@@ -243,12 +243,13 @@ export default async function Home() {
                 key={f.title}
                 href={f.href}
                 className={`
-                  group relative rounded-2xl border border-border/20 bg-card/40 p-6
-                  hover:bg-card/70 transition-all duration-300 hover:-translate-y-1
-                  hover:shadow-[0_20px_40px_rgba(0,0,0,0.12)]
-                  flex flex-col gap-4 overflow-hidden
-                  ${f.border}
-                `}
+  group relative rounded-2xl border border-border/20 bg-card/40 p-6
+  hover:bg-card/70 active:bg-card/70 transition-all duration-300
+  hover:-translate-y-1 active:scale-[0.98]
+  hover:shadow-[0_20px_40px_rgba(0,0,0,0.12)]
+  flex flex-col gap-4 overflow-hidden
+  ${f.border}
+`}
               >
                 {/* BG gradient on hover */}
                 <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br ${f.accent} pointer-events-none rounded-2xl`} />
@@ -309,7 +310,7 @@ export default async function Home() {
               {differentiators.map((item, i) => (
                 <div
                   key={item}
-                  className="group flex items-center gap-3.5 p-4 rounded-xl border border-border/20 bg-card/40 hover:bg-card/70 hover:border-primary/25 hover:-translate-y-0.5 hover:shadow-[0_8px_25px_rgba(0,0,0,0.08)] transition-all duration-200 cursor-default"
+                  className="group flex items-center gap-3.5 p-4 rounded-xl border border-border/20 bg-card/40 hover:bg-card/70 active:bg-card/70 hover:border-primary/25 active:border-primary/25 hover:-translate-y-0.5 active:scale-[0.98] hover:shadow-[0_8px_25px_rgba(0,0,0,0.08)] transition-all duration-200 cursor-default"
                   style={{ animationDelay: `${i * 60}ms` }}
                 >
                   <div className="h-6 w-6 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">

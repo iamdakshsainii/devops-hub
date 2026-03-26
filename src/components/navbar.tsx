@@ -107,14 +107,14 @@ export function Navbar() {
         }
         ${isAdmin ? "border-b border-amber-500/10" : ""}
       `}>
-        <div className="w-full px-6 lg:px-8">
-          <div className="flex h-[68px] lg:h-[76px] items-center gap-2 lg:gap-6">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-10 max-w-[1440px]">
+          <div className="flex h-[68px] lg:h-[76px] items-center">
 
             {/* ── Logo ── */}
             <Link href="/" className="flex items-center space-x-2 group mr-2">
               <Terminal className="h-6 w-6 text-primary group-hover:scale-110 transition-transform" />
               <span className="font-black tracking-tighter text-[16px] md:text-lg leading-none hidden sm:block">
-                DevOps<span className="text-primary">Network</span>
+                DevOps <span className="text-primary">Network</span>
               </span>
             </Link>
 
@@ -165,11 +165,11 @@ export function Navbar() {
               </DropdownMenu>
             </div>
 
-            {/* ── Spacer 1 ── */}
+            {/* ── Spacer — Pushes Search/Actions to the right ── */}
             <div className="flex-1" />
 
             {/* ── Search Bar — Desktop ── */}
-            <div className="hidden md:block">
+            <div className="hidden md:block mr-3 lg:mr-6">
               <button
                 onClick={() => setCmdkOpen(true)}
                 className="flex items-center gap-3 h-10 pl-4 pr-3 rounded-xl bg-foreground/[0.05] hover:bg-foreground/[0.08] border border-border/40 hover:border-border/60 transition-all duration-200 group w-[320px] xl:w-[480px]"
@@ -182,9 +182,6 @@ export function Navbar() {
                 </div>
               </button>
             </div>
-
-            {/* ── Spacer 2 — Pushes profile to far right ── */}
-            <div className="flex-1" />
 
             {/* ── Right Actions ── */}
             <div className="flex items-center gap-1.5 sm:gap-2">
