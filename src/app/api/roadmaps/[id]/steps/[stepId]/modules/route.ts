@@ -35,7 +35,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     }
 
     const { stepId } = await params;
-    const { moduleId, order } = await req.json();
+    const body = await req.json();
+    const { moduleId, order, isOptional, optionalDescription } = body;
 
     if (!moduleId) return NextResponse.json({ message: "Module ID required" }, { status: 400 });
 
@@ -48,13 +49,45 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       data: {
         stepId,
         moduleId,
-        order: order !== undefined ? parseInt(order as any) : 0
+        order: order !== undefined ? parseInt(order as any) : 0,
+        isOptional: !!isOptional,
+        optionalDescription
       }
     });
 
     return NextResponse.json({ message: "Attached", attachment }, { status: 201 });
   } catch (err) {
     console.error("POST ATTACHMENT ERROR:", err);
+    return NextResponse.json({ message: "Server error" }, { status: 500 });
+  }
+}
+
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string; stepId: string }> }) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session || !["ADMIN", "SUPER_ADMIN"].includes(session.user.role)) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    }
+
+    const { stepId } = await params;
+    const { moduleId, isOptional, order, optionalDescription } = await req.json();
+
+    if (!moduleId) return NextResponse.json({ message: "Module ID required" }, { status: 400 });
+
+    const attachment = await prisma.roadmapStepModule.update({
+      where: {
+        stepId_moduleId: { stepId, moduleId }
+      },
+      data: {
+        isOptional: isOptional !== undefined ? !!isOptional : undefined,
+        order: order !== undefined ? parseInt(order as any) : undefined,
+        optionalDescription: optionalDescription !== undefined ? optionalDescription : undefined
+      }
+    });
+
+    return NextResponse.json({ message: "Updated", attachment });
+  } catch (err) {
+    console.error("PATCH ATTACHMENT ERROR:", err);
     return NextResponse.json({ message: "Server error" }, { status: 500 });
   }
 }

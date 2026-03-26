@@ -73,3 +73,5 @@ Content for chapter 2...
 ```
 
 By following this guide, you ensure the platform remains the most professional technical learning resource on the web! 🚀🔥
+
+ this is new instruction make sur 10 to 12 topic adn subtopic or subheading rule is there to and make topic as looks good and needed in left sidebar not naything uhwantewd in sidebar and detialed good simple easy notes expalkin everything with pronlem and slolution approch if neededa

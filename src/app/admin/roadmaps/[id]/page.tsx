@@ -86,7 +86,10 @@ function AttachedModulesSection({ stepId, roadmapId }: { stepId?: string; roadma
   };
 
   const attachModule = async (moduleId: string) => {
-    if (!stepId) return;
+    if (!stepId || !roadmapId) {
+      console.error("Missing ID context:", { stepId, roadmapId });
+      return;
+    }
     await fetch(`/api/roadmaps/${roadmapId}/steps/${stepId}/modules`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -107,6 +110,26 @@ function AttachedModulesSection({ stepId, roadmapId }: { stepId?: string; roadma
     fetchAttached();
   };
 
+  const toggleOptional = async (moduleId: string, isOptional: boolean) => {
+    if (!stepId) return;
+    await fetch(`/api/roadmaps/${roadmapId}/steps/${stepId}/modules`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ moduleId, isOptional }),
+    });
+    fetchAttached();
+  };
+
+  const updateOptionalDescription = async (moduleId: string, optionalDescription: string) => {
+    if (!stepId) return;
+    await fetch(`/api/roadmaps/${roadmapId}/steps/${stepId}/modules`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ moduleId, optionalDescription }),
+    });
+    // No full fetch here to avoid losing focus during typing if we were using state for input
+  };
+
 
 
   if (!stepId) {
@@ -119,7 +142,7 @@ function AttachedModulesSection({ stepId, roadmapId }: { stepId?: string; roadma
 
   return (
     <div className="space-y-3 pt-4 border-t">
-      <h4 className="text-sm font-bold">🔗 Attached Modules</h4>
+      <h4 className="text-sm font-bold">🔗 Attached Modules <span className="text-[9px] text-primary/40 ml-1">(v2)</span></h4>
 
       {/* Search Input and Dropdown */}
       <div className="relative">
@@ -140,14 +163,24 @@ function AttachedModulesSection({ stepId, roadmapId }: { stepId?: string; roadma
             {results.map((m) => (
               <div 
                 key={m.id} 
-                className="p-2.5 hover:bg-muted cursor-pointer flex items-center justify-between text-sm"
+                className="p-2.5 hover:bg-muted cursor-pointer flex items-center justify-between text-sm group"
                 onClick={() => attachModule(m.id)}
               >
                 <div>
-                  <span className="font-semibold">{m.icon} {m.title}</span>
+                  <span className="font-semibold group-hover:text-primary transition-colors">{m.icon} {m.title}</span>
                   <p className="text-xs text-muted-foreground truncate max-w-xs">{m.description || "No description"}</p>
                 </div>
-                <Button size="sm" variant="ghost" className="h-7 px-2">Attach</Button>
+                <Button 
+                  size="sm" 
+                  variant="ghost" 
+                  className="h-7 px-2 hover:bg-primary/10 hover:text-primary"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    attachModule(m.id);
+                  }}
+                >
+                  Attach
+                </Button>
               </div>
             ))}
           </div>
@@ -157,18 +190,51 @@ function AttachedModulesSection({ stepId, roadmapId }: { stepId?: string; roadma
       {/* List Attached */}
       {attached.length > 0 ? (
         <div className="space-y-2">
-          {attached.map((am) => (
-            <div key={am.id} className="border rounded-lg p-2 flex items-center justify-between bg-muted/5">
-              <div className="flex gap-2 items-center">
-                <span className="text-lg bg-muted p-1 rounded">{am.module?.icon || "📦"}</span>
-                <div>
-                  <p className="text-xs font-semibold leading-none">{am.module?.title}</p>
-                  <span className="text-[10px] text-muted-foreground">Order: {am.order}</span>
+          {[...attached].sort((a,b) => {
+            if (a.isOptional !== b.isOptional) return a.isOptional ? 1 : -1;
+            return a.order - b.order;
+          }).map((am) => (
+            <div key={am.id} className="border border-border/40 rounded-xl bg-card overflow-hidden hover:border-primary/20 transition-all shadow-sm">
+              <div className="p-2.5 flex items-center justify-between">
+                <div className="flex gap-3 items-center">
+                  <span className="text-xl bg-primary/5 p-2 rounded-lg border border-primary/10">{am.module?.icon || "📦"}</span>
+                  <div>
+                    <p className="text-[13px] font-bold leading-tight">{am.module?.title}</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">Order: {am.order} • {am.module?._count?.topics || 0} Topics</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 bg-muted/30 px-2 py-1 rounded-md border border-border/20">
+                      <label className="text-[9px] font-black uppercase tracking-tighter cursor-pointer" htmlFor={`opt-${am.id}`}>Optional</label>
+                      <input 
+                        type="checkbox" 
+                        id={`opt-${am.id}`}
+                        checked={am.isOptional} 
+                        onChange={(e) => toggleOptional(am.moduleId, e.target.checked)}
+                        className="h-3 w-3 accent-primary rounded-sm cursor-pointer"
+                      />
+                  </div>
+                  <Button size="sm" variant="ghost" onClick={() => detachModule(am.moduleId)} className="h-7 w-7 p-0 hover:bg-destructive/10 text-destructive rounded-full">
+                    <X className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
-              <Button size="sm" variant="ghost" onClick={() => detachModule(am.moduleId)} className="p-1 hover:bg-destructive/10 rounded">
-                <X className="h-4 w-4 text-destructive" />
-              </Button>
+              {am.isOptional && (
+                <div className="px-3 pb-3 pt-1 border-t border-border/10">
+                   <Input 
+                      placeholder="Why is this optional? (e.g. 'Use this if you prefer GitHub')"
+                      defaultValue={am.optionalDescription || ""}
+                      className="text-[11px] h-7 bg-muted/20 border-border/20"
+                      onChange={(e) => {
+                         // Simple debounce logic
+                         const val = e.target.value;
+                         const tid = (e.target as any)._tid;
+                         if (tid) clearTimeout(tid);
+                         (e.target as any)._tid = setTimeout(() => updateOptionalDescription(am.moduleId, val), 1000);
+                      }}
+                   />
+                </div>
+              )}
             </div>
           ))}
         </div>

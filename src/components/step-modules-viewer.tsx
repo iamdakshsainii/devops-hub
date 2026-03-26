@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import {
   ArrowLeft, ArrowRight, BookOpen, CheckCircle2, ChevronRight,
-  Search, Zap, Clock, Trophy, Flame, LayoutGrid, List,
+  Search, Zap, Clock, Trophy, Flame, LayoutGrid, List, Info, Lightbulb
 } from "lucide-react";
 
 const getIcon = (iconName: string): string => iconName || "📦";
@@ -13,6 +13,8 @@ const getIcon = (iconName: string): string => iconName || "📦";
 export interface AttachedModule {
   id: string;
   order: number;
+  isOptional?: boolean;
+  optionalDescription?: string | null;
   module: {
     id: string;
     title: string;
@@ -119,7 +121,11 @@ export function StepModulesViewer({
     }
     if (sortBy === "az") r.sort((a, b) => a.module.title.localeCompare(b.module.title));
     else if (sortBy === "topics") r.sort((a, b) => b.module._count.topics - a.module._count.topics);
-    else r.sort((a, b) => a.order - b.order);
+    else r.sort((a, b) => {
+      // Required modules first!
+      if (a.isOptional !== b.isOptional) return a.isOptional ? 1 : -1;
+      return a.order - b.order;
+    });
     return r;
   }, [step.attachedModules, searchQuery, activeTag, sortBy]);
 
@@ -324,6 +330,21 @@ export function StepModulesViewer({
           </div>
         </div>
 
+        {/* ── CURRICULUM GUIDE ── */}
+        <div 
+          className="p-4 rounded-2xl border flex items-start gap-3 bg-primary/5 border-primary/10 shadow-sm"
+        >
+          <div className="bg-primary/10 p-2 rounded-xl text-primary shrink-0 mt-0.5">
+            <Info className="h-4 w-4" />
+          </div>
+          <div className="space-y-1">
+            <h5 className="text-sm font-bold text-foreground">Curriculum Guide</h5>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Required modules are listed first. Modules marked as <span className="text-primary font-bold">Optional</span> are elective paths — you can skip them and still achieve <span className="text-emerald-500 font-bold italic">100% Mastery</span> for this step.
+            </p>
+          </div>
+        </div>
+
         {/* Cards */}
         {filteredModules.length > 0 ? (
           <div className={viewMode === "grid" ? "grid sm:grid-cols-2 lg:grid-cols-3 gap-5" : "space-y-3"}>
@@ -350,9 +371,18 @@ export function StepModulesViewer({
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <p className="font-bold text-foreground truncate">{am.module.title}</p>
+                        {am.isOptional && (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-muted/50 text-muted-foreground border font-black uppercase tracking-tighter">Optional</span>
+                        )}
                         {isCompleted && <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />}
                       </div>
                       <p className="text-sm text-muted-foreground truncate mt-0.5">{am.module.description}</p>
+                      {am.isOptional && am.optionalDescription && (
+                        <div className="flex items-center gap-1.5 mt-1.5 px-2 py-0.5 rounded bg-primary/10 border border-primary/20 w-fit">
+                          <Lightbulb className="h-3 w-3 text-primary" />
+                          <p className="text-[11px] text-primary font-bold italic truncate max-w-[200px]">{am.optionalDescription}</p>
+                        </div>
+                      )}
                     </div>
                     <div className="shrink-0 hidden sm:flex items-center gap-4 text-xs text-muted-foreground">
                       <span className="flex items-center gap-1"><BookOpen className="h-3.5 w-3.5" />{am.module._count.topics}</span>
@@ -388,6 +418,9 @@ export function StepModulesViewer({
                         {getIcon(am.module.icon || "")}
                       </div>
                       <div className="flex items-center gap-1.5">
+                        {am.isOptional && (
+                          <span className="text-[9px] font-black uppercase tracking-tighter px-2 py-1 rounded-md border border-border/20 bg-muted/40 text-muted-foreground">Optional</span>
+                        )}
                         {isCompleted && (
                           <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-1 rounded-full">
                             <CheckCircle2 className="h-3 w-3" /> Done
@@ -410,6 +443,17 @@ export function StepModulesViewer({
                     <div>
                       <h3 className="font-black text-foreground text-base leading-tight">{am.module.title}</h3>
                       <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{am.module.description}</p>
+                      {am.isOptional && am.optionalDescription && (
+                         <div className="mt-3 p-3 rounded-xl bg-primary/10 border border-primary/20 relative group/hint transition-all hover:bg-primary/[0.15]">
+                           <div className="absolute -top-2.5 left-3 bg-primary text-primary-foreground text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest shadow-sm">
+                             Path Note
+                           </div>
+                           <p className="text-[11.5px] text-primary font-bold italic leading-relaxed flex items-start gap-2 pt-1">
+                             <span className="text-base leading-none">💡</span>
+                             {am.optionalDescription}
+                           </p>
+                         </div>
+                      )}
                     </div>
 
                     {am.module.tags && (

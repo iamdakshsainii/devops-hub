@@ -52,12 +52,15 @@ export default async function RoadmapDetailPage({ params }: { params: Promise<{ 
 
     if (hasModules) {
       (step as any).attachedModules.forEach((am: any) => {
-        trackingTotal += am.module.topics?.length || 0;
-        trackingCompleted += (am.module.topics || []).filter((t: any) => completedItemIds.has(t.id)).length;
+        // ONLY count mandatory modules for Step Mastery
+        if (!am.isOptional) {
+          trackingTotal += am.module.topics?.length || 0;
+          trackingCompleted += (am.module.topics || []).filter((t: any) => completedItemIds.has(t.id)).length;
+        }
       });
     }
     
-    // Check if step is done
+    // Check if step is done (If no mandatory modules, it defaults to completion if it has topics or just as 0/0)
     const isCompleted = trackingTotal > 0 && trackingCompleted === trackingTotal;
     return acc + (isCompleted ? 1 : 0);
   }, 0);
@@ -65,10 +68,10 @@ export default async function RoadmapDetailPage({ params }: { params: Promise<{ 
   const totalTopics = (roadmap.steps || []).reduce((acc: number, step: any) => {
     const hasModules = (step as any).attachedModules?.length > 0;
     if (hasModules) {
-      const moduleTopics = (step as any).attachedModules.reduce(
-        (sum: number, am: any) => sum + (am.module.topics?.length || 0), 0
+      const mandatoryTopics = (step as any).attachedModules.reduce(
+        (sum: number, am: any) => sum + (am.isOptional ? 0 : (am.module.topics?.length || 0)), 0
       );
-      return acc + moduleTopics;
+      return acc + mandatoryTopics;
     }
     return acc + step._count.topics;
   }, 0);
@@ -153,8 +156,10 @@ export default async function RoadmapDetailPage({ params }: { params: Promise<{ 
 
             if (hasModules) {
               (step as any).attachedModules.forEach((am: any) => {
-                trackingTotal += am.module.topics?.length || 0;
-                trackingCompleted += (am.module.topics || []).filter((t: any) => completedItemIds.has(t.id)).length;
+                if (!am.isOptional) {
+                   trackingTotal += am.module.topics?.length || 0;
+                   trackingCompleted += (am.module.topics || []).filter((t: any) => completedItemIds.has(t.id)).length;
+                }
               });
             } else {
               trackingTotal = 0;

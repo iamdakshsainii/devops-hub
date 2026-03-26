@@ -56,12 +56,17 @@ export default async function DashboardPage() {
            icon: true,
            color: true,
            description: true,
+           createdAt: true,
+           updatedAt: true,
+           status: true,
+           order: true,
            steps: {
              where: { status: "PUBLISHED" },
              select: {
                id: true,
                attachedModules: {
                  select: {
+                   isOptional: true,
                    module: {
                      select: {
                        topics: { select: { id: true } }
@@ -80,7 +85,7 @@ export default async function DashboardPage() {
   // Determine which roadmap is "Current" based on the most recent activity
   const recentTopicId = userProgress[0]?.itemId;
   
-  const roadmapsWithProgress = rawRoadmaps.map(roadmap => {
+  const roadmapsWithProgress = (rawRoadmaps as any[]).map(roadmap => {
     let completedSteps = 0;
     let completedTopics = 0;
     let totalTopics = 0;
@@ -90,10 +95,14 @@ export default async function DashboardPage() {
        let stepCompleted = 0;
        
        step.attachedModules.forEach(am => {
+         const isOptional = (am as any).isOptional;
          am.module.topics.forEach(t => {
-           stepTotal++; totalTopics++;
+           if (!isOptional) {
+             stepTotal++; totalTopics++;
+           }
            if (completedItemIds.has(t.id)) {
-             stepCompleted++; completedTopics++;
+             if (!isOptional) stepCompleted++; 
+             completedTopics++;
            }
          });
        });

@@ -290,10 +290,12 @@ model RoadmapStep {
 }
 
 model RoadmapStepModule {
-  id       String @id @default(cuid())
-  stepId   String
-  moduleId String
-  order    Int    @default(0)
+  id         String @id @default(cuid())
+  stepId     String
+  moduleId   String
+  order      Int    @default(0)
+  isOptional Boolean @default(false)
+  optionalDescription String? @db.Text
 
   step     RoadmapStep @relation("StepToModule", fields: [stepId], references: [id], onDelete: Cascade)
   module   RoadmapStep @relation("ModuleToStep", fields: [moduleId], references: [id], onDelete: Cascade)

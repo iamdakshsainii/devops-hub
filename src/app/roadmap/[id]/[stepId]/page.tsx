@@ -4,6 +4,8 @@ import { authOptions } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import { StepModulesViewer } from "@/components/step-modules-viewer";
 
+export const dynamic = "force-dynamic";
+
 export default async function StepDetailPage({
   params,
 }: {
@@ -64,9 +66,15 @@ export default async function StepDetailPage({
      };
   });
 
-  // Calculate overall stats for the step
-  const totalTopics = attachedModulesWithProgress.reduce((sum, am) => sum + (am.module._count?.topics || 0), 0);
-  const completedTopics = attachedModulesWithProgress.reduce((sum, am) => sum + am.module.completedCount, 0);
+  // Calculate overall stats for the step (Excluding Optional for the percentage)
+  const totalTopics = attachedModulesWithProgress.reduce((sum, am) => sum + (am.isOptional ? 0 : (am.module._count?.topics || 0)), 0);
+  const completedTopics = attachedModulesWithProgress.reduce((sum, am) => sum + (am.isOptional ? 0 : (am.module.completedCount)), 0);
+  
+  // Also calculate total including optional for the "items" count if needed, or just keep it simple.
+  // The user wants to know they reached 100% without optional.
+  
+  const totalTopicsIncludingOptional = attachedModulesWithProgress.reduce((sum, am) => sum + (am.module._count?.topics || 0), 0);
+  const completedTopicsIncludingOptional = attachedModulesWithProgress.reduce((sum, am) => sum + (am.module.completedCount), 0);
 
   // Get Adjacent Steps
   const siblings = await prisma.roadmapStep.findMany({
@@ -81,8 +89,8 @@ export default async function StepDetailPage({
 
   const stats = {
     totalModules: attachedModulesWithProgress.length,
-    totalTopics,
-    completedTopics,
+    totalTopics: totalTopicsIncludingOptional,
+    completedTopics: completedTopicsIncludingOptional,
     percentComplete: totalTopics > 0 ? Math.round((completedTopics / totalTopics) * 100) : 0
   };
 
