@@ -2,14 +2,19 @@
 
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import {
   ArrowLeft, ArrowRight, BookOpen, CheckCircle2, ChevronRight,
   Search, Zap, Clock, Trophy, Flame, LayoutGrid, List, Info, Lightbulb,
-  Sparkles, Target, Star, ShieldCheck, ZapIcon, Pencil, Settings
+  Sparkles, Target, Star, ShieldCheck, ZapIcon, Pencil, Settings,
+  Github, Youtube, ExternalLink, Paperclip, FileText, Globe, Box
 } from "lucide-react";
+import { BrandIcon } from "@/components/brand-icons";
 
-const getIcon = (iconName: string): string => iconName || "📦";
+const getIcon = (iconName: string, title?: string): React.ReactNode => {
+   return <BrandIcon name={title || iconName} />;
+};
 
 export interface AttachedModule {
   id: string;
@@ -34,6 +39,7 @@ export interface StepData {
   description: string;
   icon: string;
   attachedModules: AttachedModule[];
+  resources?: any[]; // For Projects / Capstones
 }
 
 export interface RoadmapData {
@@ -48,6 +54,7 @@ export interface SummaryStats {
   totalTopics: number;
   completedTopics: number;
   percentComplete: number;
+  completedResourceIds?: string[];
 }
 
 function useCountUp(target: number, duration = 1000) {
@@ -100,8 +107,11 @@ export function StepModulesViewer({
   const [sortBy, setSortBy] = useState<"default" | "az" | "topics">("default");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [mounted, setMounted] = useState(false);
+  const [localCompletedIds, setLocalCompletedIds] = useState<string[]>(stats.completedResourceIds || []);
+  const router = useRouter();
 
   useEffect(() => { setMounted(true); }, []);
+  useEffect(() => { setLocalCompletedIds(stats.completedResourceIds || []); }, [stats.completedResourceIds]);
 
   const animatedPercent = useCountUp(mounted ? stats.percentComplete : 0);
   const animatedCompleted = useCountUp(mounted ? stats.completedTopics : 0);
@@ -124,8 +134,41 @@ export function StepModulesViewer({
   const isMastered = stats.percentComplete === 100 && stats.totalTopics > 0 && stats.totalModules > 0;
   const isOnFire = stats.percentComplete > 0 && stats.percentComplete < 100 && stats.totalModules > 0;
 
+  const handleToggleResource = async (resourceId: string, completed: boolean) => {
+    // OPTIMISTIC UPDATE: Immediate UI feedback
+    setLocalCompletedIds(prev => 
+       completed ? [...prev, resourceId] : prev.filter(id => id !== resourceId)
+    );
+
+    try {
+      await fetch("/api/progress", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          itemId: resourceId,
+          itemType: "ROADMAP_RESOURCE",
+          completed,
+        }),
+      });
+      // No router.refresh() here to keep it snappy. 
+      // The parent stats might be slightly out of sync on the PROGRESS RING, 
+      // so we should calculate local percent too for the complete experience.
+    } catch {
+      // Revert on failure
+      setLocalCompletedIds(prev => 
+        completed ? prev.filter(id => id !== resourceId) : [...prev, resourceId]
+      );
+      console.error("Resource toggle failed");
+    }
+  };
+
+  const localProjectIsDone = (step.resources?.length ?? 0) > 0 && localCompletedIds.length > 0;
+  const localPercent = localProjectIsDone ? 100 : stats.percentComplete;
+  const localIsMastered = localPercent === 100 && (stats.totalTopics > 0 || (step.resources && step.resources.length > 0));
+  const localIsOnFire = localPercent > 0 && localPercent < 100;
+
   return (
-    <div className="min-h-screen bg-background relative selection:bg-primary selection:text-primary-foreground">
+    <div className="min-h-screen bg-transparent relative selection:bg-primary selection:text-primary-foreground">
       {/* Dynamic Mesh Background */}
       <div className="fixed inset-0 pointer-events-none -z-10 bg-background">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(120,119,198,0.1),transparent_50%)]" />
@@ -202,11 +245,11 @@ export function StepModulesViewer({
               {/* Badges & Quick Stats */}
               <div className="flex flex-wrap items-center gap-3">
                 <div className="flex items-center gap-3 p-1.5 pr-4 rounded-2xl bg-muted/30 border border-border/50 backdrop-blur-md transition-all hover:bg-muted/50">
-                  {isMastered ? (
+                  {localIsMastered ? (
                     <span className="flex items-center justify-center w-8 h-8 rounded-xl bg-emerald-500 text-white shadow-lg shadow-emerald-500/30">
                       <Trophy className="h-4 w-4" />
                     </span>
-                  ) : isOnFire ? (
+                  ) : localIsOnFire ? (
                     <span className="flex items-center justify-center w-8 h-8 rounded-xl bg-orange-500 text-white shadow-lg shadow-orange-500/30">
                       <Flame className="h-4 w-4" />
                     </span>
@@ -217,7 +260,7 @@ export function StepModulesViewer({
                   )}
                   <div className="flex flex-col">
                     <span className="text-[10px] uppercase font-black tracking-widest text-muted-foreground/70 leading-none mb-1">Status</span>
-                    <span className="text-xs font-black text-foreground">{isMastered ? "Step Mastered" : isOnFire ? "Learning Path" : "Get Started"}</span>
+                    <span className="text-xs font-black text-foreground">{localIsMastered ? "Step Mastered" : localIsOnFire ? "Learning Path" : "Get Started"}</span>
                   </div>
                 </div>
 
@@ -227,7 +270,13 @@ export function StepModulesViewer({
                     </span>
                   <div className="flex flex-col">
                     <span className="text-[10px] uppercase font-black tracking-widest text-muted-foreground/70 leading-none mb-1">Content</span>
-                    <span className="text-xs font-black text-foreground text-nowrap">{stats.totalModules} Units · {stats.totalTopics} Topics</span>
+                    <span className="text-xs font-black text-foreground text-nowrap">
+                       {step.attachedModules.length > 0 && !step.title.toLowerCase().includes("project") && !step.title.toLowerCase().includes("capstone") ? (
+                          `${stats.totalModules} Units · ${stats.totalTopics} Topics`
+                       ) : (
+                          `${step.resources?.length || stats.totalTopics || 0} Project Resources`
+                       )}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -237,7 +286,7 @@ export function StepModulesViewer({
                 <div className="flex justify-between items-end">
                   <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70">Mastery Progress</span>
                   <div className="flex items-center gap-4">
-                     <span className="text-2xl font-black text-foreground tracking-tighter">{stats.percentComplete}%</span>
+                     <span className="text-2xl font-black text-foreground tracking-tighter">{localPercent}%</span>
                      {isAdmin && (
                         <Link href={`/admin/roadmaps/${roadmap.id}`}>
                            <button className="h-8 px-3 rounded-lg bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-primary/20 transition-all">
@@ -270,16 +319,11 @@ export function StepModulesViewer({
                   className="absolute inset-x-0 top-0 h-1/2 rounded-full blur-[60px] opacity-[0.1] dark:opacity-[0.2]" 
                   style={{ background: roadmap.color }}
                 />
- 
                 <div className="relative flex items-center justify-center p-3 rounded-full bg-background/50 dark:bg-zinc-950/50 backdrop-blur-xl border border-white/20 dark:border-white/10">
-                  <ProgressRing percent={stats.percentComplete} color={isMastered ? '#10b981' : roadmap.color} size={110} stroke={8} />
-                  <div className="absolute inset-0 flex flex-col items-center justify-center pt-1">
-                    <span className={`text-2xl font-black leading-none tabular-nums tracking-tight ${isMastered ? 'text-emerald-500' : 'text-foreground'}`}>
-                      {animatedPercent}<span className="text-[10px] font-bold opacity-30">%</span>
-                    </span>
-                    <span className="text-[8px] font-black uppercase tracking-widest text-muted-foreground mt-1 opacity-50">
-                      Progress
-                    </span>
+                  <ProgressRing percent={localPercent} color={localIsMastered ? '#10b981' : roadmap.color} size={110} stroke={8} />
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-2xl font-black tracking-tighter text-foreground leading-none">{localPercent}%</span>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/50 mt-1">Mastery</span>
                   </div>
                 </div>
  
@@ -373,178 +417,282 @@ export function StepModulesViewer({
         </div>
 
         {/* ── CONTENT GRID ── */}
-        {filteredModules.length > 0 ? (
-          <div className={viewMode === "grid"
-            ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 pb-20 mt-8"
-            : "flex flex-col gap-8 pb-20 mt-8"
-          }>
-            {filteredModules.map((am, idx) => {
-              const total = am.module._count.topics;
-              const done = am.module.completedCount;
-              const percent = total > 0 ? Math.round((done / total) * 100) : 0;
-              const isCompleted = total > 0 && done >= total;
+        {/* ── CONTENT GRID / PROJECT DASHBOARD ── */}
+        {(() => {
+           const isProject = step.title.toLowerCase().includes("project") || step.title.toLowerCase().includes("capstone");
+           const hasNoModules = filteredModules.length === 0;
+           const showProjectView = isProject || (hasNoModules && (step.resources?.length ?? 0) > 0);
 
-              /* ── LIST VIEW (Premium Row) ── */
-              if (viewMode === "list") {
-                return (
-                  <Link
-                    key={am.id}
-                    href={`/modules/${am.module.id}?roadmapId=${roadmap.id}&stepId=${step.id}`}
-                    className="group flex flex-col md:flex-row md:items-center gap-8 p-8 rounded-[3.5rem] border-2 bg-card/30 backdrop-blur-2xl hover:shadow-2xl hover:border-primary/30 transition-all duration-500 relative overflow-hidden active:scale-[0.98]"
-                  >
-                     <div 
-                        className="absolute inset-0 opacity-0 group-hover:opacity-[0.05] transition-opacity duration-1000"
-                        style={{ background: roadmap.color }}
-                     />
-                    <div className="text-5xl w-20 h-20 rounded-[2rem] flex items-center justify-center shrink-0 border-2 shadow-xl transition-all duration-500 group-hover:scale-110 group-hover:-rotate-3"
-                      style={{ backgroundColor: `${roadmap.color}0a`, borderColor: `${roadmap.color}25` }}
-                    >
-                      {getIcon(am.module.icon || "")}
-                    </div>
-                    <div className="flex-1 space-y-2">
-                      <div className="flex flex-wrap items-center gap-4">
-                        <span className="font-black text-foreground text-lg tracking-tight group-hover:text-primary transition-colors">{am.module.title}</span>
-                        {am.isOptional && (
-                          <span className="text-[10px] font-black uppercase tracking-[0.2em] px-4 py-1.5 rounded-2xl bg-muted border-2 border-border/50 text-muted-foreground">Optional</span>
-                        )}
-                        {isCompleted && (
-                          <span className="text-[10px] font-black uppercase tracking-[0.2em] px-3 py-1 rounded-2xl bg-emerald-500/10 border-2 border-emerald-500/20 text-emerald-600 dark:text-emerald-400">Mastered</span>
-                        )}
-                        {isAdmin && (
-                          <Link href={`/admin/modules/${am.module.id}`}>
-                             <button className="text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-xl border-border/50 border-2 hover:bg-muted transition-all flex items-center gap-2">
-                                <Settings className="h-2.5 w-2.5" /> Admin
-                             </button>
-                          </Link>
-                        )}
-                      </div>
-                      <p className="text-xs text-muted-foreground font-bold tracking-tight line-clamp-1 opacity-80">{am.module.description}</p>
-                    </div>
-                    <div className="flex items-center gap-8">
-                       <div className="flex flex-col items-end gap-2">
-                          <span className="text-xs font-black text-foreground tracking-widest uppercase opacity-60">{percent}% Completion</span>
-                          <div className="w-40 h-2 rounded-full bg-muted/50 overflow-hidden border border-border/20">
-                             <div className="h-full rounded-full transition-all duration-[1.5s] ease-out-back" style={{ width: `${percent}%`, background: roadmap.color }} />
+           if (showProjectView) {
+             const resources = step.resources || [];
+             return (
+               <div className="space-y-12 pb-20 mt-8 animate-in fade-in slide-in-from-bottom-6 duration-1000">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                     {resources.map((res: any, idx: number) => {
+                        const isGithub = res.url.includes("github.com");
+                        const isYoutube = res.url.includes("youtube.com") || res.url.includes("youtu.be");
+                        const isDoc = res.type === "DOCUMENTATION" || res.url.includes("medium.com") || res.url.includes("dev.to");
+                        
+                        let Icon = ExternalLink;
+                        let color = roadmap.color;
+                        let label = "RESOURCE";
+                        let branding = "text-primary bg-primary/10 border-primary/20";
+                        
+                        if (isGithub) { Icon = Github; label = "REPOSITORY"; branding = "dark:text-white text-zinc-900 bg-zinc-500/10 border-zinc-500/20"; color = "#333"; }
+                        else if (isYoutube) { Icon = Youtube; label = "VIDEO"; branding = "text-red-500 bg-red-500/10 border-red-500/20"; color = "#ef4444"; }
+                        else if (isDoc) { Icon = FileText; label = "ARTICLE"; branding = "text-emerald-500 bg-emerald-500/10 border-emerald-500/20"; color = "#10b981"; }
+
+                        const isDone = localCompletedIds.includes(res.id);
+
+                        return (
+                          <div key={res.id} className="group relative flex flex-col p-8 rounded-[3rem] border-2 bg-card/60 backdrop-blur-3xl hover:shadow-2xl hover:border-primary/30 transition-all duration-700 hover:-translate-y-2 border-border/40 overflow-hidden group/pcard">
+                             {/* Floating Atmospheric Glow */}
+                             <div className="absolute -top-20 -right-20 w-44 h-44 rounded-full blur-[80px] opacity-0 group-hover/pcard:opacity-20 transition-opacity duration-1000" style={{ backgroundColor: color }} />
+                             
+                             <div className="flex items-center justify-between mb-8">
+                                <div className={`px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest border ${branding}`}>
+                                   {label}
+                                </div>
+                                <button
+                                   onClick={(e) => {
+                                      e.preventDefault();
+                                      handleToggleResource(res.id, !isDone);
+                                   }}
+                                   className={`group/check flex items-center gap-2 px-3 py-1.5 rounded-xl border-2 transition-all ${
+                                      isDone 
+                                      ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-500" 
+                                      : "bg-muted/30 border-border/40 text-muted-foreground/30 hover:border-emerald-500/30 hover:text-emerald-500"
+                                   }`}
+                                >
+                                   {isDone ? <CheckCircle2 className="h-4 w-4 fill-emerald-500/20" /> : <div className="h-4 w-4 rounded-full border-2 border-current opacity-20" />}
+                                   <span className="text-[10px] font-black uppercase tracking-widest">
+                                      {isDone ? "Project Ready" : "Mark Ready"}
+                                   </span>
+                                </button>
+                             </div>
+
+                             <div className="flex flex-col gap-5 relative z-10 flex-1">
+                                <Icon className={`h-10 w-10 opacity-80 group-hover/pcard:scale-110 group-hover/pcard:rotate-6 transition-transform duration-500 ${isDone ? "text-emerald-500" : ""}`} style={{ color: isDone ? undefined : color }} />
+                                <div className="space-y-2">
+                                   <div className="flex items-start gap-3">
+                                      <h4 className={`text-xl font-black tracking-tight group-hover/pcard:text-primary transition-colors leading-tight ${isDone ? "text-emerald-500/80" : "text-foreground"}`}>
+                                         {res.title}
+                                      </h4>
+                                   </div>
+                                   <p className="text-[13px] text-muted-foreground font-bold leading-relaxed line-clamp-3 opacity-80">
+                                      {res.description}
+                                   </p>
+                                </div>
+                             </div>
+
+                             <div className="mt-8 flex gap-3">
+                                <a 
+                                   href={res.url} 
+                                   target="_blank" 
+                                   rel="noreferrer" 
+                                   className="flex-1"
+                                >
+                                   <button className="w-full h-14 rounded-[2rem] bg-muted/40 hover:bg-muted border-2 border-border/50 text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3">
+                                      Explore <ExternalLink className="h-4 w-4" />
+                                   </button>
+                                </a>
+                                {isDone && (
+                                   <div className="w-14 h-14 rounded-[2rem] bg-emerald-500/10 border-2 border-emerald-500/30 flex items-center justify-center text-emerald-500 animate-in zoom-in-50 duration-500">
+                                      <Trophy className="h-6 w-6" />
+                                   </div>
+                                )}
+                             </div>
                           </div>
-                       </div>
-                       <div className="h-16 w-16 rounded-full border-2 border-border/50 flex items-center justify-center group-hover:bg-primary group-hover:border-primary transform transition-all group-hover:scale-110">
-                          <ArrowRight className="h-7 w-7 text-muted-foreground group-hover:text-white" />
-                       </div>
-                    </div>
-                  </Link>
-                );
-              }
-
-              /* ── GRID VIEW (Mega Cards) ── */
-              return (
-                <div
-                  key={am.id}
-                  className="group relative flex flex-col rounded-[2.5rem] border-2 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-[40px] overflow-hidden hover:shadow-2xl hover:-translate-y-2 transition-all duration-700 hover:border-primary/20 border-white/10 dark:border-white/5"
-                  style={{ borderColor: isCompleted ? "rgba(16,185,129,0.2)" : undefined }}
-                >
-                  <div className="h-1.5 bg-muted/20 relative overflow-hidden">
-                     <div 
-                       className="h-full transition-all duration-1000" 
-                       style={{ width: `${percent}%`, backgroundColor: roadmap.color, boxShadow: percent > 0 ? `0 0 10px ${roadmap.color}` : 'none' }} 
-                     />
+                        );
+                     })}
                   </div>
- 
-                   <div className="relative p-7 flex-1 flex flex-col gap-6">
-                     <div className="flex items-start justify-between">
-                       <div
-                         className="text-3xl w-14 h-14 rounded-2xl flex items-center justify-center border-2 bg-background/50 backdrop-blur-xl shadow-lg transition-transform duration-500 group-hover:scale-110"
-                         style={{ backgroundColor: `${roadmap.color}0a`, borderColor: `${roadmap.color}25` }}
-                       >
-                         {getIcon(am.module.icon || "")}
-                       </div>
-                       <div className="flex flex-col items-end gap-2 text-right">
-                          <div className="flex items-center gap-2">
-                            {am.isOptional && (
-                              <span 
-                                className="text-[8.5px] font-black uppercase tracking-tighter px-1.5 py-0.5 rounded-md border bg-muted/20 border-border/30 text-muted-foreground/50"
-                              >
-                                Optional
-                              </span>
-                            )}
-                            <span
-                              className="text-[10px] font-black w-7 h-7 rounded-lg flex items-center justify-center border transition-all"
-                              style={{ backgroundColor: `${roadmap.color}10`, color: roadmap.color, borderColor: `${roadmap.color}20` }}
-                            >
-                              #{idx + 1}
-                            </span>
-                          </div>
-                       </div>
-                     </div>
- 
-                     <div className="space-y-1.5">
-                       <h3 className="font-black text-foreground text-lg tracking-tight leading-tight group-hover:text-primary transition-colors">{am.module.title}</h3>
-                       <p className="text-xs text-muted-foreground font-bold leading-relaxed line-clamp-2 opacity-90">{am.module.description.replace(/Module:/, "")}</p>
- 
-                       {/* Strategist Note (Premium Hint) - Compact Style */}
-                       {am.isOptional && (
-                         <div 
-                           className="mt-2.5 p-2.5 rounded-xl border relative transition-all bg-white/30 dark:bg-zinc-950/20 backdrop-blur-md border-white/20 dark:border-white/5"
-                         >
-                            <div className="flex items-start gap-2">
-                               <div className="w-1 h-1 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: roadmap.color }} />
-                               <p className="text-[10.5px] font-bold leading-tight text-foreground/70 lowercase">
-                                 <span className="uppercase text-[8.5px] opacity-40 mr-1.5 text-muted-foreground">Why Optional?</span>
-                                 {am.optionalDescription || "deep-dive specialization recommended for advanced operational mastery."}
-                               </p>
+                  
+                  {hasNoModules && (
+                    <div className="p-10 rounded-[4rem] border-4 border-dashed border-border/20 bg-muted/10 text-center space-y-4">
+                       <Lightbulb className="h-12 w-12 text-primary/40 mx-auto" />
+                       <h3 className="text-2xl font-black tracking-tighter text-foreground/80">Independent Capstone Project</h3>
+                       <p className="text-muted-foreground text-sm font-bold max-w-lg mx-auto leading-relaxed">
+                          This step is designed for self-directed practical application. Study the external repositories and videos above to implement your solution.
+                       </p>
+                    </div>
+                  )}
+               </div>
+             );
+           }
+
+           return filteredModules.length > 0 ? (
+            <div className={viewMode === "grid"
+              ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 pb-20 mt-8"
+              : "flex flex-col gap-8 pb-20 mt-8"
+            }>
+              {filteredModules.map((am, idx) => {
+                const total = am.module._count.topics;
+                const done = am.module.completedCount;
+                const percent = total > 0 ? Math.round((done / total) * 100) : 0;
+                const isCompleted = total > 0 && done >= total;
+  
+                /* ── LIST VIEW (Premium Row) ── */
+                if (viewMode === "list") {
+                  return (
+                    <Link
+                      key={am.id}
+                      href={`/modules/${am.module.id}?roadmapId=${roadmap.id}&stepId=${step.id}`}
+                      className="group flex flex-col md:flex-row md:items-center gap-8 p-8 rounded-[3.5rem] border-2 bg-card/30 backdrop-blur-2xl hover:shadow-2xl hover:border-primary/30 transition-all duration-500 relative overflow-hidden active:scale-[0.98]"
+                    >
+                       <div 
+                          className="absolute inset-0 opacity-0 group-hover:opacity-[0.05] transition-opacity duration-1000"
+                          style={{ background: roadmap.color }}
+                       />
+                      <div className="text-5xl w-20 h-20 rounded-[2rem] flex items-center justify-center shrink-0 border-2 shadow-xl transition-all duration-500 group-hover:scale-110 group-hover:-rotate-3 bg-background/50 backdrop-blur-xl"
+                      style={{ borderColor: `${roadmap.color}25` }}
+                    >
+                      {getIcon(am.module.icon || "", am.module.title)}
+                    </div>
+                      <div className="flex-1 space-y-2">
+                        <div className="flex flex-wrap items-center gap-4">
+                          <span className="font-black text-foreground text-lg tracking-tight group-hover:text-primary transition-colors">{am.module.title}</span>
+                          {am.isOptional && (
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] px-4 py-1.5 rounded-2xl bg-muted border-2 border-border/50 text-muted-foreground">Optional</span>
+                          )}
+                          {isCompleted && (
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] px-3 py-1 rounded-2xl bg-emerald-500/10 border-2 border-emerald-500/20 text-emerald-600 dark:text-emerald-400">Mastered</span>
+                          )}
+                          {isAdmin && (
+                            <Link href={`/admin/modules/${am.module.id}`}>
+                               <button className="text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-xl border-border/50 border-2 hover:bg-muted transition-all flex items-center gap-2">
+                                  <Settings className="h-2.5 w-2.5" /> Admin
+                               </button>
+                            </Link>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground font-bold tracking-tight line-clamp-1 opacity-80">{am.module.description}</p>
+                      </div>
+                      <div className="flex items-center gap-8">
+                         <div className="flex flex-col items-end gap-2">
+                            <span className="text-xs font-black text-foreground tracking-widest uppercase opacity-60">{percent}% Completion</span>
+                            <div className="w-40 h-2 rounded-full bg-muted/50 overflow-hidden border border-border/20">
+                               <div className="h-full rounded-full transition-all duration-[1.5s] ease-out-back" style={{ width: `${percent}%`, background: roadmap.color }} />
                             </div>
                          </div>
-                       )}
-                     </div>
- 
-                     <div className="mt-auto pt-4 space-y-6">
-                     <div className="flex items-center justify-between">
-                         <div className="flex items-center gap-3 text-[9px] font-black uppercase tracking-wider text-muted-foreground/40">
-                           <span className="flex items-center gap-1.5"><BookOpen className="h-3 w-3" /> {am.module._count.topics} Steps</span>
-                           <span className="flex items-center gap-1.5 border-l border-border/20 pl-3"><Clock className="h-3 w-3" /> {am.module.readTime}m</span>
+                         <div className="h-16 w-16 rounded-full border-2 border-border/50 flex items-center justify-center group-hover:bg-primary group-hover:border-primary transform transition-all group-hover:scale-110">
+                            <ArrowRight className="h-7 w-7 text-muted-foreground group-hover:text-white" />
                          </div>
-                         <div className="text-right">
-                            <span className="text-sm font-black text-foreground tabular-nums tracking-tighter" style={{ color: roadmap.color }}>
-                              {am.module.completedCount}<span className="text-[10px] opacity-25 mx-0.5">/</span>{am.module._count.topics}
-                            </span>
+                      </div>
+                    </Link>
+                  );
+                }
+  
+                /* ── GRID VIEW (Mega Cards) ── */
+                return (
+                  <div
+                    key={am.id}
+                    className="group relative flex flex-col rounded-[2.5rem] border-2 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-[40px] overflow-hidden hover:shadow-2xl hover:-translate-y-2 transition-all duration-700 hover:border-primary/20 border-white/10 dark:border-white/5"
+                    style={{ borderColor: isCompleted ? "rgba(16,185,129,0.2)" : undefined }}
+                  >
+                    <div className="h-1.5 bg-muted/20 relative overflow-hidden">
+                       <div 
+                         className="h-full transition-all duration-1000" 
+                         style={{ width: `${percent}%`, backgroundColor: roadmap.color, boxShadow: percent > 0 ? `0 0 10px ${roadmap.color}` : 'none' }} 
+                       />
+                    </div>
+   
+                     <div className="relative p-7 flex-1 flex flex-col gap-6">
+                       <div className="flex items-start justify-between">
+                         <div
+                          className="w-14 h-14 rounded-2xl flex items-center justify-center border-2 bg-background/50 backdrop-blur-xl shadow-lg transition-transform duration-500 group-hover:scale-110"
+                          style={{ borderColor: `${roadmap.color}25` }}
+                        >
+                          {getIcon(am.module.icon || "", am.module.title)}
+                        </div>
+                         <div className="flex flex-col items-end gap-2 text-right">
+                            <div className="flex items-center gap-2">
+                              {am.isOptional && (
+                                <span 
+                                  className="text-[8.5px] font-black uppercase tracking-tighter px-1.5 py-0.5 rounded-md border bg-muted/20 border-border/30 text-muted-foreground/50"
+                                >
+                                  Optional
+                                </span>
+                              )}
+                              <span
+                                className="text-[10px] font-black w-7 h-7 rounded-lg flex items-center justify-center border transition-all"
+                                style={{ backgroundColor: `${roadmap.color}10`, color: roadmap.color, borderColor: `${roadmap.color}20` }}
+                              >
+                                #{idx + 1}
+                              </span>
+                            </div>
                          </div>
                        </div>
- 
-                       <Link href={`/modules/${am.module.id}?roadmapId=${roadmap.id}&stepId=${step.id}`} className="block">
-                         <button
-                           className="w-full h-14 rounded-3xl text-xs font-black uppercase tracking-[0.2em] transition-all duration-500 overflow-hidden relative group/btn"
-                           style={isCompleted
-                             ? { backgroundColor: "rgba(16,185,129,0.08)", border: "2px solid rgba(16,185,129,0.2)", color: "#16a34a" }
-                             : { backgroundColor: roadmap.color, border: "2px solid transparent", color: "#fff", boxShadow: `0 10px 20px -5px ${roadmap.color}66` }
-                           }
-                         >
-                            <span className="relative z-10 flex items-center justify-center gap-3">
-                              {isCompleted ? "✓ Review" : am.module.completedCount > 0 ? "Continue" : "Start"}
-                            </span>
-                         </button>
-                       </Link>
- 
-                       {isAdmin && (
-                         <div className="pt-2 border-t border-border/10">
-                            <Link href={`/admin/modules/${am.module.id}`}>
-                              <button className="w-full h-10 rounded-2xl bg-muted/30 border border-border/20 text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-all flex items-center justify-center gap-2">
-                                <Settings className="h-3 w-3" /> System Configuration
-                              </button>
-                            </Link>
+   
+                       <div className="space-y-1.5">
+                         <h3 className="font-black text-foreground text-lg tracking-tight leading-tight group-hover:text-primary transition-colors">{am.module.title}</h3>
+                         <p className="text-xs text-muted-foreground font-bold leading-relaxed line-clamp-2 opacity-90">{am.module.description.replace(/Module:/, "")}</p>
+   
+                         {/* Strategist Note (Premium Hint) - Compact Style */}
+                         {am.isOptional && (
+                           <div 
+                             className="mt-2.5 p-2.5 rounded-xl border relative transition-all bg-white/30 dark:bg-zinc-950/20 backdrop-blur-md border-white/20 dark:border-white/5"
+                           >
+                              <div className="flex items-start gap-2">
+                                 <div className="w-1 h-1 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: roadmap.color }} />
+                                 <p className="text-[10.5px] font-bold leading-tight text-foreground/70 lowercase">
+                                   <span className="uppercase text-[8.5px] opacity-40 mr-1.5 text-muted-foreground">Why Optional?</span>
+                                   {am.optionalDescription || "deep-dive specialization recommended for advanced operational mastery."}
+                                 </p>
+                              </div>
+                           </div>
+                         )}
+                       </div>
+   
+                       <div className="mt-auto pt-4 space-y-6">
+                       <div className="flex items-center justify-between">
+                           <div className="flex items-center gap-3 text-[9px] font-black uppercase tracking-wider text-muted-foreground/40">
+                             <span className="flex items-center gap-1.5"><BookOpen className="h-3 w-3" /> {am.module._count.topics} Steps</span>
+                             <span className="flex items-center gap-1.5 border-l border-border/20 pl-3"><Clock className="h-3 w-3" /> {am.module.readTime}m</span>
+                           </div>
+                           <div className="text-right">
+                              <span className="text-sm font-black text-foreground tabular-nums tracking-tighter" style={{ color: roadmap.color }}>
+                                {am.module.completedCount}<span className="text-[10px] opacity-25 mx-0.5">/</span>{am.module._count.topics}
+                              </span>
+                           </div>
                          </div>
-                       )}
+   
+                         <Link href={`/modules/${am.module.id}?roadmapId=${roadmap.id}&stepId=${step.id}`} className="block">
+                           <button
+                             className="w-full h-14 rounded-3xl text-xs font-black uppercase tracking-[0.2em] transition-all duration-500 overflow-hidden relative group/btn"
+                             style={isCompleted
+                               ? { backgroundColor: "rgba(16,185,129,0.08)", border: "2px solid rgba(16,185,129,0.2)", color: "#16a34a" }
+                               : { backgroundColor: roadmap.color, border: "2px solid transparent", color: "#fff", boxShadow: `0 10px 20px -5px ${roadmap.color}66` }
+                             }
+                           >
+                              <span className="relative z-10 flex items-center justify-center gap-3">
+                                {isCompleted ? "✓ Review" : am.module.completedCount > 0 ? "Continue" : "Start"}
+                              </span>
+                           </button>
+                         </Link>
+   
+                         {isAdmin && (
+                           <div className="pt-2 border-t border-border/10">
+                              <Link href={`/admin/modules/${am.module.id}`}>
+                                <button className="w-full h-10 rounded-2xl bg-muted/30 border border-border/20 text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/20 transition-all flex items-center justify-center gap-2">
+                                  <Settings className="h-3 w-3" /> System Configuration
+                                </button>
+                              </Link>
+                           </div>
+                         )}
+                       </div>
                      </div>
-                   </div>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="border-4 border-dashed border-border/20 rounded-[5rem] p-32 text-center bg-muted/10 backdrop-blur-md animate-in zoom-in-95 duration-700">
-            <ZapIcon className="h-16 w-16 text-muted-foreground/20 mx-auto mb-6 animate-pulse" />
-            <p className="text-muted-foreground text-2xl font-black tracking-tightest">No Matching Resources Found</p>
-            <p className="text-muted-foreground/50 text-base mt-2 font-bold uppercase tracking-widest">Adjust filters or search parameters</p>
-          </div>
-        )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="border-4 border-dashed border-border/20 rounded-[5rem] p-32 text-center bg-muted/10 backdrop-blur-md animate-in zoom-in-95 duration-700">
+              <ZapIcon className="h-16 w-16 text-muted-foreground/20 mx-auto mb-6 animate-pulse" />
+              <p className="text-muted-foreground text-2xl font-black tracking-tightest">No Matching Resources Found</p>
+              <p className="text-muted-foreground/50 text-base mt-2 font-bold uppercase tracking-widest">Adjust filters or search parameters</p>
+            </div>
+          );
+        })()}
 
         {/* ── PREV / NEXT NAVIGATION ── */}
         <div className="pt-10 border-t-2 border-border/10 flex flex-col sm:flex-row items-center justify-between gap-6 pb-20">

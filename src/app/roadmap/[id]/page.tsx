@@ -3,8 +3,9 @@ import { authOptions } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { ArrowRight, BookOpen, ChevronLeft, Library, Map, Edit } from "lucide-react";
+import { ArrowRight, BookOpen, ChevronLeft, Library, Map, Edit, Trophy, Flame, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ProgressRing } from "@/components/ui/progress-ring";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +32,7 @@ export default async function RoadmapDetailPage({ params }: { params: Promise<{ 
               }
             },
             topics: { select: { id: true } },
+            resources: { select: { id: true } },
             _count: { select: { topics: true, resources: true } }
           }
         }
@@ -46,22 +48,32 @@ export default async function RoadmapDetailPage({ params }: { params: Promise<{ 
 
   // 1. Calculate global stats with mutual exclusivity (Track Steps Checked)
   const stepsCompleted = (roadmap.steps || []).reduce((acc: number, step: any) => {
+    const isProject = step.title.toLowerCase().includes("project") || step.title.toLowerCase().includes("capstone");
     const hasModules = (step as any).attachedModules?.length > 0;
-    let trackingTotal = 0;
-    let trackingCompleted = 0;
+    
+    let isCompleted = false;
 
-    if (hasModules) {
-      (step as any).attachedModules.forEach((am: any) => {
-        // ONLY count mandatory modules for Step Mastery
-        if (!am.isOptional) {
-          trackingTotal += am.module.topics?.length || 0;
-          trackingCompleted += (am.module.topics || []).filter((t: any) => completedItemIds.has(t.id)).length;
-        }
-      });
+    if (isProject) {
+       // PROJECT LOGIC: One trigger completion
+       isCompleted = (step as any).resources?.some((r: any) => completedItemIds.has(r.id)) || false;
+    } else if (hasModules) {
+       // CURRICULUM LOGIC: All mandatory modules complete
+       let trackingTotal = 0;
+       let trackingCompleted = 0;
+       (step as any).attachedModules.forEach((am: any) => {
+         if (!am.isOptional) {
+           trackingTotal += am.module.topics?.length || 0;
+           trackingCompleted += (am.module.topics || []).filter((t: any) => completedItemIds.has(t.id)).length;
+         }
+       });
+       if (trackingTotal > 0 && trackingCompleted === trackingTotal) isCompleted = true;
+    } else if ((step as any).topics?.length > 0) {
+       // TOPIC FALLBACK (Legacy or custom steps)
+       const trackingTotal = (step as any).topics.length;
+       const trackingCompleted = (step as any).topics.filter((t: any) => completedItemIds.has(t.id)).length;
+       isCompleted = trackingTotal > 0 && trackingCompleted === trackingTotal;
     }
     
-    // Check if step is done (If no mandatory modules, it defaults to completion if it has topics or just as 0/0)
-    const isCompleted = trackingTotal > 0 && trackingCompleted === trackingTotal;
     return acc + (isCompleted ? 1 : 0);
   }, 0);
 
@@ -82,22 +94,23 @@ export default async function RoadmapDetailPage({ params }: { params: Promise<{ 
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-primary/20">
       {/* ── PREMIUM COMPACT HERO SECTION ── */}
-      <div className="relative border-b bg-card/[0.03] dark:bg-zinc-950/20 backdrop-blur-3xl overflow-hidden pt-6 pb-8 lg:pt-8 lg:pb-10">
+      <div className="relative border-b bg-transparent overflow-hidden pt-1.5 pb-5 lg:pt-2 lg:pb-7">
         <div 
-          className="absolute inset-x-0 -top-40 -z-10 m-auto h-[380px] w-full max-w-4xl rounded-full blur-[110px] opacity-20 dark:opacity-30" 
+          className="absolute inset-x-0 top-1/2 -translate-y-1/2 -z-10 m-auto h-[250px] w-full max-w-4xl rounded-full blur-[100px] opacity-[0.12] dark:opacity-25" 
           style={{ backgroundImage: `radial-gradient(circle at center, ${roadmap.color}, transparent)` }}
         />
 
-        <div className="container px-6 max-w-6xl mx-auto flex flex-col gap-6">
-            {/* Elegant Visible Breadcrumb Nav (The only big text the user requested) */}
-            <nav className="flex items-center gap-3 text-sm font-black uppercase tracking-[0.2em] text-muted-foreground/50 group/nav">
-                <Link href="/roadmap" className="hover:text-foreground transition-all duration-300 flex items-center gap-2 pr-1.5 border-r border-border/20">
+        <div className="container px-6 max-w-6xl mx-auto flex flex-col gap-3.5">
+            {/* Minimalist Professional Breadcrumbs */}
+            <nav className="flex items-center gap-2 text-[11px] font-black uppercase tracking-tight text-muted-foreground/40 group/nav">
+                <Link href="/roadmap" className="hover:text-foreground transition-all duration-300 flex items-center gap-2">
                   Roadmaps
                 </Link>
-                <span className="text-foreground/70 lowercase transition-colors group-hover/nav:text-foreground">{roadmap.title}</span>
+                <span className="text-muted-foreground/30 font-light text-base mx-1">/</span>
+                <span className="text-foreground/70 transition-colors group-hover/nav:text-foreground normal-case font-bold">{roadmap.title}</span>
             </nav>
 
-            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 lg:gap-12">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 lg:gap-12">
                 <div className="flex-1 space-y-4 text-left">
                     <div className="flex items-center gap-4">
                        <div 
@@ -123,28 +136,51 @@ export default async function RoadmapDetailPage({ params }: { params: Promise<{ 
                     </div>
                 </div>
 
-                {/* Integrated Compact Horizontal Progress */}
-                <div className="shrink-0 w-full lg:w-72 space-y-2 lg:mb-1 animate-in fade-in slide-in-from-right-10 duration-1000 delay-300">
-                    <div className="flex items-end justify-between px-1">
-                        <div className="flex flex-col">
-                            <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest leading-none mb-1.5 opacity-80">{getMotivation(globalPercentage)}</span>
-                            <span className="text-[10px] font-black uppercase tracking-tight text-foreground/40 leading-none">Status</span>
-                        </div>
-                        <span className="text-2xl font-black tabular-nums text-foreground leading-none tracking-tighter">
-                            {globalPercentage}<span className="text-[10px] ml-0.5 opacity-20 font-bold">%</span>
-                        </span>
-                    </div>
-                    
-                    <div className="relative h-2 w-full bg-muted/30 dark:bg-white/5 rounded-full overflow-hidden border border-border/10 p-0.5 shadow-inner">
-                        <div 
-                           className="h-full bg-emerald-500 rounded-full transition-all duration-1000 ease-out shadow-[0_0_15px_rgba(16,185,129,0.3)]" 
-                           style={{ width: `${globalPercentage}%` }} 
+                {/* ── ULTRA-PREMIUM MASTERY HUD ── */}
+                <div className="shrink-0 flex items-center gap-6 p-4 md:p-5 rounded-3xl bg-background/50 dark:bg-zinc-900/40 border border-white/[0.1] shadow-2xl backdrop-blur-3xl animate-in fade-in slide-in-from-right-10 duration-1000 delay-300 hover:scale-[1.03] hover:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] dark:hover:shadow-[0_20px_60px_-15px_rgba(59,130,246,0.1)] transition-all duration-500 ease-out-back cursor-default group/hud">
+                    <div className="relative group/ring transition-transform duration-500 group-hover/hud:translate-x-1">
+                        <ProgressRing
+                          percent={globalPercentage}
+                          color={globalPercentage === 100 ? "#10b981" : roadmap.color}
+                          size={84}
+                          stroke={7}
                         />
+                        <div className="absolute inset-0 flex flex-col items-center justify-center -space-y-0.5">
+                            <span className="text-xl font-black tabular-nums tracking-tighter tabular-nums bg-clip-text text-transparent bg-gradient-to-br from-foreground to-foreground/80">
+                                {globalPercentage}
+                            </span>
+                            <span className="text-[9px] font-black uppercase text-foreground/40 tracking-tighter">%</span>
+                        </div>
+
+                         {/* Pulse Glow Effect for 100% */}
+                         {globalPercentage === 100 && (
+                            <div className="absolute inset-0 bg-emerald-500/10 rounded-full animate-ping-slow -z-10" />
+                         )}
                     </div>
-                    
-                    <p className="text-[9px] text-muted-foreground font-black tracking-widest uppercase opacity-40 text-right pr-1">
-                        {stepsCompleted} / {roadmap.steps.length} Steps
-                    </p>
+
+                    <div className="flex flex-col gap-2.5 min-w-[140px]">
+                        <div className="space-y-0.5">
+                            <div className="flex items-center gap-1.5 overflow-hidden">
+                                {globalPercentage === 100 ? <Trophy className="h-3 w-3 text-emerald-500 shrink-0" /> : <Flame className="h-3 w-3 text-orange-500 shrink-0" />}
+                                <span className={`text-[10px] font-black uppercase tracking-[0.12em] whitespace-nowrap ${globalPercentage === 100 ? "text-emerald-500" : "text-foreground/70"}`}>
+                                    {getMotivation(globalPercentage)}
+                                </span>
+                            </div>
+                            <div className="text-xl font-black tracking-tighter text-foreground uppercase group-hover/hud:text-primary transition-colors duration-500">
+                                {globalPercentage === 100 ? "Mastery" : "Pathing"}
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-3 pt-2.5 border-t border-white/[0.08]">
+                             <div className="flex flex-col">
+                                <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/80 leading-none mb-1">Status</span>
+                                <div className="flex items-center gap-1.5">
+                                    <div className={`w-1.5 h-1.5 rounded-full ${globalPercentage === 100 ? 'bg-emerald-500 animate-pulse' : 'bg-primary'}`} style={{ backgroundColor: globalPercentage === 100 ? undefined : roadmap.color }} />
+                                    <span className="text-[11px] font-black text-foreground uppercase tracking-tight">Step {stepsCompleted}/{roadmap.steps.length}</span>
+                                </div>
+                             </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -163,23 +199,28 @@ export default async function RoadmapDetailPage({ params }: { params: Promise<{ 
 
         <div className="space-y-4 md:space-y-6 relative">
           {roadmap.steps.map((step: any, i: number) => {
+            const isProject = step.title.toLowerCase().includes("project") || step.title.toLowerCase().includes("capstone");
             const hasModules = (step as any).attachedModules?.length > 0;
-            let trackingTotal = 0;
-            let trackingCompleted = 0;
 
-            if (hasModules) {
+            let isCompleted = false;
+            if (isProject) {
+              isCompleted = (step as any).resources?.some((r: any) => completedItemIds.has(r.id)) || false;
+            } else if (hasModules) {
+              let trackingTotal = 0;
+              let trackingCompleted = 0;
               (step as any).attachedModules.forEach((am: any) => {
                 if (!am.isOptional) {
                    trackingTotal += am.module.topics?.length || 0;
                    trackingCompleted += (am.module.topics || []).filter((t: any) => completedItemIds.has(t.id)).length;
                 }
               });
-            } else {
-              trackingTotal = 0;
-              trackingCompleted = 0;
+              if (trackingTotal > 0 && trackingCompleted === trackingTotal) isCompleted = true;
+            } else if ((step as any).topics?.length > 0) {
+              const trackingTotal = (step as any).topics.length;
+              const trackingCompleted = (step as any).topics.filter((t: any) => completedItemIds.has(t.id)).length;
+              isCompleted = trackingTotal > 0 && trackingCompleted === trackingTotal;
             }
-            
-            const isCompleted = trackingTotal > 0 && trackingCompleted === trackingTotal;
+
 
             return (
             <div key={step.id} className="relative group/step">
@@ -258,8 +299,17 @@ export default async function RoadmapDetailPage({ params }: { params: Promise<{ 
 
                   <div className="flex items-center gap-3 mt-4 pt-4 border-t border-border/10 text-[9px] font-black uppercase tracking-widest text-muted-foreground">
                     <div className="flex items-center gap-1.5 bg-muted/30 px-2.5 py-1 rounded-md border border-border/10">
-                      <Library className="h-3 w-3" style={{ color: roadmap.color }} />
-                      <span>{(step as any).attachedModules?.length || 0} Modules</span>
+                       {step.attachedModules?.length > 0 ? (
+                          <>
+                             <Library className="h-3 w-3" style={{ color: roadmap.color }} />
+                             <span>{step.attachedModules.length} Modules</span>
+                          </>
+                       ) : (
+                          <>
+                             <BookOpen className="h-3 w-3" style={{ color: roadmap.color }} />
+                             <span>{step._count?.resources || 0} Project Resources</span>
+                          </>
+                       )}
                     </div>
                   </div>
                 </div>

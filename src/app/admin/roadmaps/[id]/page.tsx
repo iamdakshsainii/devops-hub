@@ -53,6 +53,119 @@ const emptyStep = (): StepForm => ({
 
 
 // --- Inline Sub-Component for Attached Modules ---
+function AttachedResourcesSection({ stepId, roadmapId }: { stepId?: string; roadmapId: string }) {
+  const [resources, setResources] = useState<any[]>([]);
+  const [newTitle, setNewTitle] = useState("");
+  const [newUrl, setNewUrl] = useState("");
+  const [newType, setNewType] = useState("ARTICLE");
+  const [newDesc, setNewDesc] = useState("");
+
+  const fetchResources = async () => {
+    if (!stepId) return;
+    const res = await fetch(`/api/roadmaps/${roadmapId}/steps/${stepId}/resources`);
+    const data = await res.json();
+    setResources(data);
+  };
+
+  useEffect(() => {
+    fetchResources();
+  }, [stepId]);
+
+  const addResource = async () => {
+    if (!newTitle || !newUrl) return;
+    await fetch(`/api/roadmaps/${roadmapId}/steps/${stepId}/resources`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: newTitle, url: newUrl, type: newType, description: newDesc, order: resources.length }),
+    });
+    setNewTitle(""); setNewUrl(""); setNewDesc(""); setNewType("ARTICLE");
+    fetchResources();
+  };
+
+  const updateResource = async (resourceId: string, data: any) => {
+    await fetch(`/api/roadmaps/${roadmapId}/steps/${stepId}/resources`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ resourceId, ...data }),
+    });
+  };
+
+  const deleteResource = async (resourceId: string) => {
+    await fetch(`/api/roadmaps/${roadmapId}/steps/${stepId}/resources`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ resourceId }),
+    });
+    fetchResources();
+  };
+
+  if (!stepId) return null;
+
+  return (
+    <div className="space-y-4 pt-4 border-t">
+      <h4 className="text-sm font-black flex items-center gap-2 uppercase tracking-widest text-primary/80">
+        <Save className="h-4 w-4" /> Project Portfolio Resources <span className="text-[10px] text-muted-foreground ml-1">(GitHub / Videos / Articles)</span>
+      </h4>
+
+      {/* Resource Inputs */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 bg-muted/20 p-4 rounded-2xl border-2 border-dashed border-border/40">
+        <div className="space-y-1">
+          <label className="text-[10px] font-black uppercase tracking-wider pl-1 font-bold">Label</label>
+          <Input placeholder="e.g. GitHub Repository" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} className="h-9 text-xs" />
+        </div>
+        <div className="space-y-1">
+          <label className="text-[10px] font-black uppercase tracking-wider pl-1 font-bold">URL</label>
+          <Input placeholder="https://github.com/..." value={newUrl} onChange={(e) => {
+            const val = e.target.value; setNewUrl(val);
+            if (val.includes("github.com")) setNewType("GITHUB");
+            else if (val.includes("youtube.com")) setNewType("VIDEO");
+          }} className="h-9 text-xs" />
+        </div>
+        <div className="space-y-1">
+          <label className="text-[10px] font-black uppercase tracking-wider pl-1 font-bold">Type</label>
+          <select value={newType} onChange={(e) => setNewType(e.target.value)} className="w-full h-9 rounded-md border bg-background px-3 text-xs font-bold uppercase tracking-wider">
+            <option value="ARTICLE">Article / Blog</option>
+            <option value="VIDEO">YouTube / Class</option>
+            <option value="GITHUB">GitHub Repo</option>
+            <option value="LINK">Live Demo / Tool</option>
+          </select>
+        </div>
+        <div className="flex items-end">
+          <Button onClick={addResource} size="sm" className="w-full h-9 gap-2 font-black text-[10px] uppercase tracking-widest bg-primary hover:bg-primary/90">
+            <Plus className="h-3 w-3" /> Add Portfolio Link
+          </Button>
+        </div>
+      </div>
+
+      {resources.length > 0 && (
+         <div className="grid grid-cols-1 gap-2.5">
+            {resources.map((res) => (
+               <div key={res.id} className="p-3 border-2 border-border/40 rounded-2xl bg-card flex items-center gap-4 group/item hover:border-primary/20 transition-all">
+                  <div className="w-10 h-10 rounded-xl bg-muted/40 flex items-center justify-center shrink-0 border border-border/20 group-hover/item:scale-110 transition-transform">
+                     {res.type === "GITHUB" ? <Code2 className="h-5 w-5 opacity-60" /> : res.type === "VIDEO" ? <FileText className="h-5 w-5 opacity-60" /> : <GripVertical className="h-5 w-5 opacity-30" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                     <p className="font-bold text-xs truncate leading-tight mb-1">{res.title}</p>
+                     <p className="text-[10px] text-muted-foreground truncate opacity-60">{res.url}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                     <Button size="sm" variant="outline" className="h-8 px-3 text-[9px] font-black uppercase tracking-tighter" onClick={() => {
+                       const t = prompt("Update Title:", res.title);
+                       if (t) updateResource(res.id, { title: t });
+                       fetchResources();
+                     }}>Rename</Button>
+                     <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10" onClick={() => deleteResource(res.id)}>
+                        <Trash2 className="h-4 w-4" />
+                     </Button>
+                  </div>
+               </div>
+            ))}
+         </div>
+      )}
+    </div>
+  );
+}
+
 function AttachedModulesSection({ stepId, roadmapId }: { stepId?: string; roadmapId: string }) {
   const [attached, setAttached] = useState<any[]>([]);
   const [search, setSearch] = useState("");
@@ -727,6 +840,9 @@ export default function RoadmapEditorPage({ params }: { params: Promise<{ id: st
 
 
 
+
+                    {/* Attached Resources (Projects) */}
+                    <AttachedResourcesSection stepId={step.id} roadmapId={roadmapId} />
 
                     {/* Attached Modules */}
                     <AttachedModulesSection stepId={step.id} roadmapId={roadmapId} />

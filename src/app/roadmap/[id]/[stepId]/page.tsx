@@ -17,6 +17,7 @@ export default async function StepDetailPage({
   const step = await prisma.roadmapStep.findFirst({
     where: { id: stepId },
     include: {
+      resources: { orderBy: { order: "asc" } },
       attachedModules: {
         include: {
           module: {
@@ -43,6 +44,10 @@ export default async function StepDetailPage({
     });
     completedTopicIds = progress.map(p => p.itemId);
   }
+
+  const isProject = step.title.toLowerCase().includes("project") || step.title.toLowerCase().includes("capstone");
+  const completedResourceIds = (step as any).resources?.filter((r: any) => completedTopicIds.includes(r.id)).map((r: any) => r.id) || [];
+  const projectIsDone = isProject && completedResourceIds.length > 0;
 
   // Calculate completed topics count for each module
   const attachedModulesWithProgress = step.attachedModules.map((am: any) => {
@@ -105,11 +110,16 @@ export default async function StepDetailPage({
   const prevStepId = currentIndex > 0 ? siblings[currentIndex - 1].id : undefined;
   const nextStepId = currentIndex < siblings.length - 1 ? siblings[currentIndex + 1].id : undefined;
 
+  const finalTotalTopics = isProject ? 1 : totalTopicsIncludingOptional;
+  const finalCompletedTopics = projectIsDone ? 1 : (isProject ? 0 : completedTopicsIncludingOptional);
+  const finalPercent = projectIsDone ? 100 : (finalTotalTopics > 0 ? Math.round((finalCompletedTopics / finalTotalTopics) * 100) : 0);
+
   const stats = {
     totalModules: attachedModulesWithProgress.length,
-    totalTopics: totalTopicsIncludingOptional,
-    completedTopics: completedTopicsIncludingOptional,
-    percentComplete: totalTopics > 0 ? Math.round((completedTopics / totalTopics) * 100) : 0
+    totalTopics: finalTotalTopics,
+    completedTopics: finalCompletedTopics,
+    percentComplete: finalPercent,
+    completedResourceIds
   };
 
   const isAdmin = session?.user?.role === "ADMIN" || session?.user?.role === "SUPER_ADMIN";
@@ -122,7 +132,8 @@ export default async function StepDetailPage({
         title: step.title,
         description: step.description,
         icon: step.icon,
-        attachedModules: attachedModulesWithProgress
+        attachedModules: attachedModulesWithProgress,
+        resources: (step as any).resources || []
       }}
       roadmap={{
         id: step.roadmap.id,
