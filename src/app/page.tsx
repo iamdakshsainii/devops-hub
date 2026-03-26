@@ -1,266 +1,321 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { 
-  BookOpen, Layers, Calendar, ArrowRight, 
-  GitBranch, Terminal, Zap, Users, Map, FileText, Search 
+import {
+  BookOpen, Layers, Calendar, ArrowRight, ArrowUpRight,
+  GitBranch, Terminal, Zap, Users, Map, FileText, Search,
+  ChevronRight, Sparkles, CheckCircle2, Star
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { PinnedBlogs } from "@/components/pinned-blogs";
 
 export default async function Home() {
-  // PRODUCTION NOTE: Using a Raw SQL query here as a robust fallback to ensure the 
-  // 'isPinned' feature works reliably even during deployment transitions or 
-  // dev-server cache refreshes where the generated Prisma Client might be stale.
   const pinnedBlogsRaw = await prisma.$queryRaw`
-    SELECT * FROM "BlogPost" 
-    WHERE status = 'PUBLISHED' AND "isPinned" = true 
-    ORDER BY "updatedAt" DESC 
+    SELECT * FROM "BlogPost"
+    WHERE status = 'PUBLISHED' AND "isPinned" = true
+    ORDER BY "updatedAt" DESC
     LIMIT 5
   ` as any[];
-  
-  // Normalize the raw database response for the client component
-  // Ensure robust date handling by converting Date objects to ISO strings for client components.
+
   const pinnedBlogs = pinnedBlogsRaw.map((b: any) => ({
-      ...b,
-      createdAt: b.createdAt instanceof Date ? b.createdAt.toISOString() : b.createdAt,
-      updatedAt: b.updatedAt instanceof Date ? b.updatedAt.toISOString() : b.updatedAt
+    ...b,
+    createdAt: b.createdAt instanceof Date ? b.createdAt.toISOString() : b.createdAt,
+    updatedAt: b.updatedAt instanceof Date ? b.updatedAt.toISOString() : b.updatedAt
   }));
+
+  const features = [
+    {
+      icon: Map,
+      title: "Structured Roadmaps",
+      desc: "Phase-by-phase paths that mirror how real DevOps teams work — not how textbooks describe it.",
+      href: "/roadmap",
+      cta: "View Roadmap",
+      accent: "from-emerald-500/20 to-emerald-500/5",
+      iconColor: "text-emerald-500",
+      iconBg: "bg-emerald-500/10 group-hover:bg-emerald-500/20",
+      border: "group-hover:border-emerald-500/30",
+    },
+    {
+      icon: Terminal,
+      title: "Deep-Dive Modules",
+      desc: "Step-by-step guides covering core concepts with structured sub-topics and real production context.",
+      href: "/modules",
+      cta: "Browse Modules",
+      accent: "from-purple-500/20 to-purple-500/5",
+      iconColor: "text-purple-500",
+      iconBg: "bg-purple-500/10 group-hover:bg-purple-500/20",
+      border: "group-hover:border-purple-500/30",
+    },
+    {
+      icon: Layers,
+      title: "Resource Library",
+      desc: "Hand-picked videos, articles, and production architectures vetted by real engineers.",
+      href: "/resources",
+      cta: "Explore Library",
+      accent: "from-blue-500/20 to-blue-500/5",
+      iconColor: "text-blue-500",
+      iconBg: "bg-blue-500/10 group-hover:bg-blue-500/20",
+      border: "group-hover:border-blue-500/30",
+    },
+    {
+      icon: FileText,
+      title: "Quick Cheatsheets",
+      desc: "Instantly look up native commands for Kubernetes, Docker, Terraform, and CI/CD — no fluff.",
+      href: "/cheatsheets",
+      cta: "View Cheatsheets",
+      accent: "from-cyan-500/20 to-cyan-500/5",
+      iconColor: "text-cyan-500",
+      iconBg: "bg-cyan-500/10 group-hover:bg-cyan-500/20",
+      border: "group-hover:border-cyan-500/30",
+    },
+    {
+      icon: BookOpen,
+      title: "Engineering Blog",
+      desc: "Deep-dive production stories, post-mortems, and real architectures without the filler.",
+      href: "/blog",
+      cta: "Read Blog",
+      accent: "from-orange-500/20 to-orange-500/5",
+      iconColor: "text-orange-500",
+      iconBg: "bg-orange-500/10 group-hover:bg-orange-500/20",
+      border: "group-hover:border-orange-500/30",
+    },
+    {
+      icon: Calendar,
+      title: "Community Events",
+      desc: "Webinars, workshops, and meetups submitted by the community and approved by the team.",
+      href: "/events",
+      cta: "See Events",
+      accent: "from-pink-500/20 to-pink-500/5",
+      iconColor: "text-pink-500",
+      iconBg: "bg-pink-500/10 group-hover:bg-pink-500/20",
+      border: "group-hover:border-pink-500/30",
+    },
+    {
+      icon: Search,
+      title: "Global Command Engine",
+      desc: "Hit ⌘K from anywhere to instantly scan every blog, module, roadmap, and cheatsheet.",
+      href: "#",
+      cta: "Try ⌘K",
+      accent: "from-primary/20 to-primary/5",
+      iconColor: "text-primary",
+      iconBg: "bg-primary/10 group-hover:bg-primary/20",
+      border: "group-hover:border-primary/30",
+    },
+    {
+      icon: Users,
+      title: "Active Network",
+      desc: "Save resources, track progress, upvote concepts, and grow alongside engineers building the platform.",
+      href: "/signup",
+      cta: "Join Network",
+      accent: "from-violet-500/20 to-violet-500/5",
+      iconColor: "text-violet-500",
+      iconBg: "bg-violet-500/10 group-hover:bg-violet-500/20",
+      border: "group-hover:border-violet-500/30",
+    },
+  ];
+
+  const techStack = ["Docker", "Kubernetes", "Terraform", "AWS", "CI/CD", "Linux", "Kafka", "Prometheus", "ArgoCD", "Helm"];
+
+  const differentiators = [
+    "Roadmaps built around real team workflows",
+    "Modules with production context, not just syntax",
+    "Resources curated by engineers, not scraped",
+    "Community that submits, upvotes, and improves content",
+    "Events from real practitioners in the community",
+    "Free forever — no paywalls, no subscriptions",
+  ];
+
   return (
     <div className="flex flex-col w-full overflow-x-hidden">
 
-      {/* ── Hero ──────────────────────────────────────────────────────────── */}
-      <section className="relative w-full min-h-[92vh] flex items-center justify-center overflow-hidden bg-transparent">
+      {/* ── Hero ── */}
+      <section className="relative w-full min-h-[88vh] flex items-center justify-center overflow-hidden">
 
-        {/* Dot grid */}
-        <div
-          className="absolute inset-0 opacity-[0.035] dark:opacity-[0.06] pointer-events-none"
+        {/* Grid background */}
+        <div className="absolute inset-0 pointer-events-none"
           style={{
-            backgroundImage: `radial-gradient(circle, hsl(var(--foreground)) 1px, transparent 1px)`,
-            backgroundSize: "28px 28px",
+            backgroundImage: `
+              linear-gradient(rgba(var(--foreground-rgb, 0,0,0), 0.03) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(var(--foreground-rgb, 0,0,0), 0.03) 1px, transparent 1px)
+            `,
+            backgroundSize: "40px 40px"
           }}
         />
 
-        {/* Ambient Floating Ambient Light Spheres for backdrops framing nodeCoords downwards flaws. */}
-        <div className="absolute -top-12 -left-12 w-64 h-64 rounded-full bg-primary/20 blur-[90px] animate-pulse duration-[5s] pointer-events-none" />
-        <div className="absolute top-1/4 left-1/4 w-48 h-48 rounded-full bg-amber-500/10 blur-[90px] animate-pulse duration-[4s] pointer-events-none" />
-        <div className="absolute bottom-1/4 right-1/4 w-72 h-72 rounded-full bg-purple-500/15 blur-[100px] animate-pulse duration-[6s] pointer-events-none" />
+        {/* Gradient overlays */}
+        <div className="absolute inset-0 bg-gradient-to-b from-background via-transparent to-background pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-r from-background via-transparent to-background pointer-events-none" />
+
+        {/* Ambient glows */}
+        <div className="absolute top-0 left-1/4 w-[500px] h-[500px] rounded-full bg-primary/8 blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] rounded-full bg-purple-500/8 blur-[100px] pointer-events-none" />
 
         <div className="relative z-10 container px-6 mx-auto max-w-5xl">
-          <div className="flex flex-col items-center text-center space-y-7 animate-in fade-in slide-in-from-bottom-6 duration-1000">
-            {/* Mission Activation Badge - Above Title */}
-            <div className="group relative flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-primary/8 hover:bg-primary/12 border border-primary/20 hover:border-primary/40 shadow-sm transition-all duration-300">
-               <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-               <span className="text-[10px] font-black uppercase tracking-[0.15em] text-foreground/80 dark:text-foreground/90">Always Free & Open Access</span>
-               <ArrowRight className="h-2.5 w-2.5 text-primary group-hover:translate-x-0.5 transition-transform" />
+          <div className="flex flex-col items-center text-center space-y-8">
+
+            {/* Badge */}
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-border/40 bg-background/60 backdrop-blur-sm text-xs font-bold text-foreground/70 shadow-sm hover:border-primary/30 hover:text-foreground transition-all cursor-default">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+              Always Free & Open Access
+              <span className="text-muted-foreground/40">·</span>
+              <span className="text-primary">No paywalls</span>
             </div>
 
-            {/* Headline */}
-            <div className="space-y-4 max-w-4xl relative">
-              <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tighter leading-none">
-                <span className="block text-foreground transition-colors duration-500">Learn DevOps</span>
-                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-primary via-purple-500 to-amber-500">The right way</span>
+            {/* Heading */}
+            <div className="space-y-4 max-w-4xl">
+              <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-[84px] font-black tracking-[-0.03em] leading-[0.93]">
+                <span className="block">Learn DevOps</span>
+                <span className="block bg-gradient-to-r from-primary via-violet-500 to-amber-500 bg-clip-text text-transparent">
+                  the right way.
+                </span>
               </h1>
-              <p className="mx-auto max-w-2xl text-muted-foreground text-base md:text-xl leading-relaxed font-bold opacity-80">
+              <p className="mx-auto max-w-2xl text-muted-foreground text-base md:text-lg leading-relaxed font-medium">
                 Structured roadmaps, curated resources, and a community of engineers
-                sharing what actually works in production — not just what looks good in a tutorial.
+                sharing what actually works in production.
               </p>
             </div>
 
             {/* CTAs */}
-            <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
               <Link href="/roadmap">
-                <Button size="lg" className="w-full sm:w-auto h-12 px-8 rounded-full text-base gap-2 group bg-primary hover:bg-primary/95 md:hover:shadow-[0_15px_35px_rgba(59,130,246,0.3)] md:hover:-translate-y-1 transition-all duration-300">
+                <Button size="lg" className="w-full sm:w-auto h-12 px-8 rounded-xl text-[15px] font-bold gap-2 group shadow-[0_8px_30px_rgba(59,130,246,0.25)] hover:shadow-[0_12px_40px_rgba(59,130,246,0.35)] hover:-translate-y-0.5 transition-all duration-300">
                   Start the Roadmap
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </Button>
               </Link>
               <Link href="/modules">
-                <Button variant="outline" size="lg" className="w-full sm:w-auto h-12 px-8 rounded-full text-base hover:bg-background md:hover:shadow-[0_15px_35px_rgba(0,0,0,0.1)] md:hover:-translate-y-1 transition-all duration-300 border-border/60">
+                <Button variant="outline" size="lg" className="w-full sm:w-auto h-12 px-8 rounded-xl text-[15px] font-bold hover:-translate-y-0.5 transition-all duration-300 border-border/50 hover:border-border bg-background/50 backdrop-blur-sm">
                   Browse Modules
                 </Button>
               </Link>
             </div>
 
-            {/* Tool strip */}
-            <div className="flex flex-wrap justify-center gap-2 pt-4 max-w-xl">
-              {["Docker", "Kubernetes", "Terraform", "AWS", "CI/CD", "Linux", "Kafka", "Prometheus"].map((t) => (
-                <span key={t}
-                  className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/60
-                  border border-border rounded-full px-3 py-1">
+            {/* Tech tags */}
+            <div className="flex flex-wrap justify-center gap-2 max-w-xl pt-2">
+              {techStack.map((t) => (
+                <span key={t} className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground/50 border border-border/30 rounded-full px-3 py-1 hover:border-border/60 hover:text-muted-foreground/70 transition-all cursor-default">
                   {t}
                 </span>
               ))}
+            </div>
+
+            {/* Stats */}
+            <div className="flex items-center gap-6 pt-4 text-center">
+              {[
+                { val: "12+", label: "Roadmap phases" },
+                { val: "50+", label: "Modules" },
+                { val: "100%", label: "Free forever" },
+              ].map(({ val, label }) => (
+                <div key={label} className="flex flex-col items-center gap-0.5">
+                  <span className="text-2xl font-black tracking-tight">{val}</span>
+                  <span className="text-[11px] text-muted-foreground/60 font-medium">{label}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
 
-        {/* Pinned Blogs Floating Button - Top Right Extreme */}
-        {/* ── HIGH-VISIBILITY FLOATING INTERACTION PLANE ── */}
-
-        {/* 1. Pinned Content Achievement Node - Desktop Only Focal Zone */}
-        <div className="hidden md:block absolute top-[40px] right-10 lg:right-14 z-40 pointer-events-auto transition-all duration-1000 animate-in fade-in slide-in-from-right-6 shadow-2xl">
-           <div className="scale-95 origin-top-right">
-              <PinnedBlogs blogs={pinnedBlogs} />
-           </div>
+        {/* Pinned blogs — desktop right float */}
+        <div className="hidden xl:block absolute top-12 right-8 z-20 animate-in fade-in slide-in-from-right-6 duration-700">
+          <PinnedBlogs blogs={pinnedBlogs} />
         </div>
 
         {/* Bottom fade */}
-        <div className="absolute bottom-0 left-0 right-0 h-32
-          bg-gradient-to-t from-background/80 to-transparent pointer-events-none" />
+        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent pointer-events-none" />
       </section>
 
-      {/* ── What's inside ─────────────────────────────────────────────────── */}
-      <section className="w-full py-24 bg-background/40 backdrop-blur-md border-t border-border/50">
-        <div className="container px-6 mx-auto max-w-6xl">
+      {/* ── Features Grid ── */}
+      <section className="w-full py-24 bg-background relative">
+        {/* Top border glow */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
 
-          <div className="text-center mb-16 space-y-3 max-w-xl mx-auto">
-            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-              What's inside
-            </p>
-            <h2 className="text-4xl font-black tracking-tight">
-              Everything in one place.
-            </h2>
-            <p className="text-muted-foreground leading-relaxed">
-              No jumping between YouTube, Notion, and random blogs.
-              The whole learning loop — here.
+        <div className="container px-6 mx-auto max-w-6xl">
+          <div className="text-center mb-16 space-y-4">
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/50">What's inside</p>
+            <h2 className="text-4xl sm:text-5xl font-black tracking-tight">Everything in one place.</h2>
+            <p className="text-muted-foreground max-w-sm mx-auto leading-relaxed">
+              No jumping between YouTube, Notion, and random blogs. The whole learning loop — here.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {[
-              {
-                icon: Map,
-                title: "Structured Roadmaps",
-                desc: "Phase-by-phase paths that mirror how real DevOps teams work — not how textbooks describe it.",
-                href: "/roadmap",
-                cta: "View Roadmap",
-              },
-              {
-                icon: Terminal,
-                title: "Deeply Nested Modules",
-                desc: "Step-by-step technological implementation guides covering core concepts with structured sub-topics and practical context.",
-                href: "/modules",
-                cta: "Browse Modules",
-              },
-              {
-                icon: Layers,
-                title: "Resource Library",
-                desc: "Hand-picked videos, articles, and production architectures — vetted by living engineers, not algorithms.",
-                href: "/resources",
-                cta: "Explore Library",
-              },
-              {
-                icon: FileText,
-                title: "Quick Cheatsheets", 
-                desc: "Instantly search and copy native commands for Kubernetes, Docker, Terraform, and CI/CD pipelines.",
-                href: "/cheatsheets",
-                cta: "View Cheatsheets",
-              },
-              {
-                icon: BookOpen,
-                title: "Engineering Blog",
-                desc: "Deep-dive production stories, post-mortems, and authentic framework architectures without the filler.",
-                href: "/blog",
-                cta: "Read Blog",
-              },
-              // tools block removed - decommissioned
-              {
-                icon: Calendar,
-                title: "Community Events",
-                desc: "Webinars, workshops, and meetups submitted by the community and approved by the moderation team.",
-                href: "/events",
-                cta: "See Events",
-              },
-              {
-                icon: Search,
-                title: "Global Command Engine",
-                desc: "Hit Cmd+K from anywhere to instantly scan across every single blog, module, tool, roadmap, and cheatsheet natively.",
-                href: "#",
-                cta: "Try pressing Cmd+K",
-              },
-              {
-                icon: Users,
-                title: "Active Network",
-                desc: "Save resources, track your reading progress, upvote concepts, and grow with the engineers building the platform.",
-                href: "/signup",
-                cta: "Join Network",
-              },
-            ].map((f) => (
-              <div key={f.title}
-                className="group relative rounded-2xl border border-border/10 backdrop-blur-xl bg-card/60 p-7 hover:border-primary/30 shadow-md hover:shadow-[0_20px_45px_rgba(0,0,0,0.15)] transition-all duration-500 hover:-translate-y-1 flex flex-col overflow-hidden">
-                {/* Backlight flare effect forwards downwards flaws chords. */}
-                <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-0 group-hover:opacity-10 transition-all duration-700 blur-2xl pointer-events-none bg-primary" />
-                {/* Top accent line on hover */}
-                <div className="absolute top-0 left-6 right-6 h-px bg-primary scale-x-0
-                  group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full" />
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {features.map((f) => (
+              <Link
+                key={f.title}
+                href={f.href}
+                className={`
+                  group relative rounded-2xl border border-border/20 bg-card/40 p-6
+                  hover:bg-card/70 transition-all duration-300 hover:-translate-y-1
+                  hover:shadow-[0_20px_40px_rgba(0,0,0,0.12)]
+                  flex flex-col gap-4 overflow-hidden
+                  ${f.border}
+                `}
+              >
+                {/* BG gradient on hover */}
+                <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br ${f.accent} pointer-events-none rounded-2xl`} />
 
-                <div className="h-10 w-10 rounded-xl bg-primary/8 flex items-center
-                  justify-center mb-5 group-hover:bg-primary/15 transition-colors">
-                  <f.icon className="h-5 w-5 text-primary" />
+                {/* Top accent line */}
+                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-current to-transparent opacity-0 group-hover:opacity-20 transition-opacity" />
+
+                <div className={`relative h-10 w-10 rounded-xl flex items-center justify-center transition-all duration-300 ${f.iconBg}`}>
+                  <f.icon className={`h-5 w-5 ${f.iconColor}`} />
                 </div>
 
-                <h3 className="text-lg font-bold mb-2">{f.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed flex-grow mb-5">
-                  {f.desc}
-                </p>
-                <Link href={f.href}
-                  className="text-xs font-bold uppercase tracking-wider text-muted-foreground
-                  flex items-center gap-1 group-hover:text-primary transition-colors">
-                  {f.cta} <ArrowRight className="h-3 w-3" />
-                </Link>
-              </div>
+                <div className="relative space-y-1.5 flex-1">
+                  <h3 className="text-[15px] font-bold leading-tight">{f.title}</h3>
+                  <p className="text-[13px] text-muted-foreground leading-relaxed">{f.desc}</p>
+                </div>
+
+                <div className={`relative flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-muted-foreground/50 group-hover:text-foreground/70 transition-colors`}>
+                  {f.cta}
+                  <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-1" />
+                </div>
+              </Link>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── Why this is different ──────────────────────────────────────────── */}
-      <section className="w-full py-24 border-t border-border/50 bg-background/20 backdrop-blur-md">
-        <div className="container px-6 mx-auto max-w-5xl">
-          <div className="grid md:grid-cols-2 gap-16 items-center">
+      {/* ── Why Different ── */}
+      <section className="w-full py-24 bg-foreground/[0.02] relative">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
 
+        <div className="container px-6 mx-auto max-w-5xl">
+          <div className="grid md:grid-cols-2 gap-12 lg:gap-20 items-center">
+
+            {/* Text side */}
             <div className="space-y-6">
-              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                Why DevOps Network
-              </p>
-              <h2 className="text-4xl font-black tracking-tight leading-tight">
-                Not another<br />YouTube playlist.
+              <p className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/50">Why DevOps Network</p>
+              <h2 className="text-4xl sm:text-5xl font-black tracking-tight leading-[1.05]">
+                Not another<br />
+                <span className="text-muted-foreground">YouTube playlist.</span>
               </h2>
-              <p className="text-muted-foreground leading-relaxed">
-                There's no shortage of DevOps content — there's a shortage of structure.
-                Tutorials exist in isolation. Playlists cover tools, not systems. Nothing
-                connects what you're learning to what production actually looks like.
-              </p>
-              <p className="text-muted-foreground leading-relaxed">
-                Every resource here is connected to a roadmap. Every module has context.
-                Every event is community-submitted and admin-vetted. It's a system,
-                not a content dump.
-              </p>
+              <div className="space-y-4 text-muted-foreground leading-relaxed">
+                <p>
+                  There's no shortage of DevOps content — there's a shortage of <strong className="text-foreground font-semibold">structure</strong>. Tutorials exist in isolation. Playlists cover tools, not systems.
+                </p>
+                <p>
+                  Every resource here is connected to a roadmap. Every module has context. Every event is community-submitted and admin-vetted.
+                </p>
+              </div>
               <Link href="/about">
-                <Button variant="outline" className="rounded-full gap-2 mt-2">
+                <Button variant="outline" className="rounded-xl gap-2 h-11 px-6 font-bold hover:-translate-y-0.5 transition-all border-border/50">
                   Read the full story <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
             </div>
 
-            {/* Checklist */}
-            <div className="space-y-3">
-              {[
-                { label: "Roadmaps built around real team workflows" },
-                { label: "Modules with production context, not just syntax" },
-                { label: "Resources curated by engineers, not scraped" },
-                { label: "Community that submits, upvotes, and improves content" },
-                { label: "Events from real practitioners in the community" },
-                { label: "Free forever — no paywalls, no subscriptions" },
-              ].map((item) => (
-                <div key={item.label}
-                  className="flex items-center gap-3 p-4 rounded-2xl border border-border/10 backdrop-blur-xl bg-card/60 hover:border-primary/30 hover:bg-card/40 hover:shadow-[0_15px_30px_rgba(0,0,0,0.1)] transition-all duration-300 hover:-translate-y-0.5 relative group overflow-hidden">
-                  <div className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-0 group-hover:opacity-10 transition-opacity duration-700 blur-2xl pointer-events-none bg-primary" />
-                  <div className="h-5 w-5 rounded-full bg-primary/10 flex items-center
-                    justify-center shrink-0 group-hover:scale-110 transition-transform">
-                    <Zap className="h-3 w-3 text-primary" />
+            {/* Checklist side */}
+            <div className="space-y-2.5">
+              {differentiators.map((item, i) => (
+                <div
+                  key={item}
+                  className="group flex items-center gap-3.5 p-4 rounded-xl border border-border/20 bg-card/40 hover:bg-card/70 hover:border-primary/25 hover:-translate-y-0.5 hover:shadow-[0_8px_25px_rgba(0,0,0,0.08)] transition-all duration-200 cursor-default"
+                  style={{ animationDelay: `${i * 60}ms` }}
+                >
+                  <div className="h-6 w-6 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
                   </div>
-                  <p className="text-sm font-medium">{item.label}</p>
+                  <p className="text-[13.5px] font-semibold text-foreground/80 group-hover:text-foreground transition-colors">{item}</p>
                 </div>
               ))}
             </div>
@@ -268,42 +323,72 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ── CTA ───────────────────────────────────────────────────────────── */}
-      <section className="w-full py-24 border-t border-border/50 bg-foreground/95 backdrop-blur-xl text-background">
-        <div className="container px-6 mx-auto max-w-3xl text-center space-y-8">
-          <div className="inline-flex items-center gap-2 text-xs font-bold uppercase
-            tracking-widest text-background/50 border border-background/10
-            rounded-full px-4 py-1.5">
+      {/* ── Social proof strip ── */}
+      <section className="w-full py-16 border-y border-border/20 bg-background">
+        <div className="container px-6 mx-auto max-w-5xl">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-8">
+            <div className="text-center sm:text-left">
+              <p className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/50 mb-2">Built for engineers</p>
+              <p className="text-2xl font-black tracking-tight">Learning that actually sticks.</p>
+            </div>
+            <div className="flex items-center gap-8">
+              {[
+                { n: "100%", t: "Free forever" },
+                { n: "0", t: "Paywalls" },
+                { n: "∞", t: "Resources" },
+              ].map(({ n, t }) => (
+                <div key={t} className="text-center">
+                  <p className="text-3xl font-black tracking-tight text-primary">{n}</p>
+                  <p className="text-xs text-muted-foreground font-semibold mt-0.5">{t}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── CTA ── */}
+      <section className="w-full py-28 relative overflow-hidden bg-foreground dark:bg-foreground/95">
+        {/* Background pattern */}
+        <div className="absolute inset-0 opacity-[0.04] pointer-events-none"
+          style={{
+            backgroundImage: `radial-gradient(circle, white 1px, transparent 1px)`,
+            backgroundSize: "24px 24px"
+          }}
+        />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2/3 h-1/2 rounded-full bg-primary/10 blur-[80px] pointer-events-none" />
+
+        <div className="relative container px-6 mx-auto max-w-3xl text-center space-y-8">
+          <div className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.15em] text-background/40 border border-background/10 rounded-full px-4 py-1.5">
             <Terminal className="h-3.5 w-3.5" />
             Start here
           </div>
-          <h2 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tighter leading-tight text-background">
+
+          <h2 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-[-0.03em] leading-tight text-background">
             Ready to build<br />real infrastructure?
           </h2>
-          <p className="text-background/60 text-lg max-w-lg mx-auto leading-relaxed">
-            Start with the roadmap, pick a module, or browse the resource library.
-            Your path, your pace. Always free.
+
+          <p className="text-background/50 text-lg max-w-md mx-auto leading-relaxed font-medium">
+            Start with the roadmap, pick a module, or browse the library. Your path, your pace.
           </p>
+
           <div className="flex flex-col sm:flex-row justify-center gap-3">
             <Link href="/signup">
               <Button size="lg" variant="secondary"
-                className="h-12 px-8 rounded-full text-base bg-background
-                text-foreground hover:bg-background/90 gap-2 group">
+                className="h-12 px-8 rounded-xl text-[15px] font-bold bg-background text-foreground hover:bg-background/90 gap-2 group hover:-translate-y-0.5 shadow-[0_8px_30px_rgba(0,0,0,0.3)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.4)] transition-all duration-300">
                 Get Started Free
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Button>
             </Link>
             <Link href="/roadmap">
               <Button size="lg" variant="ghost"
-                className="h-12 px-8 rounded-full text-base text-background/70
-                hover:text-background hover:bg-background/10 border border-background/20">
+                className="h-12 px-8 rounded-xl text-[15px] font-bold text-background/60 hover:text-background hover:bg-background/8 border border-background/15 hover:border-background/25 transition-all duration-300 hover:-translate-y-0.5">
                 View Roadmap
               </Button>
             </Link>
           </div>
         </div>
       </section>
-
     </div>
   );
 }
