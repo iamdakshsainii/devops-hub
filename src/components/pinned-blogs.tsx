@@ -37,23 +37,15 @@ export function PinnedBlogs({ blogs }: { blogs: any[] }) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <button 
-          className="group relative flex items-center justify-center h-14 w-14 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 shadow-lg shadow-orange-500/20 hover:shadow-orange-500/40 hover:-translate-y-1 transition-all duration-300"
-          title="Pinned Content"
+          className="group relative flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 hover:border-amber-500/40 shadow-sm hover:shadow-md transition-all duration-300 animate-in fade-in slide-in-from-top-4"
+          title="Essential Reads"
         >
-           <Pin className="h-6 w-6 text-white rotate-45 group-hover:rotate-0 transition-transform duration-500" />
-           <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center">
+           <span className="relative flex h-2 w-2 items-center justify-center shrink-0">
              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-             <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-600"></span>
+             <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-600"></span>
            </span>
-           
-           {/* Label for Tooltip/Desktop */}
-           <div className="absolute right-full mr-4 opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 transition-all duration-300 pointer-events-none hidden md:block">
-             <div className="bg-background/95 backdrop-blur-md border border-border px-3 py-1.5 rounded-xl shadow-xl whitespace-nowrap">
-               <span className="text-xs font-bold text-foreground flex items-center gap-2">
-                 <Sparkles className="h-3 w-3 text-amber-500" /> Essential Reads
-               </span>
-             </div>
-           </div>
+           <span className="text-[10px] font-black uppercase tracking-[0.15em] text-amber-600 dark:text-amber-500">Essential Insight</span>
+           <ArrowRight className="h-2.5 w-2.5 text-amber-500 group-hover:translate-x-0.5 transition-transform" />
         </button>
       </DialogTrigger>
 

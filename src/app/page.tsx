@@ -46,7 +46,10 @@ export default async function Home() {
         <div className="absolute bottom-1/4 right-1/4 w-72 h-72 rounded-full bg-purple-500/15 blur-[100px] animate-pulse duration-[6s] pointer-events-none" />
 
         <div className="relative z-10 container px-6 mx-auto max-w-5xl">
-          <div className="flex flex-col items-center text-center space-y-8">
+          <div className="flex flex-col items-center text-center space-y-7 transition-all duration-700">
+            {/* Interactive Announcement Portal */}
+            <PinnedBlogs blogs={pinnedBlogs} />
+
             {/* Headline */}
             <div className="space-y-4 max-w-4xl">
               <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tighter leading-none">
@@ -88,13 +91,6 @@ export default async function Home() {
       </div>
 
         {/* Pinned Blogs Floating Button - Top Right Extreme */}
-        {/* Pinned Blogs Floating Button - Optimized Positioning & Scalability */}
-        <div className="absolute top-16 right-2 md:top-24 md:right-10 lg:right-16 z-40 transition-all duration-700 animate-in fade-in slide-in-from-top-6">
-           <div className="scale-[0.6] md:scale-90 origin-top-right">
-              <PinnedBlogs blogs={pinnedBlogs} />
-           </div>
-        </div>
-
         {/* Bottom fade */}
         <div className="absolute bottom-0 left-0 right-0 h-32
           bg-gradient-to-t from-background/80 to-transparent pointer-events-none" />
