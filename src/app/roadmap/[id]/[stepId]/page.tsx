@@ -94,8 +94,11 @@ export default async function StepDetailPage({
     percentComplete: totalTopics > 0 ? Math.round((completedTopics / totalTopics) * 100) : 0
   };
 
+  const isAdmin = session?.user?.role === "ADMIN" || session?.user?.role === "SUPER_ADMIN";
+
   return (
     <StepModulesViewer
+      isAdmin={isAdmin}
       step={{
         id: step.id,
         title: step.title,
