@@ -3,13 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { uploadToCloudinary } from "@/lib/cloudinary";
 
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '10mb',
-    },
-  },
-};
+// DE-CLUTTER: The 'config' export is for Pages Router. 
+// For App Router, Next.js handles bodyParser automatically through req.formData().
 
 export async function POST(req: Request) {
   try {

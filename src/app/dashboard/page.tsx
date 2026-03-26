@@ -80,23 +80,23 @@ export default async function DashboardPage() {
      })
   ]);
 
-  const completedItemIds = new Set(userProgress.map(p => p.itemId));
+  const completedItemIds = new Set(userProgress.map((p: any) => p.itemId));
 
   // Determine which roadmap is "Current" based on the most recent activity
   const recentTopicId = userProgress[0]?.itemId;
   
-  const roadmapsWithProgress = (rawRoadmaps as any[]).map(roadmap => {
+  const roadmapsWithProgress = (rawRoadmaps as any[]).map((roadmap: any) => {
     let completedSteps = 0;
     let completedTopics = 0;
     let totalTopics = 0;
 
-    roadmap.steps.forEach(step => {
+    roadmap.steps.forEach((step: any) => {
        let stepTotal = 0;
        let stepCompleted = 0;
        
-       step.attachedModules.forEach(am => {
+       step.attachedModules.forEach((am: any) => {
          const isOptional = (am as any).isOptional;
-         am.module.topics.forEach(t => {
+         am.module.topics.forEach((t: any) => {
            if (!isOptional) {
              stepTotal++; totalTopics++;
            }
@@ -110,7 +110,7 @@ export default async function DashboardPage() {
        if (stepTotal > 0 && stepCompleted === stepTotal) completedSteps++;
     });
 
-    const hasRecentActivity = roadmap.steps.some(s => s.attachedModules.some(am => am.module.topics.some(t => t.id === recentTopicId)));
+    const hasRecentActivity = roadmap.steps.some((s: any) => s.attachedModules.some((am: any) => am.module.topics.some((t: any) => t.id === recentTopicId)));
 
     return {
        ...roadmap,
@@ -137,11 +137,11 @@ export default async function DashboardPage() {
   
   let modulesCompletedCount = 0;
   // (Simplified for now to keep performance high)
-  roadmapsWithProgress.forEach(r => {
+  roadmapsWithProgress.forEach((r: any) => {
     if (r.percent === 100) modulesCompletedCount += r.totalSteps;
   });
 
-  const roadmapsCompletedCount = roadmapsWithProgress.filter(r => r.percent === 100).length;
+  const roadmapsCompletedCount = roadmapsWithProgress.filter((r: any) => r.percent === 100).length;
   const pointTotals = (userProgress.length * 10) + (modulesCompletedCount * 50) + (roadmapsCompletedCount * 500);
 
   const getLevel = (points: number) => {
@@ -213,7 +213,7 @@ export default async function DashboardPage() {
          user={{ name: session.user.name || session.user.email?.split("@")[0], pointTotals, currentLevel, nextLevelPercent }}
          currentRoadmap={currentRoadmap}
          allStats={{ topics: userProgress.length, modules: modulesCompletedCount, roadmaps: roadmapsCompletedCount, points: pointTotals }}
-         progress={userProgress.map(p => ({ createdAt: p.createdAt, id: p.id }))}
+         progress={userProgress.map((p: any) => ({ createdAt: p.createdAt, id: p.id }))}
       />
 
       {/* Pinned Announcements */}
