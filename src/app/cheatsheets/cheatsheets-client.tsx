@@ -79,11 +79,11 @@ export function CheatsheetsClient({ initialData }: { initialData: any[] }) {
                  <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl opacity-0 group-hover:opacity-10 transition-opacity duration-700 pointer-events-none bg-primary" />
 
                  {item.coverImage && (
-                     <div className="w-full h-48 bg-muted/30 overflow-hidden border-b border-border/10 relative flex items-center justify-center p-2 group/img">
+                     <div className="w-full h-48 bg-muted/30 overflow-hidden border-b border-border/10 relative flex items-center justify-center group/img">
                          <img 
                              src={item.coverImage} 
                              alt={item.title} 
-                             className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-500" 
+                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
                          />
                          {isAdmin ? (
                             <div onClick={(e) => { e.stopPropagation(); e.preventDefault(); window.open(`/admin/cheatsheets?search=${encodeURIComponent(item.title)}`, '_blank'); }} className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 flex items-center justify-center transition-opacity cursor-pointer">
@@ -108,9 +108,7 @@ export function CheatsheetsClient({ initialData }: { initialData: any[] }) {
                           </Badge>
                           <span className="text-2xl">{item.icon}</span>
                       </div>
-                      <Link href={`/cheatsheets/${item.slug}`}>
-                         <CardTitle className="text-lg group-hover:text-primary transition-colors line-clamp-2">{item.title}</CardTitle>
-                      </Link>
+                      <CardTitle className="text-lg group-hover:text-primary transition-colors line-clamp-2">{item.title}</CardTitle>
                       <CardDescription className="line-clamp-3 text-xs h-12">
                           {item.description || "Quick overview setup layout guide for references triggers."}
                       </CardDescription>

@@ -423,14 +423,14 @@ export function StepViewer({
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <div className={`sticky ${isStandalone ? 'top-0' : 'top-16'} z-40 bg-background/95 backdrop-blur border-b shadow-sm`}>
+      <div className={`sticky ${isStandalone ? 'top-0' : 'top-16 lg:top-[76px]'} z-[110] bg-background/95 backdrop-blur border-b shadow-sm`}>
         {completionPercentage === 100 && (
-          <div className="bg-emerald-500/10 border-b border-emerald-500/20 text-emerald-500 text-xs font-bold py-1.5 px-4 text-center">
-            ðŸŽ‰ Awesome! You've mastered all topics in this step. Keep the momentum going!
+          <div className="bg-emerald-500/10 border-b border-emerald-500/20 text-emerald-500 text-[10px] font-black uppercase tracking-widest py-1.5 px-4 text-center">
+            ðŸ‰ mastery achieved! stay consistent.
           </div>
         )}
         <div className="flex items-center h-14 gap-4 px-6 overflow-visible text-sm transition-all duration-300 w-full relative">
-          <button className="md:hidden p-2 rounded-xl hover:bg-muted shrink-0" onClick={() => setSidebarOpen(!sidebarOpen)}>
+          <button className="md:hidden p-2 rounded-xl bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 shrink-0 transition-all active:scale-95" onClick={() => setSidebarOpen(!sidebarOpen)}>
             {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
 
@@ -531,8 +531,8 @@ export function StepViewer({
       </div>
 
       <div className="flex flex-1 relative w-full px-4 md:px-6 font-sans">
-        {sidebarOpen && <div className="fixed inset-0 bg-black/50 z-30 md:hidden" onClick={() => setSidebarOpen(false)} />}
-        <aside className={`fixed md:sticky top-28 left-0 z-40 md:z-auto bg-background md:bg-transparent border-r md:border-r-0 transform transition-transform md:transform-none shadow-2xl md:shadow-none ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"} ${isSidebarCollapsed ? "md:w-0 md:opacity-0 md:pointer-events-none md:p-0" : "w-72 md:w-72 lg:w-80 px-4 py-8"} shrink-0 transition-all duration-300`}>
+        {sidebarOpen && <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[140] md:hidden" onClick={() => setSidebarOpen(false)} />}
+        <aside className={`fixed md:sticky ${isStandalone ? 'top-14 md:top-20' : 'top-[120px] md:top-32'} left-0 z-[150] md:z-10 bg-background md:bg-transparent border-r md:border-r-0 transform transition-transform md:transform-none shadow-2xl md:shadow-none ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"} ${isSidebarCollapsed ? "md:w-0 md:opacity-0 md:pointer-events-none md:p-0" : "w-72 md:w-72 lg:w-80 px-4 py-8"} shrink-0 transition-all duration-300 h-[calc(100vh-120px)] md:h-auto overflow-y-auto`}>
           <div className={isSidebarCollapsed ? "hidden" : "block"}>
             <div className="mb-8 pb-6 border-b">
               <div className="flex items-center gap-3 mb-3">

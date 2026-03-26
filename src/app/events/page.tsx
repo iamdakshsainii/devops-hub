@@ -59,13 +59,13 @@ export default async function EventsPage({
         </Link>
       </div>
 
-      <div className="flex gap-2 flex-wrap justify-center">
+      <div className="flex gap-2 pb-2 md:pb-0 overflow-x-auto md:overflow-x-visible md:flex-wrap md:justify-center scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
         {filterTabs.map((f) => (
-          <Link key={f.value} href={`/events?filter=${f.value}`}>
+          <Link key={f.value} href={`/events?filter=${f.value}`} className="shrink-0">
             <Button
               variant={filter === f.value || (!filter && f.value === "all") ? "secondary" : "ghost"}
               size="sm"
-              className="gap-1.5"
+              className="gap-1.5 whitespace-nowrap"
             >
               {f.value === "ongoing" && (
                 <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
@@ -208,23 +208,23 @@ function EventCard({ event, badge, isAdmin }: { event: any; badge: "ongoing" | "
           {event.description}
         </CardDescription>
         
-        <div className="flex items-center justify-between gap-3 pt-3 border-t border-border/40 mt-auto">
-          <div className="flex items-center text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-3 border-t border-border/40 mt-auto">
+          <div className="flex items-center text-[10px] font-bold text-muted-foreground uppercase tracking-widest bg-muted/20 px-2 py-1 rounded-md w-fit">
             <MapPin className="h-2.5 w-2.5 mr-1" />
             {event.type === "MEETUP" ? "In-person" : "Online"}
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 w-full sm:w-auto justify-end">
             {!isPast && (
               <a href={googleCalendarUrl} target="_blank" rel="noopener noreferrer">
-                <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg hover:bg-primary/10 hover:text-primary transition-colors">
-                   <Calendar className="h-3.5 w-3.5" />
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-primary/10 hover:text-primary transition-colors">
+                   <Calendar className="h-4 w-4" />
                 </Button>
               </a>
             )}
             <EventActions eventId={event.id} isPast={isPast} />
             {event.externalLink && (
-              <a href={event.externalLink} target="_blank" rel="noopener noreferrer" className="ml-1">
-                <Button variant={isOngoing ? "default" : "outline"} size="sm" className="h-7 px-3 text-[10px] font-black uppercase rounded-lg">
+              <a href={event.externalLink} target="_blank" rel="noopener noreferrer">
+                <Button variant={isOngoing ? "default" : "outline"} size="sm" className="h-8 px-4 text-[10px] font-black uppercase rounded-lg shadow-sm">
                   {isPast ? "Watch" : isOngoing ? "Join" : "Enter"}
                   <ExternalLink className="ml-1.5 h-3 w-3" />
                 </Button>
@@ -232,8 +232,8 @@ function EventCard({ event, badge, isAdmin }: { event: any; badge: "ongoing" | "
             )}
             {isAdmin && (
               <Link href={`/events/dashboard/edit/${event.id}`}>
-                <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg text-amber-500 hover:bg-amber-500/10">
-                  <Edit className="h-3.5 w-3.5" />
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-amber-500 hover:bg-amber-500/10">
+                  <Edit className="h-4 w-4" />
                 </Button>
               </Link>
             )}
