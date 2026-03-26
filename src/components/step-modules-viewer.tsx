@@ -144,25 +144,25 @@ export function StepModulesViewer({
 
       {/* ── STICKY BREADCRUMB ── */}
       <div className="sticky top-0 z-[100] border-b bg-background/80 backdrop-blur-xl">
-        <div className="container mx-auto px-4 max-w-6xl flex items-center h-12 gap-3 text-xs">
+        <div className="container mx-auto px-4 max-w-6xl flex items-center h-14 gap-3 text-sm">
           <Link href="/roadmap" className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-all">
             Roadmaps
           </Link>
-          <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/30" />
+          <ChevronRight className="h-4 w-4 text-muted-foreground/30" />
           <Link href={`/roadmap/${roadmap.id}`} className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2">
-            <span className="bg-muted px-1 py-0.5 rounded text-[10px]">{roadmap.icon}</span>
-            <span className="hidden sm:inline font-medium">{roadmap.title}</span>
+            <span className="bg-muted px-1.5 py-0.5 rounded text-[11px]">{roadmap.icon}</span>
+            <span className="hidden sm:inline font-bold">{roadmap.title}</span>
           </Link>
-          <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/30" />
-          <span className="font-bold text-foreground truncate flex items-center gap-2">
-            <span className="w-1 h-1 rounded-full" style={{ background: roadmap.color }} />
+          <ChevronRight className="h-4 w-4 text-muted-foreground/30" />
+          <span className="font-black text-foreground truncate flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full" style={{ background: roadmap.color }} />
             {step.title}
           </span>
         </div>
       </div>
 
       {/* ── PREMIUM HERO ── */}
-      <div className="relative border-b overflow-hidden pt-8 pb-10 lg:pt-12 lg:pb-14">
+      <div className="relative border-b overflow-hidden pt-6 pb-8 lg:pt-8 lg:pb-10">
         {/* Subtle Watermark */}
         <div className="absolute -right-10 -top-10 text-[25rem] opacity-[0.04] dark:opacity-[0.06] font-black pointer-events-none select-none rotate-12">
           {getIcon(step.icon)}
@@ -181,18 +181,18 @@ export function StepModulesViewer({
                   <Star className="h-2.5 w-2.5 fill-current" /> {roadmap.title}
                 </div>
                 
-                <div className="flex flex-col md:flex-row md:items-center gap-5">
+                <div className="flex flex-col md:flex-row md:items-center gap-4">
                   <div
-                    className="w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 border-2 bg-background/50 backdrop-blur-xl shadow-xl relative group transition-all duration-500 hover:rotate-3"
+                    className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0 border-2 bg-background/50 backdrop-blur-xl shadow-xl relative group transition-all duration-500 hover:rotate-3"
                     style={{ borderColor: `${roadmap.color}33`, boxShadow: `0 10px 30px -5px ${roadmap.color}22` }}
                   >
-                    <span className="text-3xl group-hover:scale-110 transition-transform duration-500">{getIcon(step.icon)}</span>
+                    <span className="text-2xl group-hover:scale-110 transition-transform duration-500">{getIcon(step.icon)}</span>
                   </div>
                   <div>
-                    <h1 className="text-3xl md:text-5xl font-black tracking-tight text-foreground leading-tight">
+                    <h1 className="text-2xl md:text-4xl font-black tracking-tight text-foreground leading-tight">
                       {step.title}
                     </h1>
-                    <p className="text-muted-foreground text-sm md:text-base mt-2 max-w-xl leading-relaxed font-medium opacity-90">
+                    <p className="text-muted-foreground text-xs md:text-sm mt-1 max-w-xl leading-relaxed font-bold opacity-80">
                       {step.description}
                     </p>
                   </div>
@@ -262,41 +262,40 @@ export function StepModulesViewer({
               </div>
             </div>
 
-            {/* Right: Floating Stats Dashboard */}
             <div className="shrink-0 flex justify-center lg:block animate-in fade-in slide-in-from-bottom-10 duration-1000 delay-200">
               <div
-                className="relative overflow-hidden bg-white/40 dark:bg-zinc-900/40 backdrop-blur-[40px] border-2 rounded-[3rem] p-8 shadow-2xl flex flex-col items-center gap-6 w-full sm:min-w-[280px] group/card transition-all duration-700 border-white/20 dark:border-white/5"
+                className="relative overflow-hidden bg-white/40 dark:bg-zinc-900/60 backdrop-blur-[40px] border-2 rounded-[2.5rem] p-6 shadow-2xl flex flex-col items-center gap-4 w-full sm:min-w-[240px] group/card transition-all duration-700 border-white/20 dark:border-white/10"
               >
                 <div 
-                  className="absolute inset-x-0 top-0 h-1/2 rounded-full blur-[80px] opacity-[0.15]" 
+                  className="absolute inset-x-0 top-0 h-1/2 rounded-full blur-[60px] opacity-[0.1] dark:opacity-[0.2]" 
                   style={{ background: roadmap.color }}
                 />
-
-                <div className="relative flex items-center justify-center p-4 rounded-full bg-background/50 backdrop-blur-xl border border-white/20">
-                  <ProgressRing percent={stats.percentComplete} color={isMastered ? '#10b981' : roadmap.color} size={150} stroke={10} />
-                  <div className="absolute inset-0 flex flex-col items-center justify-center pt-2">
-                    <span className={`text-4xl font-black leading-none tabular-nums tracking-tight ${isMastered ? 'text-emerald-500' : 'text-foreground'}`}>
-                      {animatedPercent}<span className="text-sm font-bold opacity-30">%</span>
+ 
+                <div className="relative flex items-center justify-center p-3 rounded-full bg-background/50 dark:bg-zinc-950/50 backdrop-blur-xl border border-white/20 dark:border-white/10">
+                  <ProgressRing percent={stats.percentComplete} color={isMastered ? '#10b981' : roadmap.color} size={110} stroke={8} />
+                  <div className="absolute inset-0 flex flex-col items-center justify-center pt-1">
+                    <span className={`text-2xl font-black leading-none tabular-nums tracking-tight ${isMastered ? 'text-emerald-500' : 'text-foreground'}`}>
+                      {animatedPercent}<span className="text-[10px] font-bold opacity-30">%</span>
                     </span>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mt-2 opacity-50">
+                    <span className="text-[8px] font-black uppercase tracking-widest text-muted-foreground mt-1 opacity-50">
                       Progress
                     </span>
                   </div>
                 </div>
-
-                <div className="grid grid-cols-2 gap-4 w-full relative z-10">
-                  <div className="bg-white/40 dark:bg-white/5 border border-white/20 dark:border-white/5 p-4 rounded-3xl flex flex-col items-center group/stat transition-colors text-center">
-                    <span className="text-2xl font-black text-foreground tabular-nums">{animatedCompleted}</span>
-                    <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 mt-1">Done</span>
+ 
+                <div className="grid grid-cols-2 gap-3 w-full relative z-10">
+                  <div className="bg-white/40 dark:bg-white/5 border border-white/20 dark:border-white/10 p-3 rounded-2xl flex flex-col items-center group/stat transition-colors text-center">
+                    <span className="text-xl font-black text-foreground tabular-nums">{animatedCompleted}</span>
+                    <span className="text-[8px] font-black uppercase tracking-widest text-muted-foreground/60 mt-0.5">Done</span>
                   </div>
                   <div 
-                    className="border-2 p-4 rounded-3xl flex flex-col items-center shadow-md text-center"
+                    className="border-2 p-3 rounded-2xl flex flex-col items-center shadow-md text-center"
                     style={{ backgroundColor: `${roadmap.color}10`, borderColor: `${roadmap.color}25` }}
                   >
-                    <span className="text-2xl font-black tabular-nums" style={{ color: roadmap.color }}>
+                    <span className="text-xl font-black tabular-nums" style={{ color: roadmap.color }}>
                       {stats.totalTopics - stats.completedTopics}
                     </span>
-                    <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 mt-1">Left</span>
+                    <span className="text-[8px] font-black uppercase tracking-widest text-muted-foreground/60 mt-0.5">Left</span>
                   </div>
                 </div>
               </div>
@@ -309,36 +308,45 @@ export function StepModulesViewer({
       <div className="container mx-auto px-4 max-w-6xl py-12 space-y-12">
 
         {/* Filters & Control Bar */}
-        <div className="flex flex-col lg:flex-row gap-6 justify-between items-stretch lg:items-center">
-          <div className="relative group">
+        <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center w-full">
+          <div className="relative group flex-1">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
             <Input
               placeholder="Search curriculum modules..."
               value={searchQuery}
               onChange={(e: any) => setSearchQuery(e.target.value)}
-              className="pl-11 h-12 w-full lg:w-[350px] rounded-2xl bg-card/40 backdrop-blur-xl border-2 border-border/50 focus:border-primary focus:ring-0 text-sm font-bold shadow-sm transition-all"
+              className="pl-11 h-14 w-full rounded-2xl bg-card/40 backdrop-blur-xl border-2 border-border/50 focus:border-primary focus:ring-0 text-sm font-bold shadow-sm transition-all"
             />
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center bg-muted/40 backdrop-blur-xl border-2 border-border/50 rounded-xl p-1 shadow-sm">
-              <button onClick={() => setViewMode("grid")} className={`w-9 h-9 flex items-center justify-center rounded-lg transition-all ${viewMode === "grid" ? "bg-background text-foreground shadow-md" : "text-muted-foreground hover:text-foreground"}`}>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center bg-muted/40 backdrop-blur-xl border-2 border-border/50 rounded-2xl p-1 shadow-sm h-14">
+              <button 
+                onClick={() => setViewMode("grid")} 
+                className={`w-12 h-full flex items-center justify-center rounded-xl transition-all ${viewMode === "grid" ? "bg-background text-foreground shadow-md" : "text-muted-foreground hover:text-foreground"}`}
+              >
                 <LayoutGrid className="h-4 w-4" />
               </button>
-              <button onClick={() => setViewMode("list")} className={`w-9 h-9 flex items-center justify-center rounded-lg transition-all ${viewMode === "list" ? "bg-background text-foreground shadow-md" : "text-muted-foreground hover:text-foreground"}`}>
+              <button 
+                onClick={() => setViewMode("list")} 
+                className={`w-12 h-full flex items-center justify-center rounded-xl transition-all ${viewMode === "list" ? "bg-background text-foreground shadow-md" : "text-muted-foreground hover:text-foreground"}`}
+              >
                 <List className="h-4 w-4" />
               </button>
             </div>
 
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="h-12 px-5 rounded-2xl bg-card/40 backdrop-blur-xl border-2 border-border/50 text-[10px] font-black uppercase tracking-widest text-foreground appearance-none cursor-pointer focus:outline-none focus:border-primary shadow-sm hover:border-border transition-all"
-            >
-              <option value="default">Structure</option>
-              <option value="az">A → Z</option>
-              <option value="topics">Topics</option>
-            </select>
+            <div className="relative h-14 group">
+               <select
+                 value={sortBy}
+                 onChange={(e) => setSortBy(e.target.value as any)}
+                 className="h-full px-6 rounded-2xl bg-card/40 dark:bg-zinc-900/40 backdrop-blur-xl border-2 border-border/50 dark:border-white/5 text-[10px] font-black uppercase tracking-widest text-foreground appearance-none cursor-pointer focus:outline-none focus:border-primary shadow-sm hover:border-border transition-all pr-10"
+               >
+                 <option value="default" className="bg-background text-foreground">Structure</option>
+                 <option value="az" className="bg-background text-foreground">A → Z</option>
+                 <option value="topics" className="bg-background text-foreground">Topics</option>
+               </select>
+               <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/40 rotate-90 pointer-events-none" />
+            </div>
           </div>
         </div>
 
@@ -358,7 +366,7 @@ export function StepModulesViewer({
                 Learning Strategy
               </h5>
               <p className="text-sm text-muted-foreground leading-relaxed font-bold tracking-tight max-w-4xl">
-                Mandatory modules are core standards. <span style={{ color: roadmap.color, borderColor: `${roadmap.color}44` }} className="font-black border-b px-0.5">Elective Paths</span> are specializations — master them to distinguish your expertise.
+                Mandatory modules are core standards. <span style={{ color: roadmap.color, borderColor: `${roadmap.color}44` }} className="font-black border-b px-0.5">Optional Paths</span> are specializations — master them to distinguish your expertise.
               </p>
             </div>
           </div>
@@ -397,7 +405,7 @@ export function StepModulesViewer({
                       <div className="flex flex-wrap items-center gap-4">
                         <span className="font-black text-foreground text-lg tracking-tight group-hover:text-primary transition-colors">{am.module.title}</span>
                         {am.isOptional && (
-                          <span className="text-[10px] font-black uppercase tracking-[0.2em] px-4 py-1.5 rounded-2xl bg-orange-500/10 border-2 border-orange-500/20 text-orange-600 dark:text-orange-400">Elective</span>
+                          <span className="text-[10px] font-black uppercase tracking-[0.2em] px-4 py-1.5 rounded-2xl bg-muted border-2 border-border/50 text-muted-foreground">Optional</span>
                         )}
                         {isCompleted && (
                           <span className="text-[10px] font-black uppercase tracking-[0.2em] px-3 py-1 rounded-2xl bg-emerald-500/10 border-2 border-emerald-500/20 text-emerald-600 dark:text-emerald-400">Mastered</span>
@@ -453,14 +461,13 @@ export function StepModulesViewer({
                           <div className="flex items-center gap-2">
                             {am.isOptional && (
                               <span 
-                                className="text-[9px] font-black uppercase tracking-widest px-2.5 py-1.5 rounded-xl border-2"
-                                style={{ backgroundColor: `${roadmap.color}10`, borderColor: `${roadmap.color}30`, color: roadmap.color }}
+                                className="text-[8.5px] font-black uppercase tracking-tighter px-1.5 py-0.5 rounded-md border bg-muted/20 border-border/30 text-muted-foreground/50"
                               >
-                                Elective
+                                Optional
                               </span>
                             )}
                             <span
-                              className="text-[10px] font-black w-8 h-8 rounded-xl flex items-center justify-center border transition-all"
+                              className="text-[10px] font-black w-7 h-7 rounded-lg flex items-center justify-center border transition-all"
                               style={{ backgroundColor: `${roadmap.color}10`, color: roadmap.color, borderColor: `${roadmap.color}20` }}
                             >
                               #{idx + 1}
@@ -469,38 +476,35 @@ export function StepModulesViewer({
                        </div>
                      </div>
  
-                     <div className="space-y-2">
+                     <div className="space-y-1.5">
                        <h3 className="font-black text-foreground text-lg tracking-tight leading-tight group-hover:text-primary transition-colors">{am.module.title}</h3>
-                       <p className="text-xs text-muted-foreground font-bold leading-relaxed line-clamp-3 opacity-90">{am.module.description.replace(/Module:/, "")}</p>
+                       <p className="text-xs text-muted-foreground font-bold leading-relaxed line-clamp-2 opacity-90">{am.module.description.replace(/Module:/, "")}</p>
  
-                       {/* Strategist Note (Premium Hint) */}
-                       {am.isOptional && am.optionalDescription && (
+                       {/* Strategist Note (Premium Hint) - Compact Style */}
+                       {am.isOptional && (
                          <div 
-                           className="mt-4 p-5 rounded-[2rem] border relative transition-all bg-white/50 dark:bg-zinc-950/40 backdrop-blur-xl border-white/20 dark:border-white/5 hover:bg-white/70 dark:hover:bg-zinc-950/60 transition-all duration-500"
+                           className="mt-2.5 p-2.5 rounded-xl border relative transition-all bg-white/30 dark:bg-zinc-950/20 backdrop-blur-md border-white/20 dark:border-white/5"
                          >
-                           <div 
-                             className="absolute -top-3 left-6 text-[9px] font-black px-3.5 py-1 rounded-full uppercase tracking-widest text-white shadow-lg"
-                             style={{ backgroundColor: roadmap.color }}
-                           >
-                              Pro Tip
-                           </div>
-                           <p className="text-[13px] font-bold italic leading-relaxed flex items-start gap-3 pt-1 text-foreground/90">
-                              <Lightbulb className="h-4 w-4 shrink-0 text-primary" style={{ color: roadmap.color }} />
-                             {am.optionalDescription}
-                           </p>
+                            <div className="flex items-start gap-2">
+                               <div className="w-1 h-1 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: roadmap.color }} />
+                               <p className="text-[10.5px] font-bold leading-tight text-foreground/70 lowercase">
+                                 <span className="uppercase text-[8.5px] opacity-40 mr-1.5 text-muted-foreground">Why Optional?</span>
+                                 {am.optionalDescription || "deep-dive specialization recommended for advanced operational mastery."}
+                               </p>
+                            </div>
                          </div>
                        )}
                      </div>
  
                      <div className="mt-auto pt-4 space-y-6">
-                       <div className="flex items-center justify-between">
-                         <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground/50">
-                           <span className="flex items-center gap-2"><BookOpen className="h-3.5 w-3.5" /> {am.module._count.topics} Steps</span>
-                           <span className="flex items-center gap-2 border-l border-border/30 pl-4"><Clock className="h-3.5 w-3.5" /> {am.module.readTime}m</span>
+                     <div className="flex items-center justify-between">
+                         <div className="flex items-center gap-3 text-[9px] font-black uppercase tracking-wider text-muted-foreground/40">
+                           <span className="flex items-center gap-1.5"><BookOpen className="h-3 w-3" /> {am.module._count.topics} Steps</span>
+                           <span className="flex items-center gap-1.5 border-l border-border/20 pl-3"><Clock className="h-3 w-3" /> {am.module.readTime}m</span>
                          </div>
                          <div className="text-right">
-                            <span className="text-lg font-black text-foreground tabular-nums tracking-tighter" style={{ color: roadmap.color }}>
-                              {am.module.completedCount}<span className="text-xs opacity-30 mx-0.5">/</span>{am.module._count.topics}
+                            <span className="text-sm font-black text-foreground tabular-nums tracking-tighter" style={{ color: roadmap.color }}>
+                              {am.module.completedCount}<span className="text-[10px] opacity-25 mx-0.5">/</span>{am.module._count.topics}
                             </span>
                          </div>
                        </div>

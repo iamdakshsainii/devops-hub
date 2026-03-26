@@ -66,13 +66,31 @@ export default async function StepDetailPage({
      };
   });
 
-  // Calculate overall stats for the step (Excluding Optional for the percentage)
-  const totalTopics = attachedModulesWithProgress.reduce((sum, am) => sum + (am.isOptional ? 0 : (am.module._count?.topics || 0)), 0);
-  const completedTopics = attachedModulesWithProgress.reduce((sum, am) => sum + (am.isOptional ? 0 : (am.module.completedCount)), 0);
-  
-  // Also calculate total including optional for the "items" count if needed, or just keep it simple.
-  // The user wants to know they reached 100% without optional.
-  
+  // Dynamic Progress Logic:
+  // 1. Mandatory modules ALWAYS count towards the goal.
+  // 2. Optional modules ONLY count towards the goal (and the total) if the user has started them (completedCount > 0).
+  // This allows the progress bar to show 100% once required modules are done, unless the user chooses to "deep-dive".
+
+  const totalTopics = attachedModulesWithProgress.reduce((sum, am) => {
+    const isMandatory = !am.isOptional;
+    const hasStartedOptional = am.isOptional && am.module.completedCount > 0;
+    
+    if (isMandatory || hasStartedOptional) {
+      return sum + (am.module._count?.topics || 0);
+    }
+    return sum;
+  }, 0);
+
+  const completedTopics = attachedModulesWithProgress.reduce((sum, am) => {
+    const isMandatory = !am.isOptional;
+    const hasStartedOptional = am.isOptional && am.module.completedCount > 0;
+
+    if (isMandatory || hasStartedOptional) {
+      return sum + am.module.completedCount;
+    }
+    return sum;
+  }, 0);
+
   const totalTopicsIncludingOptional = attachedModulesWithProgress.reduce((sum, am) => sum + (am.module._count?.topics || 0), 0);
   const completedTopicsIncludingOptional = attachedModulesWithProgress.reduce((sum, am) => sum + (am.module.completedCount), 0);
 

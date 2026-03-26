@@ -65,17 +65,6 @@ export default async function RoadmapDetailPage({ params }: { params: Promise<{ 
     return acc + (isCompleted ? 1 : 0);
   }, 0);
 
-  const totalTopics = (roadmap.steps || []).reduce((acc: number, step: any) => {
-    const hasModules = (step as any).attachedModules?.length > 0;
-    if (hasModules) {
-      const mandatoryTopics = (step as any).attachedModules.reduce(
-        (sum: number, am: any) => sum + (am.isOptional ? 0 : (am.module.topics?.length || 0)), 0
-      );
-      return acc + mandatoryTopics;
-    }
-    return acc + step._count.topics;
-  }, 0);
-
   const globalPercentage = roadmap.steps.length > 0 ? Math.round((stepsCompleted / roadmap.steps.length) * 100) : 0;
 
   const getMotivation = (p: number) => {
@@ -86,69 +75,93 @@ export default async function RoadmapDetailPage({ params }: { params: Promise<{ 
     return "Roadmap mastered! 🎉";
   };
 
+  const getIcon = (icon: string) => {
+    return icon || "📍";
+  };
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* ── HIGH END HERO SECTION ── */}
-      <div className="relative border-b bg-card/[0.15] backdrop-blur overflow-hidden">
+    <div className="min-h-screen bg-background text-foreground selection:bg-primary/20">
+      {/* ── PREMIUM COMPACT HERO SECTION ── */}
+      <div className="relative border-b bg-card/[0.03] dark:bg-zinc-950/20 backdrop-blur-3xl overflow-hidden pt-6 pb-8 lg:pt-8 lg:pb-10">
         <div 
-          className="absolute inset-x-0 -top-40 -z-10 m-auto h-[380px] w-full max-w-4xl rounded-full blur-[110px]" 
-          style={{ backgroundImage: `radial-gradient(circle at center, ${roadmap.color}0d, ${roadmap.color}04, transparent)` }}
+          className="absolute inset-x-0 -top-40 -z-10 m-auto h-[380px] w-full max-w-4xl rounded-full blur-[110px] opacity-20 dark:opacity-30" 
+          style={{ backgroundImage: `radial-gradient(circle at center, ${roadmap.color}, transparent)` }}
         />
 
-        <div className="container px-6 py-12 md:py-16 max-w-5xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-10">
-            <div className="flex-1 space-y-5 text-left">
-                <Link href="/roadmap" className="inline-flex items-center gap-1 text-xs font-bold text-muted-foreground hover:text-foreground transition-colors mb-2">
-                     <ChevronLeft className="h-3.5 w-3.5" /> Back to Roadmaps
+        <div className="container px-6 max-w-6xl mx-auto flex flex-col gap-6">
+            {/* Elegant Visible Breadcrumb Nav (The only big text the user requested) */}
+            <nav className="flex items-center gap-3 text-sm font-black uppercase tracking-[0.2em] text-muted-foreground/50 group/nav">
+                <Link href="/roadmap" className="hover:text-foreground transition-all duration-300 flex items-center gap-2 pr-1.5 border-r border-border/20">
+                  Roadmaps
                 </Link>
+                <span className="text-foreground/70 lowercase transition-colors group-hover/nav:text-foreground">{roadmap.title}</span>
+            </nav>
 
-                <div className="space-y-4">
-                    <div className="flex items-center gap-3.5">
-                       <div className="text-4xl h-14 w-14 rounded-2xl flex items-center justify-center bg-card border border-border/40 shadow-sm shrink-0" style={{ boxShadow: `0 0 20px ${roadmap.color}10` }}>{roadmap.icon}</div>
-                       <h1 className="text-3xl md:text-5xl font-black tracking-tight leading-tight">{roadmap.title}</h1>
+            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 lg:gap-12">
+                <div className="flex-1 space-y-4 text-left">
+                    <div className="flex items-center gap-4">
+                       <div 
+                        className="text-2xl h-11 w-11 rounded-xl flex items-center justify-center bg-background border border-border/30 shadow-md shrink-0" 
+                        style={{ borderColor: `${roadmap.color}33`, boxShadow: `0 0 20px ${roadmap.color}10` }}
+                       >
+                         {roadmap.icon}
+                       </div>
+                       <h1 className="text-2xl md:text-3xl lg:text-4xl font-black tracking-tight leading-tight">
+                         {roadmap.title}
+                       </h1>
                     </div>
-                    <p className="text-muted-foreground text-sm md:text-base max-w-2xl leading-relaxed">
+                    
+                    <p className="text-muted-foreground text-xs md:text-sm max-w-2xl leading-relaxed font-bold opacity-60">
                         {roadmap.description}
                     </p>
+
+                    <div className="flex items-center gap-3 pt-1">
+                        <div className="inline-flex items-center gap-2 rounded-lg border border-border/10 bg-muted/20 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-foreground/50">
+                            <Map className="h-3 w-3 opacity-60" style={{ color: roadmap.color }} />
+                            {roadmap.steps.length} Steps in Path
+                        </div>
+                    </div>
                 </div>
 
-                <div className="inline-flex items-center gap-2 rounded-full border border-border/10 bg-muted/20 px-3.5 py-1 text-[11px] font-bold text-foreground/90 shadow-sm">
-                    <Map className="h-3.5 w-3.5" style={{ color: roadmap.color }} />
-                    {roadmap.steps.length} Steps
+                {/* Integrated Compact Horizontal Progress */}
+                <div className="shrink-0 w-full lg:w-72 space-y-2 lg:mb-1 animate-in fade-in slide-in-from-right-10 duration-1000 delay-300">
+                    <div className="flex items-end justify-between px-1">
+                        <div className="flex flex-col">
+                            <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest leading-none mb-1.5 opacity-80">{getMotivation(globalPercentage)}</span>
+                            <span className="text-[10px] font-black uppercase tracking-tight text-foreground/40 leading-none">Status</span>
+                        </div>
+                        <span className="text-2xl font-black tabular-nums text-foreground leading-none tracking-tighter">
+                            {globalPercentage}<span className="text-[10px] ml-0.5 opacity-20 font-bold">%</span>
+                        </span>
+                    </div>
+                    
+                    <div className="relative h-2 w-full bg-muted/30 dark:bg-white/5 rounded-full overflow-hidden border border-border/10 p-0.5 shadow-inner">
+                        <div 
+                           className="h-full bg-emerald-500 rounded-full transition-all duration-1000 ease-out shadow-[0_0_15px_rgba(16,185,129,0.3)]" 
+                           style={{ width: `${globalPercentage}%` }} 
+                        />
+                    </div>
+                    
+                    <p className="text-[9px] text-muted-foreground font-black tracking-widest uppercase opacity-40 text-right pr-1">
+                        {stepsCompleted} / {roadmap.steps.length} Steps
+                    </p>
                 </div>
-            </div>
-
-            {/* Right: Achievement Progress Ring Card */}
-            <div className="w-full md:w-auto shrink-0">
-               <div className="border border-border/40 bg-card rounded-3xl p-6 shadow-xl w-full md:w-64 flex flex-row md:flex-col items-center justify-between md:justify-center gap-5 relative group overflow-hidden bg-gradient-to-b from-card to-background/50">
-                    <div className="relative h-20 w-20 flex items-center justify-center bg-background rounded-2xl border border-border/30 shadow-inner p-1">
-                         <svg className="h-full w-full -rotate-90" viewBox="0 0 36 36">
-                              <path className="stroke-muted/20" strokeWidth="4" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                              <path className="stroke-emerald-500 transition-all duration-1000 ease-out" strokeWidth="4" fill="none" strokeDasharray={`${globalPercentage}, 100`} strokeLinecap="round" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                         </svg>
-                         <div className="absolute inset-0 flex flex-col items-center justify-center font-black text-emerald-500">
-                              <span className="text-[14px] font-black leading-none">{globalPercentage}%</span>
-                         </div>
-                    </div>
-
-                    <div className="text-left md:text-center space-y-0.5">
-                         <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest block">{getMotivation(globalPercentage)}</span>
-                         <h4 className="text-xs font-bold text-foreground">Steps Mastered</h4>
-                         <p className="text-[11px] text-muted-foreground font-medium pt-0.5">{stepsCompleted} of {roadmap.steps.length} completed</p>
-                    </div>
-               </div>
             </div>
         </div>
       </div>
 
-      <div className="container px-6 py-12 m-auto max-w-5xl">
-          <div className="mb-12 text-center">
-              <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/80">
+      <div className="container px-6 py-10 m-auto max-w-5xl">
+          <div className="mb-10 text-center space-y-2 text-foreground">
+              <h2 className="text-xl md:text-2xl font-black tracking-tight">
                  Your Learning Path
               </h2>
-              <p className="text-muted-foreground text-sm pt-1 mt-1">Follow the modules sequentially for optimal understanding.</p>
+              <div className="h-0.5 w-8 bg-primary/20 rounded-full mx-auto" style={{ background: roadmap.color }} />
+              <p className="text-muted-foreground text-[9px] font-black uppercase tracking-widest opacity-30 mt-2">
+                Follow modules sequentially
+              </p>
           </div>
 
-        <div className="space-y-6 relative">
+        <div className="space-y-4 md:space-y-6 relative">
           {roadmap.steps.map((step: any, i: number) => {
             const hasModules = (step as any).attachedModules?.length > 0;
             let trackingTotal = 0;
@@ -169,16 +182,16 @@ export default async function RoadmapDetailPage({ params }: { params: Promise<{ 
             const isCompleted = trackingTotal > 0 && trackingCompleted === trackingTotal;
 
             return (
-            <div key={step.id} className="relative group">
-              {isAdmin && (
+            <div key={step.id} className="relative group/step">
+               {isAdmin && (
                 <a 
                    href={`/admin/modules?search=${encodeURIComponent(step.title)}`} 
                    target="_blank" 
                    rel="noreferrer"
-                   className="absolute top-6 right-12 z-30 flex items-center gap-1.5"
+                   className="absolute top-5 right-10 z-30 flex items-center gap-1.5 opacity-0 group-hover/step:opacity-100 transition-opacity"
                 >
-                  <Button variant="outline" size="sm" className="h-7 text-[10px] items-center font-bold px-2.5 gap-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 border-amber-500/20 shadow-sm rounded-full">
-                    <Edit className="h-3 w-3" /> Edit
+                  <Button variant="outline" size="sm" className="h-6 text-[9px] items-center font-black px-2 gap-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 border-amber-500/20 shadow-sm rounded-md tracking-widest uppercase">
+                    <Edit className="h-2.5 w-2.5" /> Edit
                   </Button>
                 </a>
               )}
@@ -186,66 +199,66 @@ export default async function RoadmapDetailPage({ params }: { params: Promise<{ 
                 href={`/roadmap/${roadmap.id}/${step.id}`}
                 className="block relative z-10"
               >
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-6 sm:gap-10 relative">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 sm:gap-8 relative">
                   {i < roadmap.steps.length - 1 && (
                      <div 
-                        className={`absolute top-16 bottom-[-24px] left-8 w-1.5 hidden sm:block -z-10 transition-all duration-700 rounded-full`}
-                        style={{ backgroundColor: isCompleted ? '#10b981' : `${roadmap.color}25` }}
+                        className={`absolute top-12 bottom-[-16px] left-6 w-1 hidden sm:block -z-10 transition-all duration-700 rounded-full`}
+                        style={{ backgroundColor: isCompleted ? '#10b981' : `${roadmap.color}20` }}
                      />
                   )}
                   
-                {/* Station Node */}
-                <div className="flex items-center gap-4 shrink-0 sm:w-16 relative z-20">
+                  {/* Station Node */}
+                <div className="flex items-center gap-3 shrink-0 sm:w-12 relative z-20">
                   <div
-                    className={`hidden sm:flex w-16 h-16 rounded-[1.25rem] border-[1.5px] items-center justify-center relative transition-all duration-500 bg-background/90 backdrop-blur-md group-hover:scale-110 shadow-lg`}
+                    className={`hidden sm:flex w-12 h-12 rounded-xl border items-center justify-center relative transition-all duration-500 bg-background/90 dark:bg-zinc-900/80 backdrop-blur-md group-hover:scale-105 shadow-sm`}
                     style={{ 
-                        borderColor: isCompleted ? '#10b981' : `${roadmap.color}40`,
-                        boxShadow: isCompleted ? `0 0 30px rgba(16,185,129,0.3)` : `0 10px 30px ${roadmap.color}15`
+                        borderColor: isCompleted ? '#10b981' : `${roadmap.color}30`,
+                        boxShadow: isCompleted ? `0 0 25px rgba(16,185,129,0.3)` : `0 5px 15px ${roadmap.color}15`
                     }}
                   >
-                    <span className="text-xl font-black drop-shadow-sm" style={{ color: isCompleted ? '#10b981' : roadmap.color }}>
+                    <span className="text-sm font-black drop-shadow-sm" style={{ color: isCompleted ? '#10b981' : roadmap.color }}>
                       {String(i + 1).padStart(2, "0")}
                     </span>
                   </div>
                   <div
-                    className={`sm:hidden w-10 h-10 rounded-[1rem] border flex items-center justify-center font-black text-sm shrink-0 bg-background/95 backdrop-blur-md shadow-sm`}
-                    style={{ borderColor: isCompleted ? '#10b981' : `${roadmap.color}40`, color: isCompleted ? '#10b981' : roadmap.color }}
+                    className={`sm:hidden w-8 h-8 rounded-lg border flex items-center justify-center font-black text-[10px] shrink-0 bg-background/95 dark:bg-zinc-950/90 shadow-sm`}
+                    style={{ borderColor: isCompleted ? '#10b981' : `${roadmap.color}30`, color: isCompleted ? '#10b981' : roadmap.color }}
                   >
                     {String(i + 1).padStart(2, "0")}
                   </div>
                 </div>
 
                 {/* Card */}
-                <div className="flex-1 bg-background/50 backdrop-blur-2xl border border-border/30 rounded-[2rem] p-6 lg:p-8 hover:shadow-[0_15px_40px_rgba(0,0,0,0.06)] hover:border-border/60 transition-all duration-500 relative overflow-hidden ring-1 ring-white/10 dark:ring-white/5 group hover:-translate-y-1">
+                <div className="flex-1 bg-background/50 dark:bg-zinc-900/30 backdrop-blur-3xl border border-border/30 dark:border-white/[0.03] rounded-2xl p-5 lg:p-6 hover:shadow-[0_20px_50px_rgba(0,0,0,0.1)] dark:hover:shadow-[0_20px_50px_rgba(59,130,246,0.06)] transition-all duration-700 relative overflow-hidden group ring-1 ring-white/10 dark:ring-white/[0.02] hover:-translate-y-0.5">
+                  {/* ADVANCED ATMOSPHERIC OVERLAY (DARK MODE) */}
+                  <div className="absolute -top-24 -right-24 w-64 h-64 rounded-full blur-[80px] opacity-0 dark:opacity-0 dark:group-hover:opacity-10 transition-all duration-700 pointer-events-none" style={{ backgroundColor: roadmap.color }} />
+                  
                   {/* Card Indicator Strip */}
                   <div
-                    className={`absolute top-0 left-0 w-2 h-full transition-all duration-500 ${isCompleted ? "opacity-100 bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.8)]" : "opacity-0 group-hover:opacity-100"}`}
+                    className={`absolute top-0 left-0 w-1 pt-1 h-full transition-all duration-500 ${isCompleted ? "opacity-100 bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.8)]" : "opacity-0 group-hover:opacity-100"}`}
                     style={{ backgroundColor: isCompleted ? undefined : roadmap.color }}
                   />
 
-                  {/* Internal Glow Overlay */}
-                  <div className="absolute -top-24 -right-24 w-64 h-64 rounded-full blur-[80px] opacity-0 group-hover:opacity-40 transition-all duration-700 pointer-events-none" style={{ backgroundColor: roadmap.color }} />
-
                   <div className="sm:flex justify-between items-start gap-4 relative z-10">
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-card shadow-sm border border-border/40 text-2xl shrink-0 group-hover:rotate-6 transition-transform duration-300">
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-card shadow-sm border border-border/30 text-xl shrink-0">
                            {step.icon}
                         </div>
-                        <h3 className="text-2xl lg:text-3xl font-black tracking-tight group-hover:text-primary transition-colors">
+                        <h3 className="text-xl lg:text-2xl font-black tracking-tight group-hover:text-primary transition-colors">
                           {step.title}
                         </h3>
                       </div>
-                      <p className="text-muted-foreground text-[15px] sm:text-[17px] leading-relaxed line-clamp-2 md:line-clamp-none max-w-2xl font-medium">
+                      <p className="text-muted-foreground text-xs md:text-sm leading-relaxed line-clamp-2 md:line-clamp-none max-w-2xl font-bold opacity-80">
                         {step.description}
                       </p>
                     </div>
-                    <ArrowRight className="h-6 w-6 text-muted-foreground/30 sm:mt-3 group-hover:text-primary group-hover:translate-x-3 transition-transform duration-500 shrink-0 hidden sm:block" style={{ color: roadmap.color }} />
+                    <ArrowRight className="h-5 w-5 text-muted-foreground/30 sm:mt-2 group-hover:text-primary group-hover:translate-x-2 transition-transform duration-500 shrink-0 hidden sm:block" style={{ color: roadmap.color }} />
                   </div>
 
-                  <div className="flex items-center gap-4 mt-8 pt-5 border-t border-border/20 text-xs sm:text-[13px] font-black uppercase tracking-widest text-muted-foreground relative z-10">
-                    <div className="flex items-center gap-2 bg-muted/40 px-3.5 py-1.5 rounded-lg border border-border/10">
-                      <Library className="h-4 w-4" style={{ color: roadmap.color }} />
+                  <div className="flex items-center gap-3 mt-4 pt-4 border-t border-border/10 text-[9px] font-black uppercase tracking-widest text-muted-foreground">
+                    <div className="flex items-center gap-1.5 bg-muted/30 px-2.5 py-1 rounded-md border border-border/10">
+                      <Library className="h-3 w-3" style={{ color: roadmap.color }} />
                       <span>{(step as any).attachedModules?.length || 0} Modules</span>
                     </div>
                   </div>
@@ -253,7 +266,7 @@ export default async function RoadmapDetailPage({ params }: { params: Promise<{ 
               </div>
             </Link>
           </div>
-          );
+            );
           })}
         </div>
       </div>

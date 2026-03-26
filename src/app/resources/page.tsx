@@ -11,11 +11,11 @@ import { Badge } from "@/components/ui/badge";
 export const dynamic = "force-dynamic";
 
 const FILTERS = [
-  { label: "All Items", value: "ALL", icon: Layers },
-  { label: "Documentation", value: "DOCUMENTATION", icon: Book },
+  { label: "All", value: "ALL", icon: Layers },
+  { label: "Docs", value: "DOCUMENTATION", icon: Book },
   { label: "Videos", value: "VIDEO", icon: Video },
   { label: "Playlists", value: "PLAYLIST", icon: List },
-  { label: "Notes & Cheatsheets", value: "NOTES", icon: BookOpen },
+  { label: "Notes", value: "NOTES", icon: BookOpen },
 ];
 
 export default async function ResourcesPage({
@@ -78,20 +78,20 @@ export default async function ResourcesPage({
         )}
       </div>
 
-      {/* Modern Search & Filter Bar */}
-      <div className="flex flex-col lg:flex-row gap-4 lg:items-center justify-between bg-card/60 p-2 md:p-3 rounded-2xl border shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl">
-        <form method="GET" action="/resources" className="relative w-full lg:max-w-md">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
+      {/* Modern Search & Filter Bar - FORCED INLINE */}
+      <div className="flex flex-col lg:flex-row gap-5 lg:items-center justify-between bg-card p-2 md:p-3 rounded-2xl border shadow-xl backdrop-blur-3xl">
+        <form method="GET" action="/resources" className="relative w-full lg:max-w-sm">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
           <Input
             name="q"
-            placeholder="Search thousands of resources..."
+            placeholder="Search resources..."
             defaultValue={q}
-            className="pl-10 h-11 bg-background/50 border-0 shadow-inner rounded-xl focus-visible:ring-1 focus-visible:ring-primary/30 text-[14px] font-medium placeholder:text-muted-foreground/50 transition-all font-sans"
+            className="pl-10 h-10 bg-background/50 border-0 shadow-inner rounded-xl focus-visible:ring-1 focus-visible:ring-primary/20 text-[14px] font-medium"
           />
           {activeType && <input type="hidden" name="type" value={activeType} />}
         </form>
 
-        <div className="flex flex-wrap items-center gap-1.5 md:gap-2 w-full lg:w-auto">
+        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar pb-1 md:pb-0">
           {FILTERS.map((f) => {
             const Icon = f.icon;
             const isActive = f.value === "ALL" ? !activeType : activeType === f.value;
@@ -105,13 +105,13 @@ export default async function ResourcesPage({
                 <Button
                   variant={isActive ? "default" : "secondary"}
                   size="sm"
-                  className={`gap-2 h-9 px-4 rounded-xl text-[12px] font-bold transition-all duration-300 ${
+                  className={`gap-1.5 h-8 px-3.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all duration-300 ${
                     isActive 
-                      ? "shadow-md scale-105" 
-                      : "bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground border border-transparent hover:border-border/50"
+                      ? "shadow-md bg-primary text-primary-foreground" 
+                      : "bg-muted/40 hover:bg-muted text-muted-foreground/80 hover:text-foreground border-transparent border"
                   }`}
                 >
-                  <Icon className={`h-3.5 w-3.5 ${isActive ? "opacity-100" : "opacity-50"}`} />
+                  <Icon className={`h-3 w-3 ${isActive ? "opacity-100" : "opacity-40"}`} />
                   {f.label}
                 </Button>
               </Link>
