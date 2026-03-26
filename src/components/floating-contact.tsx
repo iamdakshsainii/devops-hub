@@ -3,9 +3,15 @@
 import Link from "next/link";
 import { MessageCircle } from "lucide-react";
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 
 export function FloatingContact() {
   const [isOpen, setIsOpen] = useState(false);
+  const pathname = usePathname();
+
+  // DE-CLUTTER: Hide the floating contact hub on the homepage to focus 100% 
+  // on the hero mission and the curated achievement pills.
+  if (pathname === "/") return null;
 
   return (
     <div className="fixed bottom-4 right-4 md:bottom-6 md:right-6 z-[100] group flex flex-col items-end">
