@@ -113,7 +113,7 @@ export function Navbar() {
             {/* ── Logo ── */}
             <Link href="/" className="flex items-center space-x-2 group mr-2">
               <Terminal className="h-6 w-6 text-primary group-hover:scale-110 transition-transform" />
-              <span className="font-black tracking-tighter text-[16px] md:text-lg leading-none hidden sm:block">
+              <span className="font-black tracking-tighter text-[16px] md:text-lg leading-none hidden sm:block whitespace-nowrap">
                 DevOps <span className="text-primary">Network</span>
               </span>
             </Link>
@@ -172,7 +172,7 @@ export function Navbar() {
             <div className="hidden md:block mr-3 lg:mr-6">
               <button
                 onClick={() => setCmdkOpen(true)}
-                className="flex items-center gap-3 h-10 pl-4 pr-3 rounded-xl bg-foreground/[0.05] hover:bg-foreground/[0.08] border border-border/40 hover:border-border/60 transition-all duration-200 group w-[320px] xl:w-[480px]"
+                className="flex items-center gap-3 h-10 pl-4 pr-3 rounded-xl bg-foreground/[0.05] hover:bg-foreground/[0.08] border border-border/40 hover:border-border/60 transition-all duration-200 group flex-1 max-w-[320px] lg:max-w-[480px] xl:max-w-[600px]"
                 title="Search (Ctrl+K)"
               >
                 <Search className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
