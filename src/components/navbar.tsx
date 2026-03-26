@@ -31,7 +31,7 @@ export function Navbar() {
   })
   const [searching, setSearching] = useState(false)
   const reminderChecked = useRef(false)
-  const isAdmin = ["ADMIN", "SUPER_ADMIN"].includes(session?.user?.role)
+  const isAdmin = ["ADMIN", "SUPER_ADMIN"].includes(session?.user?.role ?? "")
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 12)
